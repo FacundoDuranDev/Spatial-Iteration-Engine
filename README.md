@@ -62,3 +62,6 @@ engine.start()
 ## Notebooks
 Los ejemplos viven en `ascii_stream_engine/examples/`.
 Para mas detalles, ver `ascii_stream_engine/README.md`.
+
+## Documentacion
+Ver `docs/README.md` para guia general, arquitectura, casos de uso y tecnologias.

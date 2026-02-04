@@ -126,3 +126,6 @@ config = EngineConfig(render_mode="raw", raw_width=640, raw_height=360)
   ```python
   config = EngineConfig(host="192.168.1.255", udp_broadcast=True)
   ```
+
+## Documentacion
+Ver `docs/README.md` para arquitectura, casos de uso y tecnologias.
