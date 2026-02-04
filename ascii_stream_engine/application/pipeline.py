@@ -4,7 +4,7 @@ from typing import Dict, Iterable, Iterator, List, Optional
 
 import numpy as np
 
-from .config import EngineConfig
+from ..domain.config import EngineConfig
 
 
 class AnalyzerPipeline:

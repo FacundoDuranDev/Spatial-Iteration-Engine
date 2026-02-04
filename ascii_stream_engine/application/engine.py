@@ -3,12 +3,12 @@ import time
 from collections import deque
 from typing import Dict, Optional, Tuple
 
-from .config import EngineConfig
+from ..domain.config import EngineConfig
 from .pipeline import AnalyzerPipeline, FilterPipeline
-from .types import RenderFrame
-from ..outputs import OutputSink
-from ..renderer import FrameRenderer
-from ..sources import FrameSource
+from ..domain.types import RenderFrame
+from ..ports.outputs import OutputSink
+from ..ports.renderers import FrameRenderer
+from ..ports.sources import FrameSource
 
 
 class StreamEngine:

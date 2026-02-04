@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional
 
-from ..core.engine import StreamEngine
+from ..application.engine import StreamEngine
 
 
 def build_control_panel(engine: StreamEngine) -> Dict[str, List[object]]:
@@ -76,7 +76,12 @@ def build_general_control_panel(
         ) from exc
 
     try:
-        from ..filters import BrightnessFilter, DetailBoostFilter, EdgeFilter, InvertFilter
+        from ..adapters.filters import (
+            BrightnessFilter,
+            DetailBoostFilter,
+            EdgeFilter,
+            InvertFilter,
+        )
     except Exception:
         BrightnessFilter = None
         DetailBoostFilter = None

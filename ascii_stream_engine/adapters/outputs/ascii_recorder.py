@@ -1,8 +1,8 @@
 import os
 from typing import Optional, Tuple
 
-from ..core.config import EngineConfig
-from ..core.types import RenderFrame
+from ...domain.config import EngineConfig
+from ...domain.types import RenderFrame
 
 
 class AsciiFrameRecorder:

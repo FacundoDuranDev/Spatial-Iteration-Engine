@@ -1,10 +1,10 @@
 import time
 import unittest
 
-from ascii_stream_engine.core.config import EngineConfig
-from ascii_stream_engine.core.engine import StreamEngine
-from ascii_stream_engine.core.pipeline import AnalyzerPipeline, FilterPipeline
-from ascii_stream_engine.core.types import RenderFrame
+from ascii_stream_engine.domain.config import EngineConfig
+from ascii_stream_engine.application.engine import StreamEngine
+from ascii_stream_engine.application.pipeline import AnalyzerPipeline, FilterPipeline
+from ascii_stream_engine.domain.types import RenderFrame
 
 
 class DummySource:

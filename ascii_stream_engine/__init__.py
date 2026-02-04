@@ -1,19 +1,18 @@
-from .core.config import EngineConfig
-from .core.engine import StreamEngine
-from .core.pipeline import AnalyzerPipeline, FilterPipeline
-from .core.types import RenderFrame
-from .sources import FrameSource, OpenCVCameraSource
-from .analyzers import BaseAnalyzer, FaceHaarAnalyzer
-from .filters import (
+from .application import AnalyzerPipeline, FilterPipeline, StreamEngine
+from .domain import EngineConfig, RenderFrame
+from .ports import FrameRenderer, FrameSource, OutputSink
+from .adapters.analyzers import BaseAnalyzer, FaceHaarAnalyzer
+from .adapters.filters import (
     BaseFilter,
     BrightnessFilter,
     DetailBoostFilter,
     EdgeFilter,
     InvertFilter,
 )
-from .renderer import AsciiRenderer, FrameRenderer
-from .outputs import AsciiFrameRecorder, FfmpegUdpOutput, OutputSink
-from .control import build_control_panel, build_general_control_panel
+from .adapters.outputs import AsciiFrameRecorder, FfmpegUdpOutput
+from .adapters.renderers import AsciiRenderer
+from .adapters.sources import OpenCVCameraSource
+from .presentation import build_control_panel, build_general_control_panel
 
 __all__ = [
     "EngineConfig",

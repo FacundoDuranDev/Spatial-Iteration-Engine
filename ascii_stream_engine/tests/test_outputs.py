@@ -3,9 +3,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from ascii_stream_engine.core.config import EngineConfig
-from ascii_stream_engine.core.types import RenderFrame
-from ascii_stream_engine.outputs.ascii_recorder import AsciiFrameRecorder
+from ascii_stream_engine.domain.config import EngineConfig
+from ascii_stream_engine.domain.types import RenderFrame
+from ascii_stream_engine.adapters.outputs.ascii_recorder import AsciiFrameRecorder
 from ascii_stream_engine.tests import has_module
 
 
@@ -29,7 +29,7 @@ class TestFfmpegUdpOutput(unittest.TestCase):
     def test_udp_output_spawns_ffmpeg(self) -> None:
         from PIL import Image
 
-        from ascii_stream_engine.outputs.udp import FfmpegUdpOutput
+        from ascii_stream_engine.adapters.outputs.udp import FfmpegUdpOutput
 
         class DummyProc:
             def __init__(self):
@@ -57,7 +57,7 @@ class TestFfmpegUdpOutput(unittest.TestCase):
         frame = RenderFrame(image=image, text="")
 
         with patch(
-            "ascii_stream_engine.outputs.udp.subprocess.Popen",
+            "ascii_stream_engine.adapters.outputs.udp.subprocess.Popen",
             return_value=DummyProc(),
         ) as popen:
             output.open(config, (10, 10))

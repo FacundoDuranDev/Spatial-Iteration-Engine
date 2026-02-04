@@ -1,43 +1,41 @@
 import subprocess
-from typing import Optional, Protocol, Tuple
+from typing import Optional, Tuple
 
 from PIL import Image
 
-from .config import AsciiStreamConfig
+from ...domain.config import EngineConfig
+from ...domain.types import RenderFrame
 
 
-class OutputSink(Protocol):
-    def open(self, config: AsciiStreamConfig, output_size: Tuple[int, int]) -> None:
-        ...
-
-    def write(self, image: Image.Image) -> None:
-        ...
-
-    def close(self) -> None:
-        ...
-
-
-class UdpFfmpegSink:
+class FfmpegUdpOutput:
     def __init__(
         self,
         host: Optional[str] = None,
         port: Optional[int] = None,
         pkt_size: Optional[int] = None,
         bitrate: Optional[str] = None,
+        broadcast: Optional[bool] = None,
     ) -> None:
         self._host = host
         self._port = port
         self._pkt_size = pkt_size
         self._bitrate = bitrate
+        self._broadcast = broadcast
         self._proc: Optional[subprocess.Popen] = None
 
-    def open(self, config: AsciiStreamConfig, output_size: Tuple[int, int]) -> None:
+    def open(self, config: EngineConfig, output_size: Tuple[int, int]) -> None:
+        self.close()
         host = self._host or config.host
         port = self._port or config.port
         pkt_size = self._pkt_size or config.pkt_size
         bitrate = self._bitrate or config.bitrate
+        broadcast = (
+            self._broadcast if self._broadcast is not None else config.udp_broadcast
+        )
         out_w, out_h = output_size
-
+        url = f"udp://{host}:{port}?pkt_size={pkt_size}"
+        if broadcast:
+            url += "&broadcast=1"
         cmd = [
             "ffmpeg",
             "-loglevel",
@@ -59,16 +57,18 @@ class UdpFfmpegSink:
             bitrate,
             "-f",
             "mpegts",
-            f"udp://{host}:{port}?pkt_size={pkt_size}",
+            url,
         ]
         self._proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
 
-    def write(self, image: Image.Image) -> None:
+    def write(self, frame: RenderFrame) -> None:
         if not self._proc or not self._proc.stdin:
             return
-        if image.mode != "RGB":
-            image = image.convert("RGB")
-        self._proc.stdin.write(image.tobytes())
+        image = frame.image if isinstance(frame, RenderFrame) else frame
+        if isinstance(image, Image.Image):
+            if image.mode != "RGB":
+                image = image.convert("RGB")
+            self._proc.stdin.write(image.tobytes())
 
     def close(self) -> None:
         if self._proc and self._proc.stdin:
@@ -77,5 +77,13 @@ class UdpFfmpegSink:
             except Exception:
                 pass
         if self._proc:
-            self._proc.wait()
+            try:
+                self._proc.wait(timeout=1)
+            except subprocess.TimeoutExpired:
+                try:
+                    self._proc.terminate()
+                    self._proc.wait(timeout=1)
+                except subprocess.TimeoutExpired:
+                    self._proc.kill()
+                    self._proc.wait()
             self._proc = None

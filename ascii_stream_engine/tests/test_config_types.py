@@ -1,7 +1,7 @@
 import unittest
 
-from ascii_stream_engine.core.config import EngineConfig
-from ascii_stream_engine.core.types import RenderFrame
+from ascii_stream_engine.domain.config import EngineConfig
+from ascii_stream_engine.domain.types import RenderFrame
 
 
 class TestConfigAndTypes(unittest.TestCase):

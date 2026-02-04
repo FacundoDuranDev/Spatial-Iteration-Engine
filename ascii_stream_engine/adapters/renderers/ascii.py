@@ -5,8 +5,8 @@ import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-from ..core.config import EngineConfig
-from ..core.types import RenderFrame
+from ...domain.config import EngineConfig
+from ...domain.types import RenderFrame
 
 
 class AsciiRenderer:

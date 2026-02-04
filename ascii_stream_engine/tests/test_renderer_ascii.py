@@ -11,8 +11,8 @@ class TestAsciiRenderer(unittest.TestCase):
     def test_render_ascii(self) -> None:
         import numpy as np
 
-        from ascii_stream_engine.core.config import EngineConfig
-        from ascii_stream_engine.renderer.ascii import AsciiRenderer
+        from ascii_stream_engine.domain.config import EngineConfig
+        from ascii_stream_engine.adapters.renderers.ascii import AsciiRenderer
 
         config = EngineConfig(grid_w=12, grid_h=6, charset="@.")
         renderer = AsciiRenderer()
@@ -26,8 +26,8 @@ class TestAsciiRenderer(unittest.TestCase):
     def test_render_raw(self) -> None:
         import numpy as np
 
-        from ascii_stream_engine.core.config import EngineConfig
-        from ascii_stream_engine.renderer.ascii import AsciiRenderer
+        from ascii_stream_engine.domain.config import EngineConfig
+        from ascii_stream_engine.adapters.renderers.ascii import AsciiRenderer
 
         config = EngineConfig(render_mode="raw", raw_width=20, raw_height=10)
         renderer = AsciiRenderer()

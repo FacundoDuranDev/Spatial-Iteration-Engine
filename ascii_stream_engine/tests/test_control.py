@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from ascii_stream_engine.core.config import EngineConfig
+from ascii_stream_engine.domain.config import EngineConfig
 from ascii_stream_engine.tests import has_module
 
 
@@ -48,7 +48,7 @@ class DummyEngine:
 
 class TestNotebookControl(unittest.TestCase):
     def test_build_control_panel_imports(self) -> None:
-        from ascii_stream_engine.control.notebook_api import build_control_panel
+        from ascii_stream_engine.presentation.notebook_api import build_control_panel
 
         engine = DummyEngine()
 
@@ -68,7 +68,7 @@ class TestNotebookControl(unittest.TestCase):
         self.assertIn("filters", panel)
 
     def test_build_general_control_panel_imports(self) -> None:
-        from ascii_stream_engine.control.notebook_api import build_general_control_panel
+        from ascii_stream_engine.presentation.notebook_api import build_general_control_panel
 
         engine = DummyEngine()
 

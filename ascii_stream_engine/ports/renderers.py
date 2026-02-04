@@ -2,9 +2,8 @@ from typing import Optional, Protocol, Tuple
 
 import numpy as np
 
-from ..core.config import EngineConfig
-from ..core.types import RenderFrame
-from .ascii import AsciiRenderer
+from ..domain.config import EngineConfig
+from ..domain.types import RenderFrame
 
 
 class FrameRenderer(Protocol):
@@ -15,6 +14,3 @@ class FrameRenderer(Protocol):
         self, frame: np.ndarray, config: EngineConfig, analysis: Optional[dict] = None
     ) -> RenderFrame:
         ...
-
-
-__all__ = ["FrameRenderer", "AsciiRenderer"]

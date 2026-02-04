@@ -1,9 +1,7 @@
 from typing import Protocol, Tuple
 
-from ..core.config import EngineConfig
-from ..core.types import RenderFrame
-from .ascii_recorder import AsciiFrameRecorder
-from .udp import FfmpegUdpOutput
+from ..domain.config import EngineConfig
+from ..domain.types import RenderFrame
 
 
 class OutputSink(Protocol):
@@ -15,6 +13,3 @@ class OutputSink(Protocol):
 
     def close(self) -> None:
         ...
-
-
-__all__ = ["OutputSink", "AsciiFrameRecorder", "FfmpegUdpOutput"]

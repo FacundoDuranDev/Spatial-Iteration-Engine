@@ -12,8 +12,3 @@ class FrameSource(Protocol):
 
     def close(self) -> None:
         ...
-
-
-from .camera import OpenCVCameraSource
-
-__all__ = ["FrameSource", "OpenCVCameraSource"]

@@ -24,6 +24,26 @@ Opcional (manos con MediaPipe):
 python -m pip install mediapipe
 ```
 
+## Arquitectura (Ports & Adapters)
+Este proyecto sigue una arquitectura hexagonal para separar dominio, casos de uso
+y adaptadores. La idea es poder reemplazar fuentes, renderers y salidas sin
+tocar el motor principal.
+
+Estructura:
+```
+ascii_stream_engine/
+  domain/        # modelos puros (config, types)
+  application/   # engine y pipelines
+  ports/         # protocolos (interfaces)
+  adapters/      # implementaciones concretas
+    sources/
+    renderers/
+    outputs/
+    filters/
+    analyzers/
+  presentation/  # UI y notebooks
+```
+
 ## Ejemplo rapido (UDP + VLC)
 ```python
 from ascii_stream_engine import (
@@ -52,8 +72,8 @@ udp://@127.0.0.1:1234
 ## Filtros y analizadores
 ```python
 from ascii_stream_engine import AnalyzerPipeline, FilterPipeline
-from ascii_stream_engine.filters import BrightnessFilter, InvertFilter
-from ascii_stream_engine.analyzers import FaceHaarAnalyzer
+from ascii_stream_engine.adapters.filters import BrightnessFilter, InvertFilter
+from ascii_stream_engine.adapters.analyzers import FaceHaarAnalyzer
 
 filters = FilterPipeline([BrightnessFilter(), InvertFilter()])
 analyzers = AnalyzerPipeline([FaceHaarAnalyzer()])
@@ -62,7 +82,7 @@ analyzers = AnalyzerPipeline([FaceHaarAnalyzer()])
 ## Tip: fuente monoespaciada (mejor alineado)
 Si ves el ASCII pegado a la izquierda, usa una fuente monoespaciada:
 ```python
-from ascii_stream_engine.renderer import AsciiRenderer
+from ascii_stream_engine.adapters.renderers import AsciiRenderer
 
 renderer = AsciiRenderer(font_path="/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf")
 ```
