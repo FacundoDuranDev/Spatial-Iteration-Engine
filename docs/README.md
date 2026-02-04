@@ -17,3 +17,4 @@ Tecnologias:
 - tech/ipywidgets.md
 - tech/ipython.md
 - tech/python_stdlib.md
+- tech/requirements.md
