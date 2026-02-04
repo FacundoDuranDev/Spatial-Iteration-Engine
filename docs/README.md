@@ -15,3 +15,5 @@ Tecnologias:
 - tech/pillow.md
 - tech/numpy.md
 - tech/ipywidgets.md
+- tech/ipython.md
+- tech/python_stdlib.md
