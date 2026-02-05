@@ -23,9 +23,11 @@ class DetailBoostFilter(BaseFilter):
         )
 
     def apply(self, frame, config, analysis=None):
+        # Optimización: evitar conversión de color si el frame ya es escala de grises
         if frame.ndim == 3:
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         else:
+            # Frame ya es escala de grises, usar directamente
             gray = frame
 
         eq = self._clahe.apply(gray)
@@ -34,4 +36,7 @@ class DetailBoostFilter(BaseFilter):
 
         if frame.ndim == 3:
             return cv2.cvtColor(sharp, cv2.COLOR_GRAY2BGR)
-        return sharp.astype(frame.dtype)
+        # Optimización: solo convertir tipo si es necesario
+        if sharp.dtype != frame.dtype:
+            return sharp.astype(frame.dtype)
+        return sharp

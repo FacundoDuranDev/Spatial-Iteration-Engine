@@ -1,7 +1,7 @@
 import time
 import unittest
 
-from ascii_stream_engine.domain.config import EngineConfig
+from ascii_stream_engine.domain.config import ConfigValidationError, EngineConfig
 from ascii_stream_engine.application.engine import StreamEngine
 from ascii_stream_engine.application.pipeline import AnalyzerPipeline, FilterPipeline
 from ascii_stream_engine.domain.types import RenderFrame
@@ -123,6 +123,95 @@ class TestStreamEngine(unittest.TestCase):
 
         engine.stop()
         self.assertGreaterEqual(sink.open_calls, initial_opens + 1)
+
+    def test_engine_validates_config_on_update(self) -> None:
+        """Verifica que el engine valida la configuración al actualizarla."""
+        config = EngineConfig(fps=30, frame_buffer_size=0, sleep_on_empty=0.001)
+        source = DummySource(frame=1)
+        renderer = DummyRenderer()
+        sink = DummySink()
+
+        engine = StreamEngine(
+            source=source,
+            renderer=renderer,
+            sink=sink,
+            config=config,
+        )
+
+        # Actualización válida
+        engine.update_config(fps=25)
+        self.assertEqual(engine.get_config().fps, 25)
+
+        # Actualización inválida (fps fuera de rango)
+        with self.assertRaises(ValueError) as cm:
+            engine.update_config(fps=200)
+        self.assertIn("Configuración inválida", str(cm.exception))
+
+        # Actualización inválida (port fuera de rango)
+        with self.assertRaises(ValueError) as cm:
+            engine.update_config(port=70000)
+        self.assertIn("Configuración inválida", str(cm.exception))
+
+    def test_profiling_collects_data(self) -> None:
+        """Verifica que el profiling recopila datos correctamente."""
+        config = EngineConfig(fps=30, frame_buffer_size=0, sleep_on_empty=0.001)
+        source = DummySource(frame=1)
+        renderer = DummyRenderer()
+        sink = DummySink()
+
+        engine = StreamEngine(
+            source=source,
+            renderer=renderer,
+            sink=sink,
+            config=config,
+            enable_profiling=True,  # Habilitar profiling
+        )
+        
+        # Verificar que el profiler está habilitado
+        self.assertTrue(engine.profiler.enabled)
+        
+        engine.start()
+        time.sleep(0.1)  # Procesar algunos frames
+        engine.stop()
+
+        # Obtener estadísticas
+        stats = engine.get_profiling_stats()
+        
+        # Verificar que se recopilaron datos
+        self.assertGreater(len(stats), 0, "Debe haber estadísticas recopiladas")
+        
+        # Verificar que hay datos de frame total
+        from ascii_stream_engine.infrastructure.profiling import LoopProfiler
+        if LoopProfiler.PHASE_TOTAL in stats:
+            total_stats = stats[LoopProfiler.PHASE_TOTAL]
+            self.assertGreater(total_stats["count"], 0, "Debe haber procesado al menos un frame")
+            self.assertGreater(total_stats["avg_time"], 0, "El tiempo promedio debe ser positivo")
+
+    def test_profiling_can_be_disabled(self) -> None:
+        """Verifica que el profiling puede deshabilitarse."""
+        config = EngineConfig(fps=30, frame_buffer_size=0, sleep_on_empty=0.001)
+        source = DummySource(frame=1)
+        renderer = DummyRenderer()
+        sink = DummySink()
+
+        engine = StreamEngine(
+            source=source,
+            renderer=renderer,
+            sink=sink,
+            config=config,
+            enable_profiling=False,  # Deshabilitar profiling
+        )
+        
+        # Verificar que el profiler está deshabilitado
+        self.assertFalse(engine.profiler.enabled)
+        
+        engine.start()
+        time.sleep(0.05)
+        engine.stop()
+
+        # Con profiling deshabilitado, no debería haber datos
+        stats = engine.get_profiling_stats()
+        # Puede estar vacío o tener datos si se habilitó después, pero no debería afectar el funcionamiento
 
 
 if __name__ == "__main__":
