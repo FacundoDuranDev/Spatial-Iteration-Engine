@@ -1,7 +1,8 @@
 from contextlib import contextmanager
 import threading
-from typing import Dict, Iterable, Iterator, List, Optional
+from typing import Dict, Iterable, Iterator, List, Optional, Tuple
 
+import cv2
 import numpy as np
 
 from ..domain.config import EngineConfig
@@ -82,6 +83,11 @@ class FilterPipeline:
     def __init__(self, filters: Optional[Iterable[object]] = None) -> None:
         self._filters: List[object] = list(filters) if filters else []
         self._lock = threading.Lock()
+        # Cache de conversiones comunes para evitar conversiones redundantes
+        # Estructura: {(conversion_code, frame_shape, frame_dtype): converted_frame}
+        self._conversion_cache: Dict[Tuple[int, Tuple, np.dtype], np.ndarray] = {}
+        # ID del frame actual para invalidar cache cuando cambia el frame
+        self._current_frame_id: Optional[int] = None
 
     @property
     def filters(self) -> List[object]:
@@ -130,14 +136,69 @@ class FilterPipeline:
                         changed = True
         return changed
 
+    def _get_cached_conversion(
+        self, frame: np.ndarray, conversion_code: int, frame_id: int
+    ) -> np.ndarray:
+        """
+        Obtiene una conversión cacheada o la realiza y la cachea.
+        
+        Args:
+            frame: Frame original
+            conversion_code: Código de conversión de OpenCV (ej: cv2.COLOR_BGR2GRAY)
+            frame_id: ID único del frame para invalidar cache cuando cambia
+            
+        Returns:
+            Frame convertido (cacheado o nuevo)
+        """
+        # Invalidar cache si cambió el frame
+        if self._current_frame_id != frame_id:
+            self._conversion_cache.clear()
+            self._current_frame_id = frame_id
+        
+        # Crear clave de cache basada en conversión y características del frame
+        cache_key = (conversion_code, frame.shape, frame.dtype)
+        
+        # Verificar si ya existe en cache
+        if cache_key in self._conversion_cache:
+            return self._conversion_cache[cache_key]
+        
+        # Realizar conversión y cachearla
+        converted = cv2.cvtColor(frame, conversion_code)
+        self._conversion_cache[cache_key] = converted
+        return converted
+    
+    def _clear_conversion_cache(self) -> None:
+        """Limpia el cache de conversiones."""
+        self._conversion_cache.clear()
+        self._current_frame_id = None
+
     def apply(
         self, frame: np.ndarray, config: EngineConfig, analysis: Optional[dict] = None
     ) -> np.ndarray:
+        # Optimización: si no hay filtros activos, retornar el frame original sin copias
+        filters = self.snapshot()
+        active_filters = [
+            f for f in filters
+            if not (hasattr(f, "enabled") and not getattr(f, "enabled"))
+        ]
+        
+        if not active_filters:
+            return frame
+        
+        # Limpiar cache de conversiones al inicio de cada frame
+        # El cache global se maneja automáticamente por frame_id
+        from ..adapters.filters.conversion_cache import clear_conversion_cache
+        clear_conversion_cache()
+        
+        # Aplicar filtros secuencialmente
+        # Nota: Cada filtro puede crear su propia copia si es necesario,
+        # pero evitamos pasar el frame a través del pipeline si no hay filtros activos
+        # Los filtros ahora usan el cache global de conversiones para evitar
+        # conversiones redundantes cuando múltiples filtros necesitan la misma conversión
         processed = frame
-        for filter_obj in self.snapshot():
-            if hasattr(filter_obj, "enabled") and not getattr(filter_obj, "enabled"):
-                continue
+        for filter_obj in active_filters:
             processed = filter_obj.apply(processed, config, analysis)
+        
         return processed
 
     @contextmanager

@@ -1,7 +1,7 @@
 import re
 import socket
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional
 
 
 class ConfigValidationError(ValueError):
@@ -29,6 +29,13 @@ class EngineConfig:
     udp_broadcast: bool = False
     frame_buffer_size: int = 2
     sleep_on_empty: float = 0.01
+    # Nuevos campos para extensibilidad
+    enable_events: bool = False
+    parallel_workers: int = 0  # 0 = deshabilitado, >0 = número de workers
+    gpu_enabled: bool = False
+    controller_config: Dict[str, Any] = field(default_factory=dict)
+    sensor_config: Dict[str, Any] = field(default_factory=dict)
+    plugin_paths: List[str] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         """Valida la configuración después de la inicialización."""
@@ -122,6 +129,36 @@ class EngineConfig:
             errors.append(
                 f"sleep_on_empty debe ser > 0, se recibió: {self.sleep_on_empty}"
             )
+
+        # Validar parallel_workers: mínimo 0 (deshabilitado) o positivo
+        if self.parallel_workers < 0:
+            errors.append(
+                f"parallel_workers debe ser >= 0, se recibió: {self.parallel_workers}"
+            )
+
+        # Validar controller_config: debe ser un diccionario
+        if not isinstance(self.controller_config, dict):
+            errors.append(
+                f"controller_config debe ser un diccionario, se recibió: {type(self.controller_config)}"
+            )
+
+        # Validar sensor_config: debe ser un diccionario
+        if not isinstance(self.sensor_config, dict):
+            errors.append(
+                f"sensor_config debe ser un diccionario, se recibió: {type(self.sensor_config)}"
+            )
+
+        # Validar plugin_paths: debe ser una lista de strings
+        if not isinstance(self.plugin_paths, list):
+            errors.append(
+                f"plugin_paths debe ser una lista, se recibió: {type(self.plugin_paths)}"
+            )
+        else:
+            for path in self.plugin_paths:
+                if not isinstance(path, str):
+                    errors.append(
+                        f"plugin_paths debe contener solo strings, se encontró: {type(path)}"
+                    )
 
         # Si hay errores, lanzar excepción
         if errors:

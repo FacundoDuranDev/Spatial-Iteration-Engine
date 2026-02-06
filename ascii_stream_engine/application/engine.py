@@ -5,12 +5,26 @@ from collections import deque
 from typing import Dict, Optional, Tuple
 
 from ..domain.config import EngineConfig
+from ..domain.events import (
+    AnalysisCompleteEvent,
+    ConfigChangeEvent,
+    ErrorEvent,
+    FilterAppliedEvent,
+    FrameCapturedEvent,
+    FrameWrittenEvent,
+    RenderCompleteEvent,
+)
 from .pipeline import AnalyzerPipeline, FilterPipeline
 from ..domain.types import RenderFrame
 from ..ports.outputs import OutputSink
 from ..ports.renderers import FrameRenderer
 from ..ports.sources import FrameSource
+from ..infrastructure.event_bus import EventBus
 from ..infrastructure.profiling import LoopProfiler
+from ..infrastructure.metrics import EngineMetrics
+from ..infrastructure.plugins import PluginManager
+from .parallel_pipeline import FrameProcessor
+from ..adapters.transformations import TransformationPipeline
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +45,10 @@ class StreamEngine:
         config: Optional[EngineConfig] = None,
         analyzers: Optional[AnalyzerPipeline] = None,
         filters: Optional[FilterPipeline] = None,
+        trackers: Optional[any] = None,  # TrackingPipeline
+        transformations: Optional[TransformationPipeline] = None,
+        controllers: Optional[any] = None,  # ControllerManager
+        sensors: Optional[list] = None,  # Lista de sensores
         enable_profiling: bool = False,
     ) -> None:
         self._config = config or EngineConfig()
@@ -40,6 +58,10 @@ class StreamEngine:
         self._sink = sink
         self._analyzers = analyzers or AnalyzerPipeline()
         self._filters = filters or FilterPipeline()
+        self._trackers = trackers
+        self._transformations = transformations
+        self._controllers = controllers
+        self._sensors = sensors or []
         self._analysis_lock = threading.Lock()
         self._last_analysis: Dict[str, object] = {}
         self._stop_event = threading.Event()
@@ -48,8 +70,31 @@ class StreamEngine:
         self._buffer_lock = threading.Lock()
         self._frame_buffer = deque(maxlen=self._config.frame_buffer_size)
         self._profiler = LoopProfiler(enabled=enable_profiling)
+        self._metrics = EngineMetrics()
         self._camera_failure_lock = threading.Lock()
         self._consecutive_camera_failures = 0
+
+        # Sistema de eventos
+        self._event_bus = EventBus() if self._config.enable_events else None
+
+        # Plugin manager
+        if self._config.plugin_paths:
+            self._plugin_manager = PluginManager(self._config.plugin_paths)
+        else:
+            self._plugin_manager = None
+
+        # Procesamiento paralelo
+        if self._config.parallel_workers > 0:
+            self._frame_processor = FrameProcessor(num_workers=self._config.parallel_workers)
+        else:
+            self._frame_processor = None
+
+        # Configurar controladores y sensores con event bus
+        if self._controllers and self._event_bus:
+            self._controllers.set_mapping(self._controllers.get_mapping())  # Asegurar que tiene el mapping
+        if self._sensors and self._event_bus:
+            for sensor in self._sensors:
+                sensor.set_event_bus(self._event_bus)
 
     @property
     def is_running(self) -> bool:
@@ -62,9 +107,12 @@ class StreamEngine:
 
     def update_config(self, **kwargs) -> None:
         with self._config_lock:
+            # Guardar estado anterior para poder revertir si la validación falla
+            old_values = {}
             for key, value in kwargs.items():
                 if not hasattr(self._config, key):
                     raise ValueError(f"Parametro desconocido: {key}")
+                old_values[key] = getattr(self._config, key)
                 setattr(self._config, key, value)
             # Validar la configuración completa después de actualizar
             # Crear una instancia temporal para validar
@@ -72,8 +120,17 @@ class StreamEngine:
                 EngineConfig(**vars(self._config))
             except ValueError as e:
                 # Revertir cambios si la validación falla
-                # (En una implementación más robusta, podríamos guardar el estado anterior)
+                for key, old_value in old_values.items():
+                    setattr(self._config, key, old_value)
                 raise ValueError(f"Configuración inválida después de actualizar: {e}") from e
+
+            # Publicar evento de cambio de configuración
+            if self._event_bus and old_values:
+                event = ConfigChangeEvent(
+                    changed_params=kwargs,
+                    old_values=old_values,
+                )
+                self._event_bus.publish(event, "config_change")
 
     def get_source(self) -> FrameSource:
         return self._source
@@ -102,6 +159,10 @@ class StreamEngine:
         return self._filters
 
     @property
+    def transformation_pipeline(self) -> Optional[TransformationPipeline]:
+        return self._transformations
+
+    @property
     def analyzers(self) -> list:
         return self._analyzers.analyzers
 
@@ -117,6 +178,19 @@ class StreamEngine:
     def profiler(self) -> LoopProfiler:
         """Obtiene el profiler del engine."""
         return self._profiler
+    
+    @property
+    def metrics(self) -> EngineMetrics:
+        """Obtiene el sistema de métricas del engine."""
+        return self._metrics
+
+    def get_event_bus(self) -> Optional[EventBus]:
+        """Obtiene el bus de eventos."""
+        return self._event_bus
+
+    def get_plugin_manager(self) -> Optional[PluginManager]:
+        """Obtiene el gestor de plugins."""
+        return self._plugin_manager
 
     def get_profiling_report(self) -> str:
         """
@@ -140,6 +214,19 @@ class StreamEngine:
         if self.is_running:
             return
         self._stop_event.clear()
+        self._metrics.start()
+
+        # Iniciar procesamiento paralelo si está habilitado
+        if self._frame_processor:
+            self._frame_processor.start()
+
+        # Conectar controladores si están disponibles
+        if self._controllers:
+            try:
+                self._controllers.connect_all()
+            except Exception as e:
+                logger.warning(f"Error conectando controladores: {e}")
+
         if blocking:
             self._run()
             return
@@ -148,6 +235,18 @@ class StreamEngine:
 
     def stop(self) -> None:
         self._stop_event.set()
+
+        # Detener procesamiento paralelo
+        if self._frame_processor:
+            self._frame_processor.stop()
+
+        # Desconectar controladores
+        if self._controllers:
+            try:
+                self._controllers.disconnect_all()
+            except Exception as e:
+                logger.warning(f"Error desconectando controladores: {e}")
+
         self._safe_close_source()
         self._safe_close_sink()
         if self._capture_thread:
@@ -386,6 +485,17 @@ class StreamEngine:
                             self._consecutive_camera_failures = 0
 
                     timestamp = time.time()
+
+                # Publicar evento de captura
+                if self._event_bus:
+                    frame_id = f"frame_{int(timestamp * 1000)}"
+                    event = FrameCapturedEvent(
+                        frame=frame,
+                        frame_id=frame_id,
+                        timestamp=timestamp,
+                    )
+                    self._event_bus.publish(event, "frame_captured")
+
                 self._profiler.end_phase(LoopProfiler.PHASE_CAPTURE)
 
                 cfg = self.get_config()
@@ -413,6 +523,7 @@ class StreamEngine:
 
                 # Fase 2: Análisis
                 self._profiler.start_phase(LoopProfiler.PHASE_ANALYSIS)
+                frame_id = f"frame_{int(timestamp * 1000)}"
                 try:
                     analysis = (
                         self._analyzers.run(frame, cfg)
@@ -420,17 +531,68 @@ class StreamEngine:
                         else {}
                     )
                     analysis["timestamp"] = timestamp
+
+                    # Tracking si está disponible
+                    if self._trackers:
+                        try:
+                            tracking_data = self._trackers.run(frame, analysis, cfg)
+                            analysis["tracking"] = tracking_data.to_dict() if hasattr(tracking_data, "to_dict") else tracking_data
+                        except Exception as e:
+                            logger.warning(f"Error en tracking: {e}")
+
                     with self._analysis_lock:
                         self._last_analysis = analysis
+
+                    # Publicar evento de análisis
+                    if self._event_bus:
+                        analysis_time = self._profiler.get_phase_time(LoopProfiler.PHASE_ANALYSIS)
+                        event = AnalysisCompleteEvent(
+                            frame_id=frame_id,
+                            results=analysis,
+                            timestamp=timestamp,
+                            analysis_time=analysis_time,
+                        )
+                        self._event_bus.publish(event, "analysis_complete")
                 except Exception as e:
                     self._profiler.end_phase(LoopProfiler.PHASE_ANALYSIS)
                     self._profiler.end_frame()
                     logger.error(f"Error en análisis de frame: {e}")
+                    self._metrics.record_error("analysis")
+                    if self._event_bus:
+                        error_event = ErrorEvent(
+                            error_type="analysis",
+                            error_message=str(e),
+                            module_name="analyzer_pipeline",
+                            exception=e,
+                        )
+                        self._event_bus.publish(error_event, "error")
                     time.sleep(cfg.sleep_on_empty)
                     continue
                 self._profiler.end_phase(LoopProfiler.PHASE_ANALYSIS)
 
-                # Fase 3: Filtrado
+                # Fase 3: Transformaciones Espaciales
+                self._profiler.start_phase(LoopProfiler.PHASE_TRANSFORMATION)
+                try:
+                    if self._transformations:
+                        frame = self._transformations.apply(frame)
+                except Exception as e:
+                    self._profiler.end_phase(LoopProfiler.PHASE_TRANSFORMATION)
+                    self._profiler.end_frame()
+                    logger.error(f"Error en transformaciones espaciales: {e}")
+                    self._metrics.record_error("transformation")
+                    if self._event_bus:
+                        error_event = ErrorEvent(
+                            error_type="transformation",
+                            error_message=str(e),
+                            module_name="transformation_pipeline",
+                            exception=e,
+                        )
+                        self._event_bus.publish(error_event, "error")
+                    time.sleep(cfg.sleep_on_empty)
+                    continue
+                self._profiler.end_phase(LoopProfiler.PHASE_TRANSFORMATION)
+
+                # Fase 4: Filtrado
                 self._profiler.start_phase(LoopProfiler.PHASE_FILTERING)
                 try:
                     filtered = self._filters.apply(frame, cfg, analysis)
@@ -438,36 +600,80 @@ class StreamEngine:
                     self._profiler.end_phase(LoopProfiler.PHASE_FILTERING)
                     self._profiler.end_frame()
                     logger.error(f"Error en filtrado de frame: {e}")
+                    self._metrics.record_error("filtering")
                     time.sleep(cfg.sleep_on_empty)
                     continue
                 self._profiler.end_phase(LoopProfiler.PHASE_FILTERING)
 
-                # Fase 4: Renderizado
+                # Fase 5: Renderizado
                 self._profiler.start_phase(LoopProfiler.PHASE_RENDERING)
                 try:
                     rendered = self._renderer.render(filtered, cfg, analysis)
                     if isinstance(rendered, RenderFrame) and rendered.metadata is None:
                         rendered.metadata = {"analysis": analysis}
+
+                    # Publicar evento de renderizado
+                    if self._event_bus:
+                        render_time = self._profiler.get_phase_time(LoopProfiler.PHASE_RENDERING)
+                        event = RenderCompleteEvent(
+                            frame_id=frame_id,
+                            timestamp=timestamp,
+                            render_time=render_time,
+                            output_size=desired_output_size,
+                        )
+                        self._event_bus.publish(event, "render_complete")
                 except Exception as e:
                     self._profiler.end_phase(LoopProfiler.PHASE_RENDERING)
                     self._profiler.end_frame()
                     logger.error(f"Error en renderizado de frame: {e}")
+                    self._metrics.record_error("rendering")
+                    if self._event_bus:
+                        error_event = ErrorEvent(
+                            error_type="rendering",
+                            error_message=str(e),
+                            module_name="renderer",
+                            exception=e,
+                        )
+                        self._event_bus.publish(error_event, "error")
                     time.sleep(cfg.sleep_on_empty)
                     continue
                 self._profiler.end_phase(LoopProfiler.PHASE_RENDERING)
 
-                # Fase 5: Escritura
+                # Fase 6: Escritura
                 self._profiler.start_phase(LoopProfiler.PHASE_WRITING)
                 # Usar método con reintentos para escribir UDP
+                write_start = time.perf_counter()
                 if not self._write_with_retry(rendered, cfg, desired_output_size):
                     self._profiler.end_phase(LoopProfiler.PHASE_WRITING)
                     self._profiler.end_frame()
                     logger.error("No se pudo escribir al sink después de reintentos, deteniendo")
+                    self._metrics.record_error("writing")
+                    if self._event_bus:
+                        error_event = ErrorEvent(
+                            error_type="writing",
+                            error_message="No se pudo escribir al sink",
+                            module_name="output_sink",
+                        )
+                        self._event_bus.publish(error_event, "error")
                     break
+
+                # Publicar evento de escritura
+                if self._event_bus:
+                    write_time = time.perf_counter() - write_start
+                    event = FrameWrittenEvent(
+                        frame_id=frame_id,
+                        timestamp=timestamp,
+                        write_time=write_time,
+                    )
+                    self._event_bus.publish(event, "frame_written")
+
                 self._profiler.end_phase(LoopProfiler.PHASE_WRITING)
 
                 # Fin del frame completo
                 self._profiler.end_frame()
+                
+                # Registrar frame procesado exitosamente
+                self._metrics.record_frame()
 
                 target = 1.0 / max(1, int(cfg.fps))
                 now = time.perf_counter()
