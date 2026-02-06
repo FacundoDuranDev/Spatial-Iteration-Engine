@@ -1,0 +1,24 @@
+{
+  "fps": 25,
+  "grid_w": 120,
+  "grid_h": 60,
+  "charset": " .:-=+*#%@",
+  "render_mode": "ascii",
+  "invert": false,
+  "contrast": 1.2,
+  "brightness": 0,
+  "host": "127.0.0.1",
+  "port": 1234,
+  "pkt_size": 1316,
+  "bitrate": "1500k",
+  "udp_broadcast": false,
+  "frame_buffer_size": 2,
+  "sleep_on_empty": 0.01,
+  "enable_events": false,
+  "parallel_workers": 1,
+  "gpu_enabled": false,
+  "controller_config": {},
+  "sensor_config": {},
+  "plugin_paths": []
+}
+

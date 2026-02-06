@@ -5,9 +5,20 @@ from PIL import Image
 
 from ...domain.config import EngineConfig
 from ...domain.types import RenderFrame
+from ...ports.output_capabilities import (
+    OutputCapabilities,
+    OutputCapability,
+    OutputQuality,
+)
 
 
 class FfmpegUdpOutput:
+    """
+    Backend de salida UDP usando ffmpeg.
+
+    Soporta streaming UDP con broadcast opcional. Optimizado para baja latencia.
+    """
+
     def __init__(
         self,
         host: Optional[str] = None,
@@ -22,6 +33,8 @@ class FfmpegUdpOutput:
         self._bitrate = bitrate
         self._broadcast = broadcast
         self._proc: Optional[subprocess.Popen] = None
+        self._is_open = False
+        self._output_size: Optional[Tuple[int, int]] = None
 
     def open(self, config: EngineConfig, output_size: Tuple[int, int]) -> None:
         self.close()
@@ -33,6 +46,7 @@ class FfmpegUdpOutput:
             self._broadcast if self._broadcast is not None else config.udp_broadcast
         )
         out_w, out_h = output_size
+        self._output_size = output_size
         url = f"udp://{host}:{port}?pkt_size={pkt_size}"
         if broadcast:
             url += "&broadcast=1"
@@ -60,6 +74,7 @@ class FfmpegUdpOutput:
             url,
         ]
         self._proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+        self._is_open = True
 
     def write(self, frame: RenderFrame) -> None:
         if not self._proc or not self._proc.stdin:
@@ -87,3 +102,57 @@ class FfmpegUdpOutput:
                     self._proc.kill()
                     self._proc.wait()
             self._proc = None
+        self._is_open = False
+        self._output_size = None
+
+    def get_capabilities(self) -> OutputCapabilities:
+        """
+        Obtiene las capacidades del backend UDP.
+
+        UDP con ffmpeg soporta streaming, broadcast, y baja latencia.
+        """
+        capabilities = (
+            OutputCapability.STREAMING
+            | OutputCapability.UDP
+            | OutputCapability.LOW_LATENCY
+            | OutputCapability.CUSTOM_BITRATE
+        )
+
+        if self._broadcast or (self._broadcast is None):
+            capabilities |= OutputCapability.BROADCAST
+
+        return OutputCapabilities(
+            capabilities=capabilities,
+            estimated_latency_ms=80.0,  # Latencia típica de UDP con ffmpeg
+            supported_qualities=[
+                OutputQuality.LOW,
+                OutputQuality.MEDIUM,
+                OutputQuality.HIGH,
+            ],
+            max_clients=None,  # UDP puede tener múltiples clientes (limitado por red)
+            min_bitrate="500k",
+            max_bitrate="10m",
+            protocol_name="UDP/MPEG-TS",
+            metadata={
+                "codec": "mpeg1video",
+                "container": "mpegts",
+                "supports_broadcast": True,
+            },
+        )
+
+    def is_open(self) -> bool:
+        """Verifica si el backend está abierto y listo para escribir."""
+        return self._is_open and self._proc is not None and self._proc.stdin is not None
+
+    def get_estimated_latency_ms(self) -> Optional[float]:
+        """Obtiene la latencia estimada del backend UDP."""
+        return 80.0  # Latencia típica de UDP con ffmpeg
+
+    def supports_multiple_clients(self) -> bool:
+        """
+        UDP soporta múltiples clientes cuando se usa broadcast o multicast.
+        En modo unicast, técnicamente solo un cliente puede recibir.
+        """
+        return self._broadcast is True or (
+            self._broadcast is None
+        )  # Si no está especificado, asumimos que puede ser configurado

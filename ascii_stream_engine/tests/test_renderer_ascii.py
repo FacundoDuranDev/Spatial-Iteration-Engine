@@ -14,7 +14,7 @@ class TestAsciiRenderer(unittest.TestCase):
         from ascii_stream_engine.domain.config import EngineConfig
         from ascii_stream_engine.adapters.renderers.ascii import AsciiRenderer
 
-        config = EngineConfig(grid_w=12, grid_h=6, charset="@.")
+        config = EngineConfig(grid_w=12, grid_h=10, charset="@.")
         renderer = AsciiRenderer()
         frame = np.zeros((24, 48), dtype=np.uint8)
         result = renderer.render(frame, config)

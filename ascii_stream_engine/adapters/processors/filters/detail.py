@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 
 from .base import BaseFilter
+from .conversion_cache import get_cached_conversion
 
 
 class DetailBoostFilter(BaseFilter):
@@ -23,9 +24,12 @@ class DetailBoostFilter(BaseFilter):
         )
 
     def apply(self, frame, config, analysis=None):
+        # Optimización: usar cache de conversiones para evitar conversiones redundantes
         if frame.ndim == 3:
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            # Usar cache de conversión BGR2GRAY
+            gray = get_cached_conversion(frame, cv2.COLOR_BGR2GRAY)
         else:
+            # Frame ya es escala de grises, usar directamente
             gray = frame
 
         eq = self._clahe.apply(gray)
@@ -33,5 +37,9 @@ class DetailBoostFilter(BaseFilter):
         sharp = cv2.addWeighted(eq, 1.0 + self._sharpness, blur, -self._sharpness, 0)
 
         if frame.ndim == 3:
-            return cv2.cvtColor(sharp, cv2.COLOR_GRAY2BGR)
-        return sharp.astype(frame.dtype)
+            # Usar cache de conversión GRAY2BGR
+            return get_cached_conversion(sharp, cv2.COLOR_GRAY2BGR, frame_id=id(sharp))
+        # Optimización: solo convertir tipo si es necesario
+        if sharp.dtype != frame.dtype:
+            return sharp.astype(frame.dtype)
+        return sharp
