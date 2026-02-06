@@ -3,3 +3,5 @@ numpy
 pillow
 ipywidgets
 ipython
+watchdog
+pyyaml

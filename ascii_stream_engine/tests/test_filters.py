@@ -1,8 +1,7 @@
 import unittest
 
 from ascii_stream_engine.tests import has_module
-from ascii_stream_engine.adapters.filters.base import BaseFilter
-from ascii_stream_engine.adapters.filters.invert import InvertFilter
+from ascii_stream_engine.adapters.processors import BaseFilter, InvertFilter
 
 
 class DummyConfig:
@@ -31,7 +30,7 @@ class TestCv2Filters(unittest.TestCase):
     def test_detail_boost_filter(self) -> None:
         import numpy as np
 
-        from ascii_stream_engine.adapters.filters.detail import DetailBoostFilter
+        from ascii_stream_engine.adapters.processors import DetailBoostFilter
 
         filt = DetailBoostFilter()
         frame = np.zeros((10, 10), dtype=np.uint8)
@@ -41,7 +40,7 @@ class TestCv2Filters(unittest.TestCase):
     def test_brightness_filter(self) -> None:
         import numpy as np
 
-        from ascii_stream_engine.adapters.filters.brightness import BrightnessFilter
+        from ascii_stream_engine.adapters.processors import BrightnessFilter
 
         class Cfg:
             contrast = 2.0
@@ -55,7 +54,7 @@ class TestCv2Filters(unittest.TestCase):
     def test_edge_filter(self) -> None:
         import numpy as np
 
-        from ascii_stream_engine.adapters.filters.edges import EdgeFilter
+        from ascii_stream_engine.adapters.processors import EdgeFilter
 
         filt = EdgeFilter()
         frame = np.zeros((10, 10), dtype=np.uint8)

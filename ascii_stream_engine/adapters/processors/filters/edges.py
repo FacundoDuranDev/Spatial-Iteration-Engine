@@ -1,6 +1,7 @@
 import cv2
 
 from .base import BaseFilter
+from .conversion_cache import get_cached_conversion
 
 
 class EdgeFilter(BaseFilter):
@@ -12,8 +13,9 @@ class EdgeFilter(BaseFilter):
         self._high = high
 
     def apply(self, frame, config, analysis=None):
+        # Optimización: usar cache de conversiones para evitar conversiones redundantes
         if frame.ndim == 3:
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            gray = get_cached_conversion(frame, cv2.COLOR_BGR2GRAY)
         else:
             gray = frame
         return cv2.Canny(gray, self._low, self._high)

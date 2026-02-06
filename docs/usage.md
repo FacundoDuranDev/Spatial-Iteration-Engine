@@ -41,7 +41,7 @@ config = EngineConfig(render_mode="raw", raw_width=640, raw_height=360)
 ## 5) Filtros en cadena
 ```python
 from ascii_stream_engine import FilterPipeline
-from ascii_stream_engine.adapters.filters import BrightnessFilter, InvertFilter
+from ascii_stream_engine.adapters.processors import BrightnessFilter, InvertFilter
 
 filters = FilterPipeline([BrightnessFilter(), InvertFilter()])
 engine = StreamEngine(..., filters=filters)
@@ -50,7 +50,7 @@ engine = StreamEngine(..., filters=filters)
 ## 6) Analizadores (ej: rostros)
 ```python
 from ascii_stream_engine import AnalyzerPipeline
-from ascii_stream_engine.adapters.analyzers import FaceHaarAnalyzer
+from ascii_stream_engine.adapters.processors import FaceHaarAnalyzer
 
 analyzers = AnalyzerPipeline([FaceHaarAnalyzer()])
 engine = StreamEngine(..., analyzers=analyzers)
