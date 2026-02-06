@@ -72,8 +72,11 @@ udp://@127.0.0.1:1234
 ## Filtros y analizadores
 ```python
 from ascii_stream_engine import AnalyzerPipeline, FilterPipeline
-from ascii_stream_engine.adapters.filters import BrightnessFilter, InvertFilter
-from ascii_stream_engine.adapters.analyzers import FaceHaarAnalyzer
+from ascii_stream_engine.adapters.processors import (
+    BrightnessFilter,
+    FaceHaarAnalyzer,
+    InvertFilter,
+)
 
 filters = FilterPipeline([BrightnessFilter(), InvertFilter()])
 analyzers = AnalyzerPipeline([FaceHaarAnalyzer()])

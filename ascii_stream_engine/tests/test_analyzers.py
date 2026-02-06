@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch
 
 from ascii_stream_engine.tests import has_module
-from ascii_stream_engine.adapters.analyzers.base import BaseAnalyzer
+from ascii_stream_engine.adapters.processors import BaseAnalyzer
 
 
 class TestAnalyzers(unittest.TestCase):
@@ -20,7 +20,7 @@ class TestFaceAnalyzer(unittest.TestCase):
     def test_face_analyzer_detects(self) -> None:
         import numpy as np
 
-        from ascii_stream_engine.adapters.analyzers.face import FaceHaarAnalyzer
+        from ascii_stream_engine.adapters.processors import FaceHaarAnalyzer
 
         class DummyCascade:
             def __init__(self, path):
@@ -33,7 +33,7 @@ class TestFaceAnalyzer(unittest.TestCase):
                 return [(1, 2, 3, 4)]
 
         with patch(
-            "ascii_stream_engine.adapters.analyzers.face.cv2.CascadeClassifier",
+            "ascii_stream_engine.adapters.processors.analyzers.face.cv2.CascadeClassifier",
             new=DummyCascade,
         ):
             analyzer = FaceHaarAnalyzer(cascade_path="dummy.xml")

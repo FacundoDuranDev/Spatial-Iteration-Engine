@@ -76,7 +76,7 @@ def build_general_control_panel(
         ) from exc
 
     try:
-        from ..adapters.filters import (
+        from ..adapters.processors import (
             BrightnessFilter,
             DetailBoostFilter,
             EdgeFilter,
