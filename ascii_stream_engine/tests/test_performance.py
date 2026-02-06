@@ -18,13 +18,14 @@ import numpy as np
 
 from ascii_stream_engine.domain.config import EngineConfig
 from ascii_stream_engine.adapters.renderers.ascii import AsciiRenderer
-from ascii_stream_engine.adapters.filters.brightness import BrightnessFilter
-from ascii_stream_engine.adapters.filters.edges import EdgeFilter
-from ascii_stream_engine.adapters.filters.invert import InvertFilter
-from ascii_stream_engine.adapters.filters.detail import DetailBoostFilter
-from ascii_stream_engine.application.pipeline import FilterPipeline
+from ascii_stream_engine.adapters.processors import (
+    BrightnessFilter,
+    DetailBoostFilter,
+    EdgeFilter,
+    InvertFilter,
+)
+from ascii_stream_engine.application.pipeline import AnalyzerPipeline, FilterPipeline
 from ascii_stream_engine.application.engine import StreamEngine
-from ascii_stream_engine.application.pipeline import AnalyzerPipeline
 from ascii_stream_engine.domain.types import RenderFrame
 
 

@@ -1,41 +1,42 @@
+"""Motor principal de streaming de frames."""
+
 import logging
 import threading
 import time
-from collections import deque
 from typing import Dict, Optional, Tuple
 
 from ..domain.config import EngineConfig
-from ..domain.events import (
-    AnalysisCompleteEvent,
-    ConfigChangeEvent,
-    ErrorEvent,
-    FilterAppliedEvent,
-    FrameCapturedEvent,
-    FrameWrittenEvent,
-    RenderCompleteEvent,
-)
-from .pipeline import AnalyzerPipeline, FilterPipeline
+from ..domain.events import ConfigChangeEvent
 from ..domain.types import RenderFrame
+from ..infrastructure.event_bus import EventBus
+from ..infrastructure.metrics import EngineMetrics
+from ..infrastructure.plugins import PluginManager
+from ..infrastructure.profiling import LoopProfiler
 from ..ports.outputs import OutputSink
 from ..ports.renderers import FrameRenderer
 from ..ports.sources import FrameSource
-from ..infrastructure.event_bus import EventBus
-from ..infrastructure.profiling import LoopProfiler
-from ..infrastructure.metrics import EngineMetrics
-from ..infrastructure.plugins import PluginManager
+from .orchestration import PipelineOrchestrator
 from .parallel_pipeline import FrameProcessor
-from ..adapters.transformations import TransformationPipeline
+from .pipeline import (
+    AnalyzerPipeline,
+    FilterPipeline,
+    TransformationPipeline,
+    TrackingPipeline,
+)
+from .services import ErrorHandler, FrameBuffer, RetryManager
 
 logger = logging.getLogger(__name__)
 
 
 class StreamEngine:
+    """Motor principal para streaming de frames en tiempo real.
+    
+    Orquesta el pipeline completo: captura → análisis → transformación →
+    filtrado → tracking → renderizado → salida.
+    """
+
     # Constantes para manejo de errores
-    MAX_CAMERA_RETRIES = 5
-    CAMERA_RETRY_DELAY = 1.0  # segundos
     MAX_CONSECUTIVE_CAMERA_FAILURES = 10
-    MAX_UDP_RETRIES = 3
-    UDP_RETRY_DELAY_BASE = 0.1  # segundos (backoff exponencial)
 
     def __init__(
         self,
@@ -45,12 +46,28 @@ class StreamEngine:
         config: Optional[EngineConfig] = None,
         analyzers: Optional[AnalyzerPipeline] = None,
         filters: Optional[FilterPipeline] = None,
-        trackers: Optional[any] = None,  # TrackingPipeline
+        trackers: Optional[TrackingPipeline] = None,
         transformations: Optional[TransformationPipeline] = None,
         controllers: Optional[any] = None,  # ControllerManager
         sensors: Optional[list] = None,  # Lista de sensores
         enable_profiling: bool = False,
     ) -> None:
+        """
+        Inicializa el engine.
+
+        Args:
+            source: Fuente de frames
+            renderer: Renderer de frames
+            sink: Salida de frames
+            config: Configuración del engine
+            analyzers: Pipeline de analizadores
+            filters: Pipeline de filtros
+            trackers: Pipeline de trackers
+            transformations: Pipeline de transformaciones
+            controllers: Gestor de controladores
+            sensors: Lista de sensores
+            enable_profiling: Habilitar profiling de performance
+        """
         self._config = config or EngineConfig()
         self._config_lock = threading.Lock()
         self._source = source
@@ -67,15 +84,18 @@ class StreamEngine:
         self._stop_event = threading.Event()
         self._thread: Optional[threading.Thread] = None
         self._capture_thread: Optional[threading.Thread] = None
-        self._buffer_lock = threading.Lock()
-        self._frame_buffer = deque(maxlen=self._config.frame_buffer_size)
-        self._profiler = LoopProfiler(enabled=enable_profiling)
-        self._metrics = EngineMetrics()
         self._camera_failure_lock = threading.Lock()
         self._consecutive_camera_failures = 0
 
+        # Servicios
+        self._profiler = LoopProfiler(enabled=enable_profiling)
+        self._metrics = EngineMetrics()
+        self._retry_manager = RetryManager()
+        self._frame_buffer = FrameBuffer(max_size=self._config.frame_buffer_size)
+
         # Sistema de eventos
         self._event_bus = EventBus() if self._config.enable_events else None
+        self._error_handler = ErrorHandler(event_bus=self._event_bus)
 
         # Plugin manager
         if self._config.plugin_paths:
@@ -89,42 +109,42 @@ class StreamEngine:
         else:
             self._frame_processor = None
 
+        # Orquestador del pipeline
+        self._orchestrator: Optional[PipelineOrchestrator] = None
+
         # Configurar controladores y sensores con event bus
         if self._controllers and self._event_bus:
-            self._controllers.set_mapping(self._controllers.get_mapping())  # Asegurar que tiene el mapping
+            self._controllers.set_mapping(self._controllers.get_mapping())
         if self._sensors and self._event_bus:
             for sensor in self._sensors:
                 sensor.set_event_bus(self._event_bus)
 
     @property
     def is_running(self) -> bool:
+        """Verifica si el engine está en ejecución."""
         return self._thread is not None and self._thread.is_alive()
 
     def get_config(self) -> EngineConfig:
+        """Obtiene la configuración actual del engine."""
         with self._config_lock:
-            # Crear nueva instancia para validar (__post_init__ se ejecuta)
             return EngineConfig(**vars(self._config))
 
     def update_config(self, **kwargs) -> None:
+        """Actualiza la configuración del engine."""
         with self._config_lock:
-            # Guardar estado anterior para poder revertir si la validación falla
             old_values = {}
             for key, value in kwargs.items():
                 if not hasattr(self._config, key):
                     raise ValueError(f"Parametro desconocido: {key}")
                 old_values[key] = getattr(self._config, key)
                 setattr(self._config, key, value)
-            # Validar la configuración completa después de actualizar
-            # Crear una instancia temporal para validar
             try:
                 EngineConfig(**vars(self._config))
             except ValueError as e:
-                # Revertir cambios si la validación falla
                 for key, old_value in old_values.items():
                     setattr(self._config, key, old_value)
                 raise ValueError(f"Configuración inválida después de actualizar: {e}") from e
 
-            # Publicar evento de cambio de configuración
             if self._event_bus and old_values:
                 event = ConfigChangeEvent(
                     changed_params=kwargs,
@@ -132,45 +152,72 @@ class StreamEngine:
                 )
                 self._event_bus.publish(event, "config_change")
 
+            # Actualizar orquestador si existe
+            if self._orchestrator:
+                self._orchestrator.update_config(self._config)
+
+            # Actualizar frame buffer si cambió el tamaño
+            if "frame_buffer_size" in kwargs:
+                self._frame_buffer.set_max_size(kwargs["frame_buffer_size"])
+
     def get_source(self) -> FrameSource:
+        """Obtiene la fuente de frames."""
         return self._source
 
     def set_source(self, source: FrameSource) -> None:
+        """Establece una nueva fuente de frames."""
         self._source = source
+        if self._orchestrator:
+            # Recrear orquestador con nueva fuente
+            self._create_orchestrator()
 
     def get_renderer(self) -> FrameRenderer:
+        """Obtiene el renderer."""
         return self._renderer
 
     def set_renderer(self, renderer: FrameRenderer) -> None:
+        """Establece un nuevo renderer."""
         self._renderer = renderer
+        if self._orchestrator:
+            self._create_orchestrator()
 
     def get_sink(self) -> OutputSink:
+        """Obtiene el sink de salida."""
         return self._sink
 
     def set_sink(self, sink: OutputSink) -> None:
+        """Establece un nuevo sink de salida."""
         self._sink = sink
+        if self._orchestrator:
+            self._create_orchestrator()
 
     @property
     def analyzer_pipeline(self) -> AnalyzerPipeline:
+        """Obtiene el pipeline de analizadores."""
         return self._analyzers
 
     @property
     def filter_pipeline(self) -> FilterPipeline:
+        """Obtiene el pipeline de filtros."""
         return self._filters
 
     @property
     def transformation_pipeline(self) -> Optional[TransformationPipeline]:
+        """Obtiene el pipeline de transformaciones."""
         return self._transformations
 
     @property
     def analyzers(self) -> list:
+        """Obtiene la lista de analizadores."""
         return self._analyzers.analyzers
 
     @property
     def filters(self) -> list:
+        """Obtiene la lista de filtros."""
         return self._filters.filters
 
     def get_last_analysis(self) -> Dict[str, object]:
+        """Obtiene el último análisis realizado."""
         with self._analysis_lock:
             return dict(self._last_analysis)
 
@@ -178,7 +225,7 @@ class StreamEngine:
     def profiler(self) -> LoopProfiler:
         """Obtiene el profiler del engine."""
         return self._profiler
-    
+
     @property
     def metrics(self) -> EngineMetrics:
         """Obtiene el sistema de métricas del engine."""
@@ -193,28 +240,37 @@ class StreamEngine:
         return self._plugin_manager
 
     def get_profiling_report(self) -> str:
-        """
-        Obtiene un reporte de texto con las estadísticas de profiling.
-
-        Returns:
-            String con el reporte formateado.
-        """
+        """Obtiene un reporte de texto con las estadísticas de profiling."""
         return self._profiler.get_report()
 
     def get_profiling_stats(self) -> Dict[str, Dict[str, float]]:
-        """
-        Obtiene las estadísticas de profiling como diccionario.
-
-        Returns:
-            Diccionario con estadísticas por fase.
-        """
+        """Obtiene las estadísticas de profiling como diccionario."""
         return self._profiler.get_summary_dict()
 
+    def _create_orchestrator(self) -> None:
+        """Crea o recrea el orquestador del pipeline."""
+        self._orchestrator = PipelineOrchestrator(
+            source=self._source,
+            renderer=self._renderer,
+            sink=self._sink,
+            config=self._config,
+            analyzers=self._analyzers,
+            filters=self._filters,
+            trackers=self._trackers,
+            transformations=self._transformations,
+            event_bus=self._event_bus,
+            profiler=self._profiler,
+        )
+
     def start(self, blocking: bool = False) -> None:
+        """Inicia el engine."""
         if self.is_running:
             return
         self._stop_event.clear()
         self._metrics.start()
+
+        # Crear orquestador
+        self._create_orchestrator()
 
         # Iniciar procesamiento paralelo si está habilitado
         if self._frame_processor:
@@ -234,6 +290,7 @@ class StreamEngine:
         self._thread.start()
 
     def stop(self) -> None:
+        """Detiene el engine."""
         self._stop_event.set()
 
         # Detener procesamiento paralelo
@@ -247,105 +304,34 @@ class StreamEngine:
             except Exception as e:
                 logger.warning(f"Error desconectando controladores: {e}")
 
-        self._safe_close_source()
-        self._safe_close_sink()
+        self._retry_manager.safe_close_source(self._source)
+        self._retry_manager.safe_close_sink(self._sink)
         if self._capture_thread:
             self._capture_thread.join(timeout=2)
         if self._thread:
             self._thread.join(timeout=2)
 
-    def _safe_close_source(self) -> None:
-        try:
-            self._source.close()
-        except Exception as e:
-            logger.warning(f"Error al cerrar fuente: {e}")
-
-    def _safe_close_sink(self) -> None:
-        try:
-            self._sink.close()
-        except Exception as e:
-            logger.warning(f"Error al cerrar sink: {e}")
-
-    def _reopen_source(self, config: EngineConfig) -> bool:
-        """Intenta reabrir la fuente (cámara) con reintentos."""
-        for attempt in range(self.MAX_CAMERA_RETRIES):
-            if self._stop_event.is_set():
-                return False
-            try:
-                self._safe_close_source()
-                time.sleep(self.CAMERA_RETRY_DELAY * (attempt + 1))
-                self._source.open()
-                logger.info(f"Cámara reabierta exitosamente después de {attempt + 1} intento(s)")
-                with self._camera_failure_lock:
-                    self._consecutive_camera_failures = 0
-                return True
-            except Exception as e:
-                logger.warning(
-                    f"Intento {attempt + 1}/{self.MAX_CAMERA_RETRIES} de reabrir cámara falló: {e}"
-                )
-        logger.error("No se pudo reabrir la cámara después de todos los intentos")
-        return False
-
-    def _write_with_retry(
-        self, rendered: RenderFrame, config: EngineConfig, output_size: Tuple[int, int]
-    ) -> bool:
-        """Intenta escribir al sink (UDP) con reintentos y reconexión si es necesario."""
-        last_exception = None
-        for attempt in range(self.MAX_UDP_RETRIES):
-            if self._stop_event.is_set():
-                return False
-            try:
-                self._sink.write(rendered)
-                return True
-            except (BrokenPipeError, OSError, IOError) as e:
-                last_exception = e
-                logger.warning(
-                    f"Error al escribir UDP (intento {attempt + 1}/{self.MAX_UDP_RETRIES}): {e}"
-                )
-                if attempt < self.MAX_UDP_RETRIES - 1:
-                    # Intentar reconectar el sink
-                    try:
-                        self._safe_close_sink()
-                        time.sleep(self.UDP_RETRY_DELAY_BASE * (2 ** attempt))
-                        self._sink.open(config, output_size)
-                        logger.info("Sink UDP reconectado, reintentando escritura")
-                    except Exception as reconnect_error:
-                        logger.error(f"Error al reconectar sink UDP: {reconnect_error}")
-                        time.sleep(self.UDP_RETRY_DELAY_BASE * (2 ** attempt))
-            except Exception as e:
-                # Otros errores no relacionados con UDP, no reintentar
-                logger.error(f"Error inesperado al escribir al sink: {e}")
-                return False
-
-        logger.error(
-            f"No se pudo escribir al sink UDP después de {self.MAX_UDP_RETRIES} intentos: {last_exception}"
-        )
-        return False
-
     def _start_capture_thread(self, config: EngineConfig) -> None:
+        """Inicia el thread de captura de frames."""
         if config.frame_buffer_size <= 0:
             return
-        self._frame_buffer = deque(maxlen=config.frame_buffer_size)
 
         def _capture_loop() -> None:
             while not self._stop_event.is_set():
                 try:
                     frame = self._source.read()
                 except Exception as e:
-                    logger.warning(f"Error al leer de la cámara: {e}")
+                    self._error_handler.handle_capture_error(e)
                     with self._camera_failure_lock:
                         self._consecutive_camera_failures += 1
                         failures = self._consecutive_camera_failures
 
-                    # Si hay muchos fallos consecutivos, intentar reabrir la cámara
                     if failures >= self.MAX_CONSECUTIVE_CAMERA_FAILURES:
                         logger.warning(
                             f"{failures} fallos consecutivos de cámara, intentando reabrir..."
                         )
-                        if not self._reopen_source(config):
-                            logger.error(
-                                "No se pudo recuperar la cámara, deteniendo captura"
-                            )
+                        if not self._retry_manager.reopen_source(self._source, self._stop_event):
+                            logger.error("No se pudo recuperar la cámara, deteniendo captura")
                             break
                     else:
                         time.sleep(config.sleep_on_empty)
@@ -356,49 +342,37 @@ class StreamEngine:
                         self._consecutive_camera_failures += 1
                         failures = self._consecutive_camera_failures
 
-                    # Si hay muchos frames None consecutivos, puede ser un problema de cámara
                     if failures >= self.MAX_CONSECUTIVE_CAMERA_FAILURES:
                         logger.warning(
                             f"{failures} frames None consecutivos, intentando reabrir cámara..."
                         )
-                        if not self._reopen_source(config):
-                            logger.error(
-                                "No se pudo recuperar la cámara, deteniendo captura"
-                            )
+                        if not self._retry_manager.reopen_source(self._source, self._stop_event):
+                            logger.error("No se pudo recuperar la cámara, deteniendo captura")
                             break
                     else:
                         time.sleep(config.sleep_on_empty)
                     continue
 
-                # Éxito: resetear contador de fallos
+                # Éxito: resetear contador
                 with self._camera_failure_lock:
                     if self._consecutive_camera_failures > 0:
                         logger.info("Cámara recuperada, captura normal reanudada")
                         self._consecutive_camera_failures = 0
 
-                timestamp = time.time()
-                with self._buffer_lock:
-                    self._frame_buffer.append((frame, timestamp))
+                self._frame_buffer.add(frame, time.time())
 
         self._capture_thread = threading.Thread(target=_capture_loop, daemon=True)
         self._capture_thread.start()
 
-    def _get_latest_frame(self) -> Optional[Tuple[object, float]]:
-        with self._buffer_lock:
-            if not self._frame_buffer:
-                return None
-            frame, timestamp = self._frame_buffer.pop()
-            self._frame_buffer.clear()
-            return frame, timestamp
-
     def _run(self) -> None:
+        """Loop principal del engine."""
         cfg = self.get_config()
         try:
             self._source.open()
             logger.info("Fuente (cámara) abierta exitosamente")
         except Exception as e:
             logger.error(f"Error al abrir fuente (cámara): {e}")
-            if not self._reopen_source(cfg):
+            if not self._retry_manager.reopen_source(self._source, self._stop_event):
                 logger.error("No se pudo abrir la cámara, deteniendo engine")
                 return
 
@@ -409,7 +383,7 @@ class StreamEngine:
             logger.info(f"Sink UDP abierto exitosamente en {cfg.host}:{cfg.port}")
         except Exception as e:
             logger.error(f"Error al abrir sink UDP: {e}")
-            self._safe_close_source()
+            self._retry_manager.safe_close_source(self._source)
             return
 
         sink_signature = (
@@ -425,26 +399,22 @@ class StreamEngine:
         last = time.perf_counter()
         try:
             while not self._stop_event.is_set():
-                # Inicio del frame completo
-                self._profiler.start_frame()
+                # Obtener frame
+                frame: Optional[any] = None
+                timestamp: Optional[float] = None
 
-                # Fase 1: Captura
-                self._profiler.start_phase(LoopProfiler.PHASE_CAPTURE)
                 if cfg.frame_buffer_size > 0:
-                    latest = self._get_latest_frame()
+                    latest = self._frame_buffer.get_latest()
                     if latest is None:
-                        self._profiler.end_phase(LoopProfiler.PHASE_CAPTURE)
-                        self._profiler.end_frame()
                         time.sleep(cfg.sleep_on_empty)
                         continue
                     frame, timestamp = latest
                 else:
                     try:
                         frame = self._source.read()
+                        timestamp = time.time()
                     except Exception as e:
-                        self._profiler.end_phase(LoopProfiler.PHASE_CAPTURE)
-                        self._profiler.end_frame()
-                        logger.warning(f"Error al leer frame directamente de la fuente: {e}")
+                        self._error_handler.handle_capture_error(e)
                         with self._camera_failure_lock:
                             self._consecutive_camera_failures += 1
                             failures = self._consecutive_camera_failures
@@ -453,7 +423,7 @@ class StreamEngine:
                             logger.warning(
                                 f"{failures} fallos consecutivos, intentando reabrir cámara..."
                             )
-                            if not self._reopen_source(cfg):
+                            if not self._retry_manager.reopen_source(self._source, self._stop_event):
                                 logger.error("No se pudo recuperar la cámara, deteniendo engine")
                                 break
                         else:
@@ -461,8 +431,6 @@ class StreamEngine:
                         continue
 
                     if frame is None:
-                        self._profiler.end_phase(LoopProfiler.PHASE_CAPTURE)
-                        self._profiler.end_frame()
                         with self._camera_failure_lock:
                             self._consecutive_camera_failures += 1
                             failures = self._consecutive_camera_failures
@@ -471,7 +439,7 @@ class StreamEngine:
                             logger.warning(
                                 f"{failures} frames None consecutivos, intentando reabrir cámara..."
                             )
-                            if not self._reopen_source(cfg):
+                            if not self._retry_manager.reopen_source(self._source, self._stop_event):
                                 logger.error("No se pudo recuperar la cámara, deteniendo engine")
                                 break
                         else:
@@ -484,20 +452,7 @@ class StreamEngine:
                             logger.info("Cámara recuperada")
                             self._consecutive_camera_failures = 0
 
-                    timestamp = time.time()
-
-                # Publicar evento de captura
-                if self._event_bus:
-                    frame_id = f"frame_{int(timestamp * 1000)}"
-                    event = FrameCapturedEvent(
-                        frame=frame,
-                        frame_id=frame_id,
-                        timestamp=timestamp,
-                    )
-                    self._event_bus.publish(event, "frame_captured")
-
-                self._profiler.end_phase(LoopProfiler.PHASE_CAPTURE)
-
+                # Verificar si la configuración del sink cambió
                 cfg = self.get_config()
                 desired_output_size = self._renderer.output_size(cfg)
                 desired_signature = (
@@ -511,170 +466,33 @@ class StreamEngine:
                 )
                 if desired_signature != sink_signature:
                     logger.info("Configuración de sink cambió, reconectando...")
-                    self._safe_close_sink()
+                    self._retry_manager.safe_close_sink(self._sink)
                     try:
                         self._sink.open(cfg, desired_output_size)
                         sink_signature = desired_signature
                         logger.info("Sink reconectado exitosamente")
                     except Exception as e:
                         logger.error(f"Error al reconectar sink: {e}")
-                        self._profiler.end_frame()
                         break
 
-                # Fase 2: Análisis
-                self._profiler.start_phase(LoopProfiler.PHASE_ANALYSIS)
-                frame_id = f"frame_{int(timestamp * 1000)}"
-                try:
-                    analysis = (
-                        self._analyzers.run(frame, cfg)
-                        if self._analyzers.has_any()
-                        else {}
-                    )
-                    analysis["timestamp"] = timestamp
+                # Procesar frame usando el orquestador
+                if self._orchestrator:
+                    success, error_msg = self._orchestrator.process_frame(frame, timestamp)
+                    if not success:
+                        if error_msg:
+                            logger.error(f"Error procesando frame: {error_msg}")
+                        # Continuar con el siguiente frame
+                        time.sleep(cfg.sleep_on_empty)
+                        continue
 
-                    # Tracking si está disponible
-                    if self._trackers:
-                        try:
-                            tracking_data = self._trackers.run(frame, analysis, cfg)
-                            analysis["tracking"] = tracking_data.to_dict() if hasattr(tracking_data, "to_dict") else tracking_data
-                        except Exception as e:
-                            logger.warning(f"Error en tracking: {e}")
-
+                    # Actualizar último análisis
                     with self._analysis_lock:
-                        self._last_analysis = analysis
+                        self._last_analysis = self._orchestrator.get_last_analysis()
 
-                    # Publicar evento de análisis
-                    if self._event_bus:
-                        analysis_time = self._profiler.get_phase_time(LoopProfiler.PHASE_ANALYSIS)
-                        event = AnalysisCompleteEvent(
-                            frame_id=frame_id,
-                            results=analysis,
-                            timestamp=timestamp,
-                            analysis_time=analysis_time,
-                        )
-                        self._event_bus.publish(event, "analysis_complete")
-                except Exception as e:
-                    self._profiler.end_phase(LoopProfiler.PHASE_ANALYSIS)
-                    self._profiler.end_frame()
-                    logger.error(f"Error en análisis de frame: {e}")
-                    self._metrics.record_error("analysis")
-                    if self._event_bus:
-                        error_event = ErrorEvent(
-                            error_type="analysis",
-                            error_message=str(e),
-                            module_name="analyzer_pipeline",
-                            exception=e,
-                        )
-                        self._event_bus.publish(error_event, "error")
-                    time.sleep(cfg.sleep_on_empty)
-                    continue
-                self._profiler.end_phase(LoopProfiler.PHASE_ANALYSIS)
-
-                # Fase 3: Transformaciones Espaciales
-                self._profiler.start_phase(LoopProfiler.PHASE_TRANSFORMATION)
-                try:
-                    if self._transformations:
-                        frame = self._transformations.apply(frame)
-                except Exception as e:
-                    self._profiler.end_phase(LoopProfiler.PHASE_TRANSFORMATION)
-                    self._profiler.end_frame()
-                    logger.error(f"Error en transformaciones espaciales: {e}")
-                    self._metrics.record_error("transformation")
-                    if self._event_bus:
-                        error_event = ErrorEvent(
-                            error_type="transformation",
-                            error_message=str(e),
-                            module_name="transformation_pipeline",
-                            exception=e,
-                        )
-                        self._event_bus.publish(error_event, "error")
-                    time.sleep(cfg.sleep_on_empty)
-                    continue
-                self._profiler.end_phase(LoopProfiler.PHASE_TRANSFORMATION)
-
-                # Fase 4: Filtrado
-                self._profiler.start_phase(LoopProfiler.PHASE_FILTERING)
-                try:
-                    filtered = self._filters.apply(frame, cfg, analysis)
-                except Exception as e:
-                    self._profiler.end_phase(LoopProfiler.PHASE_FILTERING)
-                    self._profiler.end_frame()
-                    logger.error(f"Error en filtrado de frame: {e}")
-                    self._metrics.record_error("filtering")
-                    time.sleep(cfg.sleep_on_empty)
-                    continue
-                self._profiler.end_phase(LoopProfiler.PHASE_FILTERING)
-
-                # Fase 5: Renderizado
-                self._profiler.start_phase(LoopProfiler.PHASE_RENDERING)
-                try:
-                    rendered = self._renderer.render(filtered, cfg, analysis)
-                    if isinstance(rendered, RenderFrame) and rendered.metadata is None:
-                        rendered.metadata = {"analysis": analysis}
-
-                    # Publicar evento de renderizado
-                    if self._event_bus:
-                        render_time = self._profiler.get_phase_time(LoopProfiler.PHASE_RENDERING)
-                        event = RenderCompleteEvent(
-                            frame_id=frame_id,
-                            timestamp=timestamp,
-                            render_time=render_time,
-                            output_size=desired_output_size,
-                        )
-                        self._event_bus.publish(event, "render_complete")
-                except Exception as e:
-                    self._profiler.end_phase(LoopProfiler.PHASE_RENDERING)
-                    self._profiler.end_frame()
-                    logger.error(f"Error en renderizado de frame: {e}")
-                    self._metrics.record_error("rendering")
-                    if self._event_bus:
-                        error_event = ErrorEvent(
-                            error_type="rendering",
-                            error_message=str(e),
-                            module_name="renderer",
-                            exception=e,
-                        )
-                        self._event_bus.publish(error_event, "error")
-                    time.sleep(cfg.sleep_on_empty)
-                    continue
-                self._profiler.end_phase(LoopProfiler.PHASE_RENDERING)
-
-                # Fase 6: Escritura
-                self._profiler.start_phase(LoopProfiler.PHASE_WRITING)
-                # Usar método con reintentos para escribir UDP
-                write_start = time.perf_counter()
-                if not self._write_with_retry(rendered, cfg, desired_output_size):
-                    self._profiler.end_phase(LoopProfiler.PHASE_WRITING)
-                    self._profiler.end_frame()
-                    logger.error("No se pudo escribir al sink después de reintentos, deteniendo")
-                    self._metrics.record_error("writing")
-                    if self._event_bus:
-                        error_event = ErrorEvent(
-                            error_type="writing",
-                            error_message="No se pudo escribir al sink",
-                            module_name="output_sink",
-                        )
-                        self._event_bus.publish(error_event, "error")
-                    break
-
-                # Publicar evento de escritura
-                if self._event_bus:
-                    write_time = time.perf_counter() - write_start
-                    event = FrameWrittenEvent(
-                        frame_id=frame_id,
-                        timestamp=timestamp,
-                        write_time=write_time,
-                    )
-                    self._event_bus.publish(event, "frame_written")
-
-                self._profiler.end_phase(LoopProfiler.PHASE_WRITING)
-
-                # Fin del frame completo
-                self._profiler.end_frame()
-                
                 # Registrar frame procesado exitosamente
                 self._metrics.record_frame()
 
+                # Control de FPS
                 target = 1.0 / max(1, int(cfg.fps))
                 now = time.perf_counter()
                 sleep = target - (now - last)
@@ -687,6 +505,6 @@ class StreamEngine:
             logger.error(f"Error inesperado en loop principal: {e}", exc_info=True)
         finally:
             logger.info("Cerrando engine...")
-            self._safe_close_source()
-            self._safe_close_sink()
+            self._retry_manager.safe_close_source(self._source)
+            self._retry_manager.safe_close_sink(self._sink)
             logger.info("Engine cerrado")

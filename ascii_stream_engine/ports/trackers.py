@@ -1,6 +1,6 @@
 """Protocolo para trackers de objetos."""
 
-from typing import Optional, Protocol
+from typing import Any, Dict, Optional, Protocol
 
 import numpy as np
 
@@ -9,7 +9,17 @@ from ..domain.tracking_data import TrackingData
 
 
 class ObjectTracker(Protocol):
-    """Protocolo para trackers de objetos."""
+    """Protocolo para trackers de objetos.
+    
+    Los trackers mantienen el seguimiento de objetos a través de múltiples frames,
+    asociando detecciones con identidades persistentes y calculando trayectorias.
+    """
+
+    name: str
+    """Nombre único del tracker."""
+
+    enabled: bool
+    """Indica si el tracker está habilitado."""
 
     def track(
         self, frame: np.ndarray, detections: dict, config: EngineConfig
@@ -28,7 +38,7 @@ class ObjectTracker(Protocol):
         ...
 
     def reset(self) -> None:
-        """Resetea el estado del tracker."""
+        """Resetea el estado del tracker, eliminando todas las trayectorias."""
         ...
 
     def get_trajectories(self) -> dict:
@@ -37,6 +47,24 @@ class ObjectTracker(Protocol):
 
         Returns:
             Diccionario con trayectorias por object_id
+        """
+        ...
+
+    def configure(self, **kwargs: Any) -> None:
+        """
+        Configura parámetros del tracker.
+
+        Args:
+            **kwargs: Parámetros de configuración específicos del tracker
+        """
+        ...
+
+    def get_config(self) -> Dict[str, Any]:
+        """
+        Obtiene la configuración actual del tracker.
+
+        Returns:
+            Diccionario con la configuración actual
         """
         ...
 

@@ -12,12 +12,13 @@ from .domain import (
     save_config_to_file,
 )
 from .ports import FrameRenderer, FrameSource, OutputSink
-from .adapters.analyzers import BaseAnalyzer, FaceHaarAnalyzer
-from .adapters.filters import (
+from .adapters.processors import (
+    BaseAnalyzer,
     BaseFilter,
     BrightnessFilter,
     DetailBoostFilter,
     EdgeFilter,
+    FaceHaarAnalyzer,
     InvertFilter,
 )
 from .adapters.outputs import AsciiFrameRecorder, FfmpegUdpOutput
@@ -36,8 +37,8 @@ try:
         KalmanTracker,
         MultiObjectTracker,
         OpenCVTracker,
-        TrackingPipeline,
     )
+    from .application.pipeline import TrackingPipeline
     TRACKERS_AVAILABLE = True
 except ImportError:
     TRACKERS_AVAILABLE = False

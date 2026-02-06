@@ -1,0 +1,40 @@
+# Ejemplo de configuración en formato YAML
+# Este archivo puede ser cargado con: load_config_from_file("config_example.yaml")
+
+# Configuración básica
+fps: 30
+grid_w: 150
+grid_h: 75
+charset: " .:-=+*#%@"
+
+# Renderizado
+render_mode: "ascii"  # "ascii" o "raw"
+# raw_width: 1920  # Solo necesario si render_mode es "raw"
+# raw_height: 1080
+
+# Filtros
+invert: false
+contrast: 1.2
+brightness: 0
+
+# Red
+host: "127.0.0.1"
+port: 1234
+pkt_size: 1316
+bitrate: "2000k"
+udp_broadcast: false
+
+# Rendimiento
+frame_buffer_size: 2
+sleep_on_empty: 0.01
+parallel_workers: 2
+gpu_enabled: true
+
+# Eventos y plugins
+enable_events: false
+plugin_paths: []
+
+# Configuraciones adicionales
+controller_config: {}
+sensor_config: {}
+

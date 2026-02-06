@@ -6,7 +6,7 @@ from ascii_stream_engine import (
     FfmpegUdpOutput,
     FilterPipeline,
 )
-from ascii_stream_engine.adapters.filters import BrightnessFilter, InvertFilter
+from ascii_stream_engine.adapters.processors import BrightnessFilter, InvertFilter
 
 
 def main() -> None:
