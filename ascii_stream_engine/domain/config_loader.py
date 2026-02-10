@@ -26,7 +26,7 @@ class ConfigLoadError(Exception):
 PREDEFINED_PROFILES: Dict[str, Dict[str, Any]] = {
     "low_latency": {
         "fps": 30,
-        "grid_w": 80,
+        "grid_w": 80 ,
         "grid_h": 40,
         "frame_buffer_size": 1,
         "sleep_on_empty": 0.005,
