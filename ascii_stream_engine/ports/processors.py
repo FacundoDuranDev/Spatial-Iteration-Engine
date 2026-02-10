@@ -1,6 +1,6 @@
 """Protocolos para procesadores de frames (filters y analyzers)."""
 
-from typing import Optional, Protocol, Union
+from typing import Optional, Protocol, Union, runtime_checkable
 
 import numpy as np
 
@@ -100,6 +100,7 @@ class Analyzer(Protocol):
         ...
 
 
+@runtime_checkable
 class ProcessorPipeline(Protocol):
     """Protocolo para pipelines de procesadores.
     
