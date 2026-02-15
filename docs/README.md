@@ -3,6 +3,7 @@
 Indice:
 - overview.md: vista general y flujo principal.
 - architecture.md: arquitectura hexagonal (ports & adapters).
+- runtime_realtime_architecture.md: arquitectura objetivo Python/C++/GPU y plan de migración.
 - usage.md: casos de uso y ejemplos.
 - best_practices.md: buenas practicas.
 - testing.md: estrategia de pruebas.
