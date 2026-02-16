@@ -17,6 +17,10 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 - `chore`: Configuración de pre-commit hooks (`.pre-commit-config.yaml`)
 - `chore`: Configuración de editor (`.editorconfig`)
 - `chore`: Makefile para automatización de tareas comunes
+- `feat(cpp/perception)`: Integración completa de ONNX Runtime para inferencia real de IA
+  - Módulo `perception_cpp` compilado con soporte ONNX Runtime
+  - Detección de landmarks faciales, manos y pose usando modelos ONNX
+  - Adapters Python (`FaceLandmarkAnalyzer`, `HandLandmarkAnalyzer`, `PoseLandmarkAnalyzer`) funcionando
 
 ### Changed
 - Reorganización de código Python: `ascii_stream_engine` movido a `python/ascii_stream_engine/`
@@ -25,6 +29,8 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 - `docs`: Actualización de GITFLOW.md con flujo simplificado (main, develop, feature/*)
 - `refactor(python)`: Limpieza y optimización del notebook de ejemplo `notebook_full_control.ipynb`
 - `chore(python)`: Actualización de dependencias en `pyproject.toml`
+- `fix(cpp/perception)`: Corrección de detección de ONNX Runtime en CMakeLists.txt para entornos conda
+- `fix(cpp/perception)`: Corrección de include path para `onnxruntime_cxx_api.h` en onnx_runner.cpp
 
 ### Fixed
 - N/A
