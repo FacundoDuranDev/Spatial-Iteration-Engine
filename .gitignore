@@ -4,3 +4,9 @@ __pycache__/
 .venv/
 .env/
 env/
+
+# Archivos grandes que no deben estar en el repositorio
+*.sh
+graveyard/*.sh
+**/Miniconda*.sh
+**/Anaconda*.sh
