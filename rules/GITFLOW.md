@@ -112,3 +112,4 @@ Formato obligatorio para mensajes de commit:
 - **Commits:** `tipo(alcance): descripción`
 - **Changelog:** siempre actualizar en `CHANGELOG.md` para cambios que afecten a usuarios o builds
 - **Tags:** solo en `main`, formato `v0.x.0`
+

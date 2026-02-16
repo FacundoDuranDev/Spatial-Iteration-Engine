@@ -1,197 +1,165 @@
 # Git Flow - Spatial Iteration Engine
 
-Este documento define el flujo de trabajo Git que se seguirá a partir de ahora en el proyecto Spatial Iteration Engine.
+**Flujo simplificado y práctico** para desarrollo ágil. Menos ramas, más claridad.
 
-## 📋 Tabla de Contenidos
+## 🎯 Filosofía
 
-- [Ramas](#ramas)
-- [Tipos de Cambios](#tipos-de-cambios)
-- [Proceso de Desarrollo](#proceso-de-desarrollo)
-- [Convenciones de Commits](#convenciones-de-commits)
-- [Changelog](#changelog)
-- [Releases](#releases)
-- [Buenas Prácticas](#buenas-prácticas)
+- **Simplicidad sobre burocracia**: Solo las ramas necesarias
+- **Desarrollo continuo**: Integración frecuente, deploys rápidos
+- **Claridad**: Cada rama tiene un propósito claro y único
 
-## 🌿 Ramas
+## 🌿 Ramas (Solo 3 tipos)
 
-### Ramas Principales
+### 1. `main` - Producción
+- **Propósito**: Código estable, listo para usar
+- **Protección**: No commits directos, solo merges desde `develop`
+- **Tags**: Versiones se etiquetan aquí (`v1.0.0`, `v1.1.0`)
 
-- **`main`**: Rama de producción. Solo contiene código estable, probado y listo para release.
-- **`develop`**: Rama de desarrollo. Integra todas las features y correcciones antes de mergear a `main`.
+### 2. `develop` - Integración
+- **Propósito**: Rama de trabajo principal, integra todas las features
+- **Protección**: Commits directos permitidos solo para cambios menores (docs, typos)
+- **Flujo**: Features se mergean aquí antes de ir a `main`
 
-### Ramas de Soporte
+### 3. `feature/*` - Trabajo en progreso
+- **Propósito**: Desarrollo de nuevas funcionalidades o fixes
+- **Origen**: Se crea desde `develop`
+- **Destino**: Se mergea de vuelta a `develop`
+- **Ejemplos**: 
+  - `feature/cpp-filters`
+  - `feature/notebook-preview`
+  - `fix/memory-leak-buffer`
 
-- **`feature/*`**: Nuevas funcionalidades. Se crean desde `develop` y se mergean de vuelta a `develop`.
-- **`bugfix/*`**: Correcciones de bugs. Se crean desde `develop` o `main` (dependiendo de la urgencia).
-- **`hotfix/*`**: Correcciones urgentes en producción. Se crean desde `main` y se mergean a `main` y `develop`.
-- **`release/*`**: Preparación de releases. Se crean desde `develop` y se mergean a `main` y `develop`.
-
-## 🏷️ Tipos de Cambios
-
-Cada cambio debe clasificarse según su alcance:
-
-### `feat`: Nueva funcionalidad
-- Añade una nueva característica al sistema
-- Ejemplo: `feat(cpp): add brightness filter implementation`
-
-### `fix`: Corrección de bug
-- Corrige un error en el código existente
-- Ejemplo: `fix(python): resolve memory leak in frame buffer`
-
-### `docs`: Documentación
-- Cambios solo en documentación
-- Ejemplo: `docs: update installation guide`
-
-### `style`: Formato de código
-- Cambios que no afectan el significado del código (espacios, formato, etc.)
-- Ejemplo: `style(cpp): fix indentation in filters`
-
-### `refactor`: Refactorización
-- Cambios que mejoran el código sin cambiar funcionalidad
-- Ejemplo: `refactor(python): extract common pipeline logic`
-
-### `perf`: Mejoras de rendimiento
-- Optimizaciones que mejoran el rendimiento
-- Ejemplo: `perf(cpp): optimize matrix operations in filters`
-
-### `test`: Tests
-- Añade o modifica tests
-- Ejemplo: `test(python): add unit tests for perception module`
-
-### `chore`: Tareas de mantenimiento
-- Cambios en build, dependencias, configuración
-- Ejemplo: `chore: update CMakeLists.txt dependencies`
-
-### `mvp`: Cambios relacionados con MVPs
-- Implementación o avance en un MVP específico
-- Ejemplo: `mvp(03): implement face landmarks detection`
-
-## 🔄 Proceso de Desarrollo
-
-### 1. Crear una Feature
-
-```bash
-# Desde develop
-git checkout develop
-git pull origin develop
-git checkout -b feature/nombre-de-la-feature
-
-# Trabajar en la feature
-# ... hacer commits ...
-
-# Push de la rama
-git push origin feature/nombre-de-la-feature
-```
-
-### 2. Crear un Bugfix
-
-```bash
-# Desde develop (o main si es crítico)
-git checkout develop
-git pull origin develop
-git checkout -b bugfix/descripcion-del-bug
-
-# Trabajar en el bugfix
-# ... hacer commits ...
-
-# Push de la rama
-git push origin bugfix/descripcion-del-bug
-```
-
-### 3. Crear un Hotfix
-
-```bash
-# Desde main
-git checkout main
-git pull origin main
-git checkout -b hotfix/descripcion-urgente
-
-# Trabajar en el hotfix
-# ... hacer commits ...
-
-# Merge a main y develop
-git checkout main
-git merge hotfix/descripcion-urgente
-git checkout develop
-git merge hotfix/descripcion-urgente
-```
-
-### 4. Crear un Release
-
-```bash
-# Desde develop
-git checkout develop
-git pull origin develop
-git checkout -b release/v1.2.0
-
-# Preparar release (actualizar versiones, changelog, etc.)
-# ... hacer commits ...
-
-# Merge a main y develop
-git checkout main
-git merge release/v1.2.0
-git tag v1.2.0
-git checkout develop
-git merge release/v1.2.0
-```
+**No usamos**: `bugfix/*`, `hotfix/*`, `release/*` (demasiado complejo)
 
 ## 📝 Convenciones de Commits
 
-### Formato
+### Formato (Conventional Commits)
 
 ```
 <tipo>(<alcance>): <descripción corta>
 
 <descripción detallada opcional>
-
-<referencias opcionales>
 ```
+
+### Tipos permitidos
+
+| Tipo | Uso | Ejemplo |
+|------|-----|---------|
+| `feat` | Nueva funcionalidad | `feat(cpp): add blur filter` |
+| `fix` | Corrección de bug | `fix(python): resolve memory leak` |
+| `docs` | Solo documentación | `docs: update installation guide` |
+| `refactor` | Refactor sin cambiar comportamiento | `refactor(engine): extract pipeline logic` |
+| `perf` | Mejora de rendimiento | `perf(cpp): optimize matrix operations` |
+| `test` | Tests | `test(python): add unit tests for filters` |
+| `chore` | Mantenimiento (build, deps) | `chore: update CMakeLists.txt` |
+| `mvp` | Avance en MVP específico | `mvp(02): complete cpp filter implementation` |
+
+### Alcance (opcional pero recomendado)
+
+- `cpp`, `python`, `docs`, `build`
+- Módulos específicos: `cpp/filters`, `python/engine`, `python/perception`
 
 ### Ejemplos
 
-```
-feat(cpp): add edge detection filter
+```bash
+feat(cpp/filters): add edge detection filter
 
-Implementa el filtro de detección de bordes usando Sobel operator
-con soporte para umbrales configurables.
+Implementa detección de bordes usando Sobel operator con umbrales configurables.
 
 Refs: MVP_02_CPP_FILTER
-```
 
-```
-fix(python): resolve frame buffer overflow
+fix(python/engine): resolve frame buffer overflow
 
-Corrige el desbordamiento del buffer cuando se procesan más de
-1000 frames por segundo. Añade validación de tamaño máximo.
+Corrige desbordamiento cuando se procesan más de 1000 fps.
+Añade validación de tamaño máximo.
 
 Fixes: #42
-```
 
-```
 docs: update gitflow documentation
 
-Añade sección sobre releases y mejores prácticas de branching.
+Simplifica flujo a solo main, develop y feature branches.
 ```
 
-### Reglas
+## 🔄 Flujo de Trabajo Diario
 
-1. **Tipo obligatorio**: Siempre incluir el tipo de cambio
-2. **Alcance opcional**: Especificar módulo afectado (cpp, python, docs, etc.)
-3. **Descripción**: Máximo 72 caracteres, imperativo, sin punto final
-4. **Cuerpo opcional**: Explicar el qué y el por qué, no el cómo
-5. **Referencias**: Incluir issues, PRs, o MVPs relacionados
+### Desarrollo de una Feature
+
+```bash
+# 1. Actualizar develop
+git checkout develop
+git pull origin develop
+
+# 2. Crear rama de feature
+git checkout -b feature/mi-feature
+
+# 3. Trabajar y hacer commits
+git add .
+git commit -m "feat(scope): descripción"
+
+# 4. Push de la rama
+git push -u origin feature/mi-feature
+
+# 5. Cuando está lista, mergear a develop
+git checkout develop
+git pull origin develop
+git merge feature/mi-feature
+git push origin develop
+
+# 6. Eliminar rama local (opcional)
+git branch -d feature/mi-feature
+```
+
+### Fixes Rápidos
+
+Para bugs pequeños, puedes trabajar directamente en `develop`:
+
+```bash
+git checkout develop
+git pull origin develop
+# ... hacer cambios ...
+git commit -m "fix(scope): descripción del fix"
+git push origin develop
+```
+
+Para bugs más complejos, usa una rama `feature/`:
+
+```bash
+git checkout -b feature/fix-nombre-del-bug
+# ... trabajar ...
+# Merge a develop como cualquier feature
+```
+
+### Release (cuando sea necesario)
+
+```bash
+# 1. Desde develop, crear tag
+git checkout develop
+git pull origin develop
+
+# 2. Merge a main
+git checkout main
+git pull origin main
+git merge develop
+git tag v1.2.0
+git push origin main --tags
+
+# 3. Volver a develop
+git checkout develop
+```
+
+**Nota**: No necesitas rama `release/*` a menos que tengas múltiples versiones en producción simultáneamente.
 
 ## 📋 Changelog
 
 ### Actualización Obligatoria
 
-Cada commit que afecte funcionalidad visible debe actualizar `CHANGELOG.md`:
+Cada cambio que afecte funcionalidad visible debe actualizar `CHANGELOG.md`:
 
-1. **Ubicación**: En la sección `[Unreleased]` al inicio del archivo
-2. **Formato**: Seguir el formato establecido en `CHANGELOG.md`
-3. **Categorías**: Usar las mismas categorías que los tipos de commits
+1. **Ubicación**: Sección `[Unreleased]` al inicio
+2. **Formato**: Categorías `Added`, `Changed`, `Fixed`, `Removed`
+3. **Cuándo**: En el mismo commit o en el merge a `develop`
 
-### Ejemplo de Entrada
+### Ejemplo
 
 ```markdown
 ## [Unreleased]
@@ -207,25 +175,19 @@ Cada commit que afecte funcionalidad visible debe actualizar `CHANGELOG.md`:
 - `fix(cpp)`: Corrección de memory leak en filtros
 ```
 
-## 🚀 Releases
+### Al hacer Release
 
-### Versionado Semántico
+Mover `[Unreleased]` a una nueva sección con la versión:
 
-Seguimos [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH`
+```markdown
+## [1.2.0] - 2024-12-19
 
-- **MAJOR**: Cambios incompatibles con versiones anteriores
-- **MINOR**: Nueva funcionalidad compatible hacia atrás
-- **PATCH**: Correcciones de bugs compatibles
+### Added
+- `feat(cpp)`: Implementación de filtro de detección de bordes
+...
 
-### Proceso de Release
-
-1. Crear rama `release/vX.Y.Z` desde `develop`
-2. Actualizar versiones en código y documentación
-3. Actualizar `CHANGELOG.md` moviendo `[Unreleased]` a `[vX.Y.Z]`
-4. Crear PR para revisión
-5. Merge a `main` y crear tag `vX.Y.Z`
-6. Merge de vuelta a `develop`
-7. Publicar release en GitHub (si aplica)
+## [Unreleased]
+```
 
 ## ✅ Buenas Prácticas
 
@@ -235,22 +197,19 @@ Seguimos [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH`
 - [ ] Tests pasan (si existen)
 - [ ] Linter/formatting aplicado
 - [ ] `CHANGELOG.md` actualizado (si aplica)
-- [ ] Documentación actualizada (si aplica)
 
 ### Antes de Push
 
-- [ ] Commits siguen el formato establecido
-- [ ] Mensajes de commit son claros y descriptivos
-- [ ] No hay commits de "WIP" o "fix typo" sin contexto
-- [ ] Branch está actualizada con la rama base
+- [ ] Commits siguen formato Conventional Commits
+- [ ] Mensajes son claros y descriptivos
+- [ ] Branch está actualizada con `develop` (`git pull --rebase origin develop`)
 
-### Antes de Merge
+### Antes de Merge a develop
 
 - [ ] Código revisado (self-review mínimo)
-- [ ] Tests pasan en CI (si existe)
-- [ ] No hay conflictos con la rama base
-- [ ] `CHANGELOG.md` está actualizado
-- [ ] Documentación está actualizada
+- [ ] No hay conflictos
+- [ ] `CHANGELOG.md` actualizado
+- [ ] Build pasa
 
 ### Respeto a MVPs
 
@@ -264,26 +223,13 @@ Seguimos [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH`
 - **Commits pequeños y frecuentes**: Facilita revisión y rollback
 - **Commits atómicos**: Cada commit debe dejar el proyecto en un estado funcional
 
-### Workflow Recomendado
+## 🚫 Qué NO hacer
 
-```bash
-# Trabajo diario
-git checkout develop
-git pull origin develop
-git checkout -b feature/mi-feature
-
-# Desarrollo iterativo
-# ... hacer cambios ...
-git add .
-git commit -m "feat(scope): descripción"
-git push origin feature/mi-feature
-
-# Cuando la feature está lista
-git checkout develop
-git pull origin develop
-git merge feature/mi-feature
-git push origin develop
-```
+1. **No commits directos a `main`** (excepto merges desde `develop`)
+2. **No `git push --force` a `main` o `develop`** (salvo acuerdo explícito)
+3. **No mezclar múltiples features en una rama**
+4. **No commits de "WIP" o "fix typo" sin contexto**
+5. **No ignorar el CHANGELOG** para cambios relevantes
 
 ## 🔍 Alcance de Cambios
 
@@ -307,15 +253,25 @@ chore(build): update CMake version
 mvp(02): complete cpp filter implementation
 ```
 
+## 📊 Comparación con Otros Flujos
+
+| Aspecto | Gitflow Tradicional | **Este Flujo (Simplificado)** | GitHub Flow |
+|---------|---------------------|-------------------------------|-------------|
+| Ramas principales | main, develop | **main, develop** | main |
+| Ramas de feature | feature/* | **feature/*** | feature/* |
+| Ramas de release | release/* | **No (merge directo)** | No |
+| Ramas de hotfix | hotfix/* | **No (usa feature/)** | No |
+| Complejidad | Alta | **Media** | Baja |
+| Ideal para | Proyectos grandes | **Equipos pequeños/medianos** | Startups |
+
 ## 📚 Referencias
 
 - [Conventional Commits](https://www.conventionalcommits.org/)
 - [Semantic Versioning](https://semver.org/)
-- [Git Flow](https://nvie.com/posts/a-successful-git-branching-model/)
+- [Keep a Changelog](https://keepachangelog.com/)
 - MVPs del proyecto: `rules/MVP_INDEX.md`
 
 ---
 
-**Última actualización**: 2024-12-19
-**Versión del documento**: 1.0.0
-
+**Última actualización**: 2024-12-19  
+**Versión del documento**: 2.0.0 (Simplificado)

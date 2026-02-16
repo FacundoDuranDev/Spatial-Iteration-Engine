@@ -1,0 +1,68 @@
+# Pre-commit hooks para Spatial Iteration Engine
+# Instalar: pip install pre-commit && pre-commit install
+# Ejecutar manualmente: pre-commit run --all-files
+
+repos:
+  # Formateo de código Python
+  - repo: https://github.com/psf/black
+    rev: 23.12.1
+    hooks:
+      - id: black
+        language_version: python3
+        files: ^python/
+        args: [--line-length=100]
+
+  # Ordenamiento de imports
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        files: ^python/
+        args: [--profile=black, --line-length=100]
+
+  # Linting
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        files: ^python/
+        args: [--max-line-length=100, --extend-ignore=E203,W503]
+
+  # Verificación de archivos YAML
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.33.0
+    hooks:
+      - id: yamllint
+        args: [-d "{extends: default, rules: {line-length: {max: 120}}}"]
+
+  # Verificación de archivos Markdown
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.38.0
+    hooks:
+      - id: markdownlint
+        args: [--fix]
+
+  # Prevención de commits grandes
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  # Verificación de mensajes de commit (Conventional Commits)
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.0.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: [--types, feat, fix, docs, style, refactor, perf, test, chore, mvp]
+
+

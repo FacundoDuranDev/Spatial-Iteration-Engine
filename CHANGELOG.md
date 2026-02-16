@@ -14,11 +14,17 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 - Módulos C++ con pybind11 para filtros y percepción
 - Soporte para modelos ONNX en módulos de percepción
 - Scripts de build para compilación de módulos C++
+- `chore`: Configuración de pre-commit hooks (`.pre-commit-config.yaml`)
+- `chore`: Configuración de editor (`.editorconfig`)
+- `chore`: Makefile para automatización de tareas comunes
 
 ### Changed
 - Reorganización de código Python: `ascii_stream_engine` movido a `python/ascii_stream_engine/`
 - Estructura de documentación: docs movidos a `graveyard/docs/` y nueva estructura en `docs/`
 - Sistema de build: CMakeLists.txt actualizado con soporte para ONNX Runtime opcional
+- `docs`: Actualización de GITFLOW.md con flujo simplificado (main, develop, feature/*)
+- `refactor(python)`: Limpieza y optimización del notebook de ejemplo `notebook_full_control.ipynb`
+- `chore(python)`: Actualización de dependencias en `pyproject.toml`
 
 ### Fixed
 - N/A
