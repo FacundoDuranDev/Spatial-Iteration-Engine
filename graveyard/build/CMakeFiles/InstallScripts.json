@@ -1,0 +1,8 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/fissure/repos/Spatial-Iteration-Engine/cpp/build/cmake_install.cmake",
+		"/home/fissure/repos/Spatial-Iteration-Engine/cpp/build/_deps/pybind11-build/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

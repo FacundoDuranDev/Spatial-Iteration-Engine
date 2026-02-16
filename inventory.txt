@@ -1,0 +1,257 @@
+.
+├── FREEZE.md
+├── Miniconda3-latest-Linux-x86_64.sh
+├── README.md
+├── cpp
+│   ├── CMakeLists.txt
+│   ├── README.md
+│   ├── build
+│   │   ├── CMakeCache.txt
+│   │   ├── CMakeFiles
+│   │   │   ├── 4.2.3
+│   │   │   ├── CMakeConfigureLog.yaml
+│   │   │   ├── CMakeDirectoryInformation.cmake
+│   │   │   ├── InstallScripts.json
+│   │   │   ├── Makefile.cmake
+│   │   │   ├── Makefile2
+│   │   │   ├── TargetDirectories.txt
+│   │   │   ├── cmake.check_cache
+│   │   │   ├── filters_cpp.dir
+│   │   │   ├── pkgRedirects
+│   │   │   ├── progress.marks
+│   │   │   └── render_bridge.dir
+│   │   ├── Makefile
+│   │   ├── _deps
+│   │   │   ├── pybind11-build
+│   │   │   ├── pybind11-src
+│   │   │   └── pybind11-subbuild
+│   │   ├── cmake_install.cmake
+│   │   ├── filters_cpp.cpython-312-x86_64-linux-gnu.so
+│   │   ├── filters_cpp.cpython-314t-x86_64-linux-gnu.so
+│   │   ├── render_bridge.cpython-312-x86_64-linux-gnu.so
+│   │   └── render_bridge.cpython-314t-x86_64-linux-gnu.so
+│   ├── build.sh
+│   ├── include
+│   │   └── filters
+│   │       ├── filter.hpp
+│   │       └── filters_api.hpp
+│   └── src
+│       ├── bridge
+│       │   ├── pybind_bridge.cpp
+│       │   └── pybind_filters.cpp
+│       ├── filters
+│       │   ├── blur.cpp
+│       │   ├── brightness_contrast.cpp
+│       │   ├── channel_swap.cpp
+│       │   ├── edge.cpp
+│       │   ├── grayscale.cpp
+│       │   ├── invert.cpp
+│       │   ├── posterize.cpp
+│       │   ├── sharpen.cpp
+│       │   └── threshold.cpp
+│       └── render
+│           └── deformed_render.cpp
+├── data
+│   ├── README.md
+│   ├── artworks
+│   └── masks
+├── docs
+│   ├── README.md
+│   ├── analysis
+│   │   └── memory_optimization_analysis.md
+│   ├── architecture.md
+│   ├── benchmarks.md
+│   ├── best_practices.md
+│   ├── conda_setup.md
+│   ├── cpp_concepts.md
+│   ├── cpp_filters_roadmap.md
+│   ├── extensions.md
+│   ├── integration_v1.md
+│   ├── mvp_ideas.md
+│   ├── neural_architecture.md
+│   ├── overview.md
+│   ├── pipeline_architecture_v1.md
+│   ├── plugins
+│   │   └── plugin_development.md
+│   ├── profiling.md
+│   ├── setup_conda.md
+│   ├── tech
+│   │   ├── ffmpeg.md
+│   │   ├── ipython.md
+│   │   ├── ipywidgets.md
+│   │   ├── numpy.md
+│   │   ├── opencv.md
+│   │   ├── pillow.md
+│   │   ├── python_stdlib.md
+│   │   ├── requirements.md
+│   │   └── udp.md
+│   ├── testing.md
+│   └── usage.md
+├── env
+│   ├── bin
+│   │   ├── Activate.ps1
+│   │   ├── activate
+│   │   ├── activate.csh
+│   │   ├── activate.fish
+│   │   ├── f2py
+│   │   ├── ipython
+│   │   ├── ipython3
+│   │   ├── numpy-config
+│   │   ├── pip
+│   │   ├── pip3
+│   │   ├── pip3.13
+│   │   ├── pygmentize
+│   │   ├── python -> /usr/bin/python
+│   │   ├── python3 -> python
+│   │   ├── python3.13 -> python
+│   │   └── watchmedo
+│   ├── etc
+│   │   └── jupyter
+│   │       └── nbconfig
+│   ├── include
+│   │   └── python3.13
+│   ├── lib
+│   │   └── python3.13
+│   │       └── site-packages
+│   ├── lib64 -> lib
+│   ├── pyvenv.cfg
+│   └── share
+│       ├── jupyter
+│       │   ├── labextensions
+│       │   └── nbextensions
+│       └── man
+│           └── man1
+├── environment.yml
+├── inventory.txt
+├── onnx_models
+│   └── README.md
+├── python
+│   ├── ascii_stream_engine
+│   │   ├── README.md
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   │   ├── __init__.cpython-312.pyc
+│   │   │   ├── __init__.cpython-313.pyc
+│   │   │   └── __init__.cpython-314.pyc
+│   │   ├── adapters
+│   │   │   ├── analyzers
+│   │   │   ├── calibration
+│   │   │   ├── controllers
+│   │   │   ├── filters
+│   │   │   ├── generators
+│   │   │   ├── outputs
+│   │   │   ├── processors
+│   │   │   ├── renderers
+│   │   │   ├── sensors
+│   │   │   ├── sources
+│   │   │   ├── trackers
+│   │   │   └── transformations
+│   │   ├── application
+│   │   │   ├── __init__.py
+│   │   │   ├── __pycache__
+│   │   │   ├── engine.py
+│   │   │   ├── orchestration
+│   │   │   ├── parallel_pipeline.py
+│   │   │   ├── pipeline
+│   │   │   └── services
+│   │   ├── domain
+│   │   │   ├── __init__.py
+│   │   │   ├── __pycache__
+│   │   │   ├── analysis_result.py
+│   │   │   ├── config.py
+│   │   │   ├── config_loader.py
+│   │   │   ├── events.py
+│   │   │   ├── frame_metadata.py
+│   │   │   ├── tracking_data.py
+│   │   │   └── types.py
+│   │   ├── examples
+│   │   │   ├── __pycache__
+│   │   │   ├── ascii_stream_engine_1024x720.ipynb
+│   │   │   ├── ascii_stream_engine_control.ipynb
+│   │   │   ├── ascii_stream_engine_demo.ipynb
+│   │   │   ├── ascii_stream_engine_general.ipynb
+│   │   │   ├── ascii_stream_engine_multicast_raw.ipynb
+│   │   │   ├── basic_stream.py
+│   │   │   ├── basic_stream_cpp_filters.py
+│   │   │   ├── config_example.json
+│   │   │   ├── config_example.py
+│   │   │   ├── config_example.yaml
+│   │   │   ├── diagnose_camera.py
+│   │   │   ├── profiling_example.py
+│   │   │   ├── spatial_engine_preview.ipynb
+│   │   │   ├── stream_camera_cpp_preview.py
+│   │   │   ├── stream_camera_preview_only.py
+│   │   │   ├── stream_with_preview.py
+│   │   │   ├── test_camera_only.py
+│   │   │   ├── test_refactored_architecture.ipynb
+│   │   │   └── turing_patterns_intermedio.ipynb
+│   │   ├── infrastructure
+│   │   │   ├── __init__.py
+│   │   │   ├── __pycache__
+│   │   │   ├── event_bus.py
+│   │   │   ├── logging.py
+│   │   │   ├── message_queue.py
+│   │   │   ├── metrics.py
+│   │   │   ├── performance
+│   │   │   ├── plugins
+│   │   │   └── profiling.py
+│   │   ├── ports
+│   │   │   ├── __init__.py
+│   │   │   ├── __pycache__
+│   │   │   ├── controllers.py
+│   │   │   ├── generators.py
+│   │   │   ├── output_capabilities.py
+│   │   │   ├── outputs.py
+│   │   │   ├── processors.py
+│   │   │   ├── renderers.py
+│   │   │   ├── sensors.py
+│   │   │   ├── sources.py
+│   │   │   ├── trackers.py
+│   │   │   └── transformations.py
+│   │   ├── presentation
+│   │   │   ├── __init__.py
+│   │   │   ├── __pycache__
+│   │   │   └── notebook_api.py
+│   │   ├── requirements.txt
+│   │   └── tests
+│   │       ├── __init__.py
+│   │       ├── __pycache__
+│   │       ├── test_analyzers.py
+│   │       ├── test_config_types.py
+│   │       ├── test_control.py
+│   │       ├── test_engine.py
+│   │       ├── test_error_handling.py
+│   │       ├── test_filters.py
+│   │       ├── test_outputs.py
+│   │       ├── test_outputs_ndi.py
+│   │       ├── test_outputs_rtsp.py
+│   │       ├── test_outputs_webrtc.py
+│   │       ├── test_performance.py
+│   │       ├── test_pipeline.py
+│   │       ├── test_plugins.py
+│   │       ├── test_renderer_ascii.py
+│   │       └── test_sources.py
+│   ├── ascii_stream_engine.egg-info
+│   │   ├── PKG-INFO
+│   │   ├── SOURCES.txt
+│   │   ├── dependency_links.txt
+│   │   ├── requires.txt
+│   │   └── top_level.txt
+│   ├── perception
+│   │   ├── __init__.py
+│   │   ├── person_detection.py
+│   │   ├── pose_estimation.py
+│   │   └── silhouette_segmentation.py
+│   ├── pyproject.toml
+│   ├── requirements.txt
+│   └── style
+│       ├── __init__.py
+│       ├── style_encoder.py
+│       ├── stylizer.py
+│       └── temporal_coherence.py
+├── requirements-build.txt
+├── run_basic_stream.sh
+├── run_preview.sh
+└── run_preview_raw.sh
+
+81 directories, 174 files

@@ -1,0 +1,14 @@
+# Spatial-Iteration-Engine / ascii_stream_engine – dependencias Python
+# Instalar: pip install -r python/requirements.txt
+
+# Core (obligatorias)
+numpy>=1.24,<3
+opencv-python>=4.5
+Pillow>=9.0
+PyYAML>=6.0
+
+# Config YAML, outputs (PIL), renderers, filtros, cámara
+# Opcionales en runtime pero usadas por el paquete:
+ipywidgets>=8.0
+ipython>=8.0
+watchdog>=3.0

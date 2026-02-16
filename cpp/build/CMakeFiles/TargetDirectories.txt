@@ -1,0 +1,7 @@
+/home/fissure/repos/Spatial-Iteration-Engine/cpp/build/CMakeFiles/filters_cpp.dir
+/home/fissure/repos/Spatial-Iteration-Engine/cpp/build/CMakeFiles/perception_cpp.dir
+/home/fissure/repos/Spatial-Iteration-Engine/cpp/build/CMakeFiles/render_bridge.dir
+/home/fissure/repos/Spatial-Iteration-Engine/cpp/build/CMakeFiles/edit_cache.dir
+/home/fissure/repos/Spatial-Iteration-Engine/cpp/build/CMakeFiles/rebuild_cache.dir
+/home/fissure/repos/Spatial-Iteration-Engine/cpp/build/_deps/pybind11-build/CMakeFiles/edit_cache.dir
+/home/fissure/repos/Spatial-Iteration-Engine/cpp/build/_deps/pybind11-build/CMakeFiles/rebuild_cache.dir

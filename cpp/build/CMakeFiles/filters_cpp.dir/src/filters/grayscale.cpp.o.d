@@ -1,0 +1,27 @@
+CMakeFiles/filters_cpp.dir/src/filters/grayscale.cpp.o: \
+ /home/fissure/repos/Spatial-Iteration-Engine/cpp/src/filters/grayscale.cpp \
+ /home/fissure/miniconda3/envs/spatial-iteration-engine/x86_64-conda-linux-gnu/sysroot/usr/include/stdc-predef.h \
+ /home/fissure/repos/Spatial-Iteration-Engine/cpp/include/filters/filter.hpp \
+ /home/fissure/miniconda3/envs/spatial-iteration-engine/lib/gcc/x86_64-conda-linux-gnu/14.3.0/include/c++/cstdint \
+ /home/fissure/miniconda3/envs/spatial-iteration-engine/lib/gcc/x86_64-conda-linux-gnu/14.3.0/include/c++/x86_64-conda-linux-gnu/bits/c++config.h \
+ /home/fissure/miniconda3/envs/spatial-iteration-engine/lib/gcc/x86_64-conda-linux-gnu/14.3.0/include/c++/x86_64-conda-linux-gnu/bits/os_defines.h \
+ /home/fissure/miniconda3/envs/spatial-iteration-engine/x86_64-conda-linux-gnu/sysroot/usr/include/features.h \
+ /home/fissure/miniconda3/envs/spatial-iteration-engine/x86_64-conda-linux-gnu/sysroot/usr/include/features-time64.h \
+ /home/fissure/miniconda3/envs/spatial-iteration-engine/x86_64-conda-linux-gnu/sysroot/usr/include/bits/wordsize.h \
+ /home/fissure/miniconda3/envs/spatial-iteration-engine/x86_64-conda-linux-gnu/sysroot/usr/include/bits/timesize.h \
+ /home/fissure/miniconda3/envs/spatial-iteration-engine/x86_64-conda-linux-gnu/sysroot/usr/include/sys/cdefs.h \
+ /home/fissure/miniconda3/envs/spatial-iteration-engine/x86_64-conda-linux-gnu/sysroot/usr/include/bits/long-double.h \
+ /home/fissure/miniconda3/envs/spatial-iteration-engine/x86_64-conda-linux-gnu/sysroot/usr/include/gnu/stubs.h \
+ /home/fissure/miniconda3/envs/spatial-iteration-engine/x86_64-conda-linux-gnu/sysroot/usr/include/gnu/stubs-64.h \
+ /home/fissure/miniconda3/envs/spatial-iteration-engine/lib/gcc/x86_64-conda-linux-gnu/14.3.0/include/c++/x86_64-conda-linux-gnu/bits/cpu_defines.h \
+ /home/fissure/miniconda3/envs/spatial-iteration-engine/lib/gcc/x86_64-conda-linux-gnu/14.3.0/include/c++/pstl/pstl_config.h \
+ /home/fissure/miniconda3/envs/spatial-iteration-engine/lib/gcc/x86_64-conda-linux-gnu/14.3.0/include/stdint.h \
+ /home/fissure/miniconda3/envs/spatial-iteration-engine/x86_64-conda-linux-gnu/sysroot/usr/include/stdint.h \
+ /home/fissure/miniconda3/envs/spatial-iteration-engine/x86_64-conda-linux-gnu/sysroot/usr/include/bits/libc-header-start.h \
+ /home/fissure/miniconda3/envs/spatial-iteration-engine/x86_64-conda-linux-gnu/sysroot/usr/include/bits/types.h \
+ /home/fissure/miniconda3/envs/spatial-iteration-engine/x86_64-conda-linux-gnu/sysroot/usr/include/bits/typesizes.h \
+ /home/fissure/miniconda3/envs/spatial-iteration-engine/x86_64-conda-linux-gnu/sysroot/usr/include/bits/time64.h \
+ /home/fissure/miniconda3/envs/spatial-iteration-engine/x86_64-conda-linux-gnu/sysroot/usr/include/bits/wchar.h \
+ /home/fissure/miniconda3/envs/spatial-iteration-engine/x86_64-conda-linux-gnu/sysroot/usr/include/bits/stdint-intn.h \
+ /home/fissure/miniconda3/envs/spatial-iteration-engine/x86_64-conda-linux-gnu/sysroot/usr/include/bits/stdint-uintn.h \
+ /home/fissure/miniconda3/envs/spatial-iteration-engine/x86_64-conda-linux-gnu/sysroot/usr/include/bits/stdint-least.h

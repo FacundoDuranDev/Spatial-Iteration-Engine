@@ -1,0 +1,2 @@
+# Redirige al requirements del proyecto Python (una sola fuente de verdad).
+-r ../requirements.txt

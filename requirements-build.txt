@@ -1,0 +1,8 @@
+# Herramientas de build para extensiones C++ (pybind11).
+# Instalar en el mismo venv donde desarrollas:
+#   pip install -r requirements-build.txt
+#
+# Además hace falta un compilador C++ en el sistema (ver cpp/README.md)
+# o usar el env de conda (environment.yml) que incluye compilador y cmake.
+
+cmake>=3.15

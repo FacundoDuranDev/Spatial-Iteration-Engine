@@ -1,7 +1,0 @@
-opencv-python
-numpy
-pillow
-ipywidgets
-ipython
-watchdog
-pyyaml

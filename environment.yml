@@ -1,0 +1,22 @@
+# Entorno Conda con Python, CMake y compilador C++.
+# Python 3.12: evita compilar numpy/opencv desde fuente (3.14 no tiene wheels).
+# Útil para compilar los módulos C++ (filters_cpp, render_bridge) sin build-essential.
+#
+# Crear el env:
+#   conda env create -f environment.yml
+# Activar:
+#   conda activate spatial-iteration-engine
+# Instalar deps Python del proyecto e compilar:
+#   pip install -r python/requirements.txt
+#   ./cpp/build.sh
+
+name: spatial-iteration-engine
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - pip
+  - cmake>=3.15
+  - compilers  # conda-forge: gcc/g++ en Linux, clang en macOS
+  - numpy
