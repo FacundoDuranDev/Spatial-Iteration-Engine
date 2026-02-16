@@ -1,12 +1,151 @@
+# Python
 __pycache__/
-*.pyc
-.ipynb_checkpoints/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Entornos virtuales y conda
 .venv/
-.env/
+venv/
+ENV/
 env/
+env.bak/
+.conda/
+conda-meta/
+*.conda
+spatial-iteration-engine/
+
+# Archivos de entorno y configuración sensible
+.env
+.env.*
+*.env
+!.env.example
+.env.local
+.env.*.local
+config.local.*
+*.local
+secrets.yaml
+secrets.yml
+credentials.json
+credentials.yaml
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+id_rsa
+id_rsa.pub
+*.secret
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb_checkpoints
 
 # Archivos grandes que no deben estar en el repositorio
 *.sh
 graveyard/*.sh
 **/Miniconda*.sh
 **/Anaconda*.sh
+*.dmg
+*.iso
+*.zip
+*.tar.gz
+*.tar.bz2
+*.7z
+*.rar
+
+# Build y compilación
+cpp/build/
+cpp/cmake-build-*/
+*.o
+*.a
+*.lib
+*.dll
+*.dylib
+*.exe
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+
+# Logs y archivos temporales
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs y editores
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.settings/
+*.code-workspace
+
+# Archivos de sistema
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+
+# Archivos de base de datos
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# Archivos de caché
+.cache/
+*.cache
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Archivos de modelos grandes (si no se deben versionar)
+*.onnx
+*.pb
+*.h5
+*.pth
+*.pt
+*.ckpt
+*.weights
+!onnx_models/**/*.onnx  # Permitir modelos en onnx_models/ si están versionados
+
+# Archivos de datos grandes (ajustar según necesidad)
+data/raw/
+data/processed/
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.flv
+*.wmv
+*.webm
+
+# Archivos de backup
+*.bak
+*.backup
+*.old
+*~
