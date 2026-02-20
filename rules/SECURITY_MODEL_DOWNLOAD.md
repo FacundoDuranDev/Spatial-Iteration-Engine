@@ -12,21 +12,23 @@ Solo se permiten descargas desde las siguientes fuentes:
 
 ### 1.1 Fuentes de Alta Confiabilidad (Nivel 1)
 
-| Fuente | Dominio | Verificación Requerida |
-|--------|---------|------------------------|
-| **HuggingFace** | `huggingface.co` | ✅ Checksum SHA256 (si disponible) |
-| **ONNX Model Zoo** | `github.com/onnx/models` | ✅ Verificación de firma Git |
-| **Google Research / MediaPipe** | `github.com/google/mediapipe` | ✅ Verificación de firma Git |
-| **Microsoft Research** | `github.com/microsoft` | ✅ Verificación de firma Git |
-| **Meta Research** | `github.com/facebookresearch` | ✅ Verificación de firma Git |
+| Fuente | Dominio | Verificación Requerida | Formatos Soportados |
+|--------|---------|------------------------|---------------------|
+| **HuggingFace** | `huggingface.co` | ✅ Checksum SHA256 (si disponible) | ONNX, TFLite, Safetensors |
+| **ONNX Model Zoo** | `github.com/onnx/models` | ✅ Verificación de firma Git | ONNX |
+| **Google Research / MediaPipe** | `github.com/google/mediapipe` | ✅ Verificación de firma Git | TFLite (nativo), ONNX (convertido) |
+| **Microsoft Research** | `github.com/microsoft` | ✅ Verificación de firma Git | ONNX, otros |
+| **Meta Research** | `github.com/facebookresearch` | ✅ Verificación de firma Git | ONNX, PyTorch |
+| **Tencent NCNN** | `github.com/Tencent/ncnn` | ✅ Verificación de firma Git | NCNN |
+| **Intel OpenVINO** | `github.com/openvinotoolkit` | ✅ Verificación de firma Git | OpenVINO IR |
+| **TensorFlow Hub** | `tensorflow.org` | ✅ Checksum SHA256 obligatorio | TFLite, SavedModel |
 
 ### 1.2 Fuentes de Confiabilidad Media (Nivel 2)
 
-| Fuente | Dominio | Verificación Requerida |
-|--------|---------|------------------------|
-| **PyTorch Hub** | `pytorch.org` | ✅ Checksum SHA256 obligatorio |
-| **TensorFlow Hub** | `tensorflow.org` | ✅ Checksum SHA256 obligatorio |
-| **Repositorios académicos** | Dominios `.edu` verificados | ✅ Verificación de autor + checksum |
+| Fuente | Dominio | Verificación Requerida | Formatos Soportados |
+|--------|---------|------------------------|---------------------|
+| **PyTorch Hub** | `pytorch.org` | ✅ Checksum SHA256 obligatorio | PyTorch (requiere conversión) |
+| **Repositorios académicos** | Dominios `.edu` verificados | ✅ Verificación de autor + checksum | Varios (verificar formato) |
 
 ### 1.3 Fuentes Prohibidas
 
