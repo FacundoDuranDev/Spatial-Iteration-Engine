@@ -48,6 +48,7 @@ id_rsa.pub
 
 # Archivos grandes que no deben estar en el repositorio
 *.sh
+!scripts/*.sh
 graveyard/*.sh
 **/Miniconda*.sh
 **/Anaconda*.sh
