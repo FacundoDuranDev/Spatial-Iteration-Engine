@@ -1,9 +1,22 @@
-# Auditoría de Seguridad - Modelos Descargados
+# Security Audit - Model Downloads
 
-**Fecha**: 2025-02-16  
+Este archivo registra todos los modelos descargados y sus verificaciones de seguridad.
+
+**Última actualización**: 2025-02-16
+
+---
+
+## Modelos Registrados
+
+Las entradas siguientes son generadas automáticamente por el script de descarga segura (`scripts/download_onnx_mediapipe.sh`).
+
+---
+
+## Auditoría Manual - Análisis Inicial (2025-02-16)
+
 **Auditor**: Análisis automatizado de archivos descargados
 
-## Resumen Ejecutivo
+### Resumen Ejecutivo
 
 ✅ **SEGURIDAD GENERAL: SEGURA**  
 ⚠️ **FORMATO: INCOMPATIBLE** (los archivos no son ONNX válidos)
@@ -12,9 +25,9 @@ Los archivos descargados **NO son maliciosos**, pero **NO son modelos ONNX váli
 
 ---
 
-## Análisis Detallado por Archivo
+### Análisis Detallado por Archivo
 
-### 1. `face_landmark.onnx` (298 KB)
+#### 1. `face_landmark.onnx` (298 KB)
 
 **Estado**: ❌ **NO VÁLIDO** (archivo HTML, no modelo)
 
@@ -33,7 +46,7 @@ Los archivos descargados **NO son maliciosos**, pero **NO son modelos ONNX váli
 
 ---
 
-### 2. `hand_landmark.onnx` (7.5 MB)
+#### 2. `hand_landmark.onnx` (7.5 MB)
 
 **Estado**: ⚠️ **FORMATO INCORRECTO** (ZIP con TFLite, no ONNX)
 
@@ -58,7 +71,7 @@ Los archivos descargados **NO son maliciosos**, pero **NO son modelos ONNX váli
 
 ---
 
-### 3. `pose_landmark.onnx` (9.0 MB)
+#### 3. `pose_landmark.onnx` (9.0 MB)
 
 **Estado**: ⚠️ **FORMATO INCORRECTO** (ZIP con TFLite, no ONNX)
 
@@ -164,3 +177,8 @@ pip install tf2onnx
 
 **Auditoría completada**: 2025-02-16
 
+---
+
+## Nota sobre Entradas Automáticas
+
+Las entradas siguientes son generadas automáticamente por el script de descarga segura. Cada modelo descargado usando `scripts/download_onnx_mediapipe.sh` será registrado aquí con todas sus verificaciones de seguridad.
