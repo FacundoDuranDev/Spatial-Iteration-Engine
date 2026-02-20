@@ -65,3 +65,5 @@ Cualquier modelo ONNX que cumpla estos requisitos debería funcionar.
 2. Buscar modelos de landmarks específicos en HuggingFace
 3. Considerar usar MediaPipe Python como fallback si no hay modelos ONNX disponibles
 
+
+
