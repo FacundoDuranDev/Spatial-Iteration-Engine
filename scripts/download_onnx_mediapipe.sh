@@ -110,13 +110,22 @@ verify_format() {
 verify_not_executable() {
   local file="$1"
   
+  if [[ ! -f "$file" ]]; then
+    echo -e "${RED}ERROR: Archivo no existe: $file${NC}" >&2
+    return 1
+  fi
+  
   if [[ -x "$file" ]]; then
     echo -e "${RED}ERROR: Archivo es ejecutable (riesgo de seguridad)${NC}" >&2
+    # Intentar quitar permisos de ejecución
+    chmod 644 "$file" 2>/dev/null || true
     return 1
   fi
   
   # Asegurar permisos correctos
-  chmod 644 "$file"
+  chmod 644 "$file" 2>/dev/null || {
+    echo -e "${YELLOW}WARNING: No se pudieron cambiar permisos de $file${NC}" >&2
+  }
   echo -e "${GREEN}✓ Permisos verificados (644, no ejecutable)${NC}"
   return 0
 }
@@ -126,12 +135,22 @@ verify_size() {
   local min_size="$2"
   local max_size="$3"
   
+  if [[ ! -f "$file" ]]; then
+    echo -e "${RED}ERROR: Archivo no existe: $file${NC}" >&2
+    return 1
+  fi
+  
   local file_size
   if [[ "$(uname)" == "Darwin" ]]; then
     file_size=$(stat -f%z "$file" 2>/dev/null || echo "0")
   else
     file_size=$(stat -c%s "$file" 2>/dev/null || echo "0")
   fi
+  
+  # Convertir a número para comparación (asegurar que son enteros)
+  file_size=$((file_size + 0))
+  min_size=$((min_size + 0))
+  max_size=$((max_size + 0))
   
   if [[ "$file_size" -lt "$min_size" ]]; then
     echo -e "${RED}ERROR: Archivo muy pequeño ($file_size bytes), posible corrupción${NC}" >&2
@@ -253,8 +272,18 @@ log_to_audit() {
     file_size=$(stat -c%s "$file" 2>/dev/null || echo "0")
   fi
   
-  local checksum=$(sha256sum "$file" | awk '{print $1}')
-  local timestamp=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+  # Calcular MB sin bc (usando awk o cálculo simple)
+  local size_mb
+  if command -v awk >/dev/null 2>&1; then
+    size_mb=$(awk "BEGIN {printf \"%.2f\", $file_size/1024/1024}")
+  else
+    # Fallback: cálculo simple con bash
+    size_mb=$((file_size / 1024 / 1024))
+    size_mb="${size_mb}.$(( (file_size % (1024*1024)) * 100 / (1024*1024) ))"
+  fi
+  
+  local checksum=$(sha256sum "$file" 2>/dev/null | awk '{print $1}' || echo "N/A")
+  local timestamp=$(date -u +"%Y-%m-%d %H:%M:%S UTC" 2>/dev/null || date +"%Y-%m-%d %H:%M:%S")
   
   # Crear entrada de auditoría
   local audit_entry="
@@ -263,7 +292,7 @@ log_to_audit() {
 - **Archivo**: \`$file\`
 - **URL**: \`$url\`
 - **Formato**: $format
-- **Tamaño**: $file_size bytes ($(echo "scale=2; $file_size/1024/1024" | bc) MB)
+- **Tamaño**: $file_size bytes ($size_mb MB)
 - **SHA256**: \`$checksum\`
 - **Fuente**: Verificada (whitelist)
 - **Verificaciones**: ✅ Checksum, ✅ Formato, ✅ Permisos, ✅ Tamaño, ✅ Strings
@@ -271,19 +300,33 @@ log_to_audit() {
 
 ---"
   
-  # Agregar al inicio del archivo de auditoría (después del header)
+  # Agregar al archivo de auditoría
   if [[ -f "$AUDIT_FILE" ]]; then
-    # Insertar después de la primera línea de markdown
-    sed -i "1a\\$audit_entry" "$AUDIT_FILE" 2>/dev/null || {
-      # Fallback si sed -i no funciona
+    # Buscar sección "## Modelos Registrados" o "## Entradas Automáticas"
+    if grep -q "## Modelos Registrados\|## Entradas Automáticas" "$AUDIT_FILE" 2>/dev/null; then
+      # Insertar después de la sección de modelos registrados
+      if command -v sed >/dev/null 2>&1 && [[ "$(uname)" != "Darwin" ]]; then
+        sed -i "/## Modelos Registrados\|## Entradas Automáticas/a\\$audit_entry" "$AUDIT_FILE" 2>/dev/null || {
+          echo "$audit_entry" >> "$AUDIT_FILE"
+        }
+      else
+        # Fallback: agregar al final
+        echo "$audit_entry" >> "$AUDIT_FILE"
+      fi
+    else
+      # Si no hay sección, agregar al final
       echo "$audit_entry" >> "$AUDIT_FILE"
-    }
+    fi
   else
     # Crear archivo de auditoría si no existe
     cat > "$AUDIT_FILE" << EOF
 # Security Audit - Model Downloads
 
 Este archivo registra todos los modelos descargados y sus verificaciones de seguridad.
+
+## Modelos Registrados
+
+Las entradas siguientes son generadas automáticamente por el script de descarga segura (\`scripts/download_onnx_mediapipe.sh\`).
 
 $audit_entry
 EOF
