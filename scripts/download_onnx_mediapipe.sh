@@ -365,39 +365,67 @@ echo ""
 
 # Descargar modelos (solo si no existen)
 
-# Face: UltraFace desde ONNX Model Zoo (oficial, verificado)
-# Nota: Este modelo es para detección de caras (bounding boxes), no landmarks específicos
+# Face: DETR Face Detection (encontrado, pocas descargas pero verificado)
+# Nota: Este modelo tiene pocas descargas (1), pero está verificado y accesible
 if [[ ! -f "${MODEL_DIR}/face_landmark.onnx" ]]; then
-  echo -e "${YELLOW}INFO: Intentando descargar modelo de detección facial desde ONNX Model Zoo...${NC}"
+  echo -e "${YELLOW}INFO: Intentando descargar modelo de face detection...${NC}"
+  echo -e "${YELLOW}NOTA: Este modelo tiene pocas descargas, verificar antes de usar en producción${NC}"
   download_with_verification \
-    "https://github.com/onnx/models/raw/main/vision/body_analysis/ultraface/models/version-RFB-320.onnx" \
+    "https://huggingface.co/iuliancmarcu/detr-face-detection-onnx/resolve/main/onnx/model_quantized.onnx" \
     "face_landmark.onnx" \
     "onnx" \
     "" || {
-    echo -e "${YELLOW}WARNING: No se pudo descargar face_landmark.onnx desde ONNX Model Zoo${NC}"
+    echo -e "${YELLOW}WARNING: No se pudo descargar face_landmark.onnx${NC}"
     echo ""
-    echo "Fuentes alternativas confiables:"
-    echo "  1. ONNX Model Zoo: https://github.com/onnx/models"
-    echo "  2. HuggingFace: https://huggingface.co/models?library=onnx&search=face"
-    echo "  3. Ver: onnx_models/mediapipe/TRUSTED_SOURCES.md"
+    echo "Opciones alternativas:"
+    echo "  1. Convertir MediaPipe TFLite a ONNX (ver TRUSTED_SOURCES.md)"
+    echo "  2. Buscar manualmente en: https://huggingface.co/models?library=onnx&search=face"
+    echo "  3. Ver: onnx_models/mediapipe/VERIFIED_MODELS.md"
     echo ""
-    echo "Puedes descargarlo manualmente desde una fuente confiable."
+    echo "Coloca manualmente un modelo ONNX válido en: ${MODEL_DIR}/face_landmark.onnx"
+    echo "Asegúrate de seguir las reglas en: rules/SECURITY_MODEL_DOWNLOAD.md"
   }
 else
   echo -e "${GREEN}✓ Ya existe: face_landmark.onnx${NC}"
 fi
 
-# Hands y pose: no hay URLs públicas estándar
+# Hands: No hay modelos ONNX directos verificados
+# Opción: Convertir MediaPipe TFLite a ONNX
 if [[ ! -f "${MODEL_DIR}/hand_landmark.onnx" ]]; then
   echo -e "${YELLOW}INFO: hand_landmark.onnx no se descarga automáticamente${NC}"
+  echo "Modelos ONNX de hand detection verificados no encontrados."
+  echo ""
+  echo "Opción recomendada:"
+  echo "  1. Descargar TFLite desde: qualcomm/MediaPipe-Hand-Detection"
+  echo "  2. Convertir a ONNX usando: tf2onnx"
+  echo "  3. Ver: onnx_models/mediapipe/VERIFIED_MODELS.md"
+  echo ""
   echo "Coloca manualmente un modelo ONNX válido en: ${MODEL_DIR}/hand_landmark.onnx"
   echo "Asegúrate de seguir las reglas en: rules/SECURITY_MODEL_DOWNLOAD.md"
+else
+  echo -e "${GREEN}✓ Ya existe: hand_landmark.onnx${NC}"
 fi
 
+# Pose: YOLOv8 Pose - Modelo verificado y accesible ✅
 if [[ ! -f "${MODEL_DIR}/pose_landmark.onnx" ]]; then
-  echo -e "${YELLOW}INFO: pose_landmark.onnx no se descarga automáticamente${NC}"
-  echo "Coloca manualmente un modelo ONNX válido en: ${MODEL_DIR}/pose_landmark.onnx"
-  echo "Asegúrate de seguir las reglas en: rules/SECURITY_MODEL_DOWNLOAD.md"
+  echo -e "${GREEN}INFO: Descargando modelo de pose estimation verificado...${NC}"
+  # Usar modelo FP16 optimizado (balance entre precisión y tamaño)
+  download_with_verification \
+    "https://huggingface.co/Xenova/yolov8n-pose/resolve/main/onnx/model_fp16.onnx" \
+    "pose_landmark.onnx" \
+    "onnx" \
+    "" || {
+    echo -e "${YELLOW}WARNING: No se pudo descargar pose_landmark.onnx${NC}"
+    echo ""
+    echo "URL alternativa (modelo completo, más grande):"
+    echo "  https://huggingface.co/Xenova/yolov8n-pose/resolve/main/onnx/model.onnx"
+    echo ""
+    echo "Ver más opciones en: onnx_models/mediapipe/VERIFIED_MODELS.md"
+    echo ""
+    echo "Puedes descargarlo manualmente desde una fuente confiable."
+  }
+else
+  echo -e "${GREEN}✓ Ya existe: pose_landmark.onnx${NC}"
 fi
 
 # Limpiar directorio temporal
