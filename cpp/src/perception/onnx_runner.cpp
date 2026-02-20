@@ -59,6 +59,59 @@ std::vector<float> output_to_xy(const float* data, size_t count) {
   return out;
 }
 
+/** Post-process YOLOv8 pose output: filter valid detections.
+ * YOLOv8 pose outputs shape (1, num_detections, num_keypoints*3+4+1) where:
+ * - First 4 values: bbox (x, y, w, h)
+ * - Next 1 value: confidence
+ * - Remaining: keypoints (x, y, confidence) for each keypoint
+ * 
+ * This function extracts keypoints from the first valid detection (confidence > 0.5).
+ */
+std::vector<float> postprocess_yolov8_pose(const float* data, size_t count, int num_keypoints = 17) {
+  std::vector<float> out;
+  
+  // YOLOv8 pose output format: (num_detections, 4+1+num_keypoints*3)
+  // Each detection: [bbox_x, bbox_y, bbox_w, bbox_h, conf, kp1_x, kp1_y, kp1_conf, ...]
+  const int detection_size = 4 + 1 + num_keypoints * 3;  // bbox(4) + conf(1) + keypoints(3*num_keypoints)
+  
+  if (count < detection_size) {
+    // Not enough data for even one detection, return as-is
+    return output_to_xy(data, count);
+  }
+  
+  // Find first detection with confidence > 0.5
+  size_t num_detections = count / detection_size;
+  for (size_t i = 0; i < num_detections; ++i) {
+    const float* det = data + i * detection_size;
+    float conf = det[4];  // Confidence is at index 4
+    
+    if (conf > 0.5f) {
+      // Extract keypoints (skip bbox and conf)
+      const float* keypoints = det + 5;  // Start after bbox(4) + conf(1)
+      out.reserve(num_keypoints * 2);
+      for (int k = 0; k < num_keypoints; ++k) {
+        float kp_x = keypoints[k * 3 + 0];
+        float kp_y = keypoints[k * 3 + 1];
+        float kp_conf = keypoints[k * 3 + 2];
+        
+        // Only include keypoints with confidence > 0.3
+        if (kp_conf > 0.3f) {
+          out.push_back(kp_x);
+          out.push_back(kp_y);
+        } else {
+          // Invalid keypoint, use (0, 0) as placeholder
+          out.push_back(0.0f);
+          out.push_back(0.0f);
+        }
+      }
+      return out;  // Return first valid detection
+    }
+  }
+  
+  // No valid detections found, return empty
+  return {};
+}
+
 }  // namespace
 
 OnnxRunner::OnnxRunner() = default;
@@ -98,7 +151,11 @@ bool OnnxRunner::load(const std::string& model_path) {
 
     loaded_ = true;
     return true;
-  } catch (const std::exception&) {
+  } catch (const std::exception& e) {
+    // Log error for debugging (en desarrollo, en producción podría ser silencioso)
+    #ifdef DEBUG
+    std::cerr << "OnnxRunner::load failed: " << e.what() << " for path: " << model_path << std::endl;
+    #endif
     impl_.reset();
     loaded_ = false;
     return false;
@@ -133,6 +190,23 @@ std::vector<float> OnnxRunner::run(const std::uint8_t* image, int width, int hei
     const float* data = out.GetTensorData<float>();
     if (!data) return {};
 
+    // Check output shape to determine if it's YOLOv8 format
+    auto shape = info.GetShape();
+    if (shape.size() >= 2 && shape[1] > 50) {
+      // Likely YOLOv8 format: (1, num_detections, detection_size)
+      // Try post-processing for YOLOv8 pose (17 keypoints)
+      auto yolov8_result = postprocess_yolov8_pose(data, count, 17);
+      if (!yolov8_result.empty()) {
+        return yolov8_result;
+      }
+      // If post-processing didn't work, try with 33 keypoints (full body)
+      yolov8_result = postprocess_yolov8_pose(data, count, 33);
+      if (!yolov8_result.empty()) {
+        return yolov8_result;
+      }
+    }
+
+    // Default: use original output_to_xy
     return output_to_xy(data, count);
   } catch (const std::exception&) {
     return {};
