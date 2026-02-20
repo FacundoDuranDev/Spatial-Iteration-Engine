@@ -201,16 +201,32 @@ download_with_verification() {
   local temp_file="${TEMP_DIR}/${output_name}"
   echo "Descargando a temporal: $temp_file"
   
+  # Intentar con wget primero, luego curl
   if command -v wget >/dev/null 2>&1; then
-    wget -q --show-progress -O "$temp_file" "$url" || {
-      echo -e "${RED}ERROR: Fallo en descarga con wget${NC}" >&2
+    if wget -q --show-progress -O "$temp_file" "$url" 2>&1; then
+      echo -e "${GREEN}✓ Descarga completada con wget${NC}"
+    elif command -v curl >/dev/null 2>&1; then
+      echo -e "${YELLOW}wget falló, intentando con curl...${NC}"
+      if curl -L -f -o "$temp_file" "$url" 2>/dev/null; then
+        echo -e "${GREEN}✓ Descarga completada con curl${NC}"
+      else
+        echo -e "${RED}ERROR: Fallo en descarga con curl${NC}" >&2
+        rm -f "$temp_file"
+        return 1
+      fi
+    else
+      echo -e "${RED}ERROR: Fallo en descarga con wget y curl no disponible${NC}" >&2
+      rm -f "$temp_file"
       return 1
-    }
+    fi
   elif command -v curl >/dev/null 2>&1; then
-    curl -sL -o "$temp_file" "$url" || {
+    if curl -L -f -o "$temp_file" "$url" 2>/dev/null; then
+      echo -e "${GREEN}✓ Descarga completada con curl${NC}"
+    else
       echo -e "${RED}ERROR: Fallo en descarga con curl${NC}" >&2
+      rm -f "$temp_file"
       return 1
-    }
+    fi
   else
     echo -e "${RED}ERROR: No se encontró wget ni curl${NC}" >&2
     return 1
