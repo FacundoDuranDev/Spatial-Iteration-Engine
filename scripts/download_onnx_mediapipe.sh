@@ -365,14 +365,22 @@ echo ""
 
 # Descargar modelos (solo si no existen)
 
-# Face: Qualcomm MediaPipe Face Landmark Detector
+# Face: UltraFace desde ONNX Model Zoo (oficial, verificado)
+# Nota: Este modelo es para detección de caras (bounding boxes), no landmarks específicos
 if [[ ! -f "${MODEL_DIR}/face_landmark.onnx" ]]; then
+  echo -e "${YELLOW}INFO: Intentando descargar modelo de detección facial desde ONNX Model Zoo...${NC}"
   download_with_verification \
-    "https://huggingface.co/qualcomm/MediaPipe-Face-Detection/resolve/main/MediaPipeFaceLandmarkDetector.onnx" \
+    "https://github.com/onnx/models/raw/main/vision/body_analysis/ultraface/models/version-RFB-320.onnx" \
     "face_landmark.onnx" \
     "onnx" \
     "" || {
-    echo -e "${YELLOW}WARNING: No se pudo descargar face_landmark.onnx${NC}"
+    echo -e "${YELLOW}WARNING: No se pudo descargar face_landmark.onnx desde ONNX Model Zoo${NC}"
+    echo ""
+    echo "Fuentes alternativas confiables:"
+    echo "  1. ONNX Model Zoo: https://github.com/onnx/models"
+    echo "  2. HuggingFace: https://huggingface.co/models?library=onnx&search=face"
+    echo "  3. Ver: onnx_models/mediapipe/TRUSTED_SOURCES.md"
+    echo ""
     echo "Puedes descargarlo manualmente desde una fuente confiable."
   }
 else
