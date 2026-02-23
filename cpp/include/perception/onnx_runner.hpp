@@ -37,6 +37,7 @@ class OnnxRunner {
   bool loaded_ = false;
   int input_size_ = 192;
   std::unique_ptr<OnnxRunnerImpl> impl_;
+  std::vector<float> input_data_;
 };
 
 }  // namespace perception

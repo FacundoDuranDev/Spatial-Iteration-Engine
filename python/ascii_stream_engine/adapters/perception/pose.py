@@ -28,6 +28,13 @@ class PoseLandmarkAnalyzer(BaseAnalyzer):
             out = _perception_cpp.detect_pose(frame)
             if out is None or out.size == 0:
                 return {}
+            # Normalizar coordenadas de píxeles absolutos a 0-1
+            # El modelo YOLOv8 devuelve coordenadas en píxeles, pero el renderer espera 0-1
+            h, w = frame.shape[:2]
+            if h > 0 and w > 0:
+                out[:, 0] /= w
+                out[:, 1] /= h
+                np.clip(out, 0.0, 1.0, out=out)
             return {"joints": out}
         except Exception:
             return {}

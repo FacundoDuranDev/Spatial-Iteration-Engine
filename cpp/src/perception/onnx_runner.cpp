@@ -2,9 +2,11 @@
 
 #ifdef USE_ONNXRUNTIME
 #include <algorithm>
+#include <cstdlib>
 #include <cstring>
 #include <onnxruntime/core/session/onnxruntime_cxx_api.h>
 #include <stdexcept>
+#include <thread>
 #include <vector>
 
 namespace perception {
@@ -66,8 +68,21 @@ std::vector<float> output_to_xy(const float* data, size_t count) {
  * - Remaining: keypoints (x, y, confidence) for each keypoint
  * 
  * This function extracts keypoints from the first valid detection (confidence > 0.5).
+ * 
+ * @param data Raw output tensor data
+ * @param count Total number of elements
+ * @param num_keypoints Number of keypoints (17 for YOLOv8n-pose)
+ * @param model_size Size of the model input (typically 640)
+ * @param orig_width Original image width
+ * @param orig_height Original image height
  */
-std::vector<float> postprocess_yolov8_pose(const float* data, size_t count, int num_keypoints = 17) {
+std::vector<float> postprocess_yolov8_pose(
+    const float* data, 
+    size_t count, 
+    int num_keypoints = 17,
+    int model_size = 640,
+    int orig_width = 640,
+    int orig_height = 480) {
   std::vector<float> out;
   
   // YOLOv8 pose output format: (num_detections, 4+1+num_keypoints*3)
@@ -78,6 +93,10 @@ std::vector<float> postprocess_yolov8_pose(const float* data, size_t count, int 
     // Not enough data for even one detection, return as-is
     return output_to_xy(data, count);
   }
+  
+  // Calculate scale factors to convert from model space to original image space
+  float scale_x = static_cast<float>(orig_width) / static_cast<float>(model_size);
+  float scale_y = static_cast<float>(orig_height) / static_cast<float>(model_size);
   
   // Find first detection with confidence > 0.5
   size_t num_detections = count / detection_size;
@@ -96,8 +115,9 @@ std::vector<float> postprocess_yolov8_pose(const float* data, size_t count, int 
         
         // Only include keypoints with confidence > 0.3
         if (kp_conf > 0.3f) {
-          out.push_back(kp_x);
-          out.push_back(kp_y);
+          // Scale from model space (model_size x model_size) to original image space
+          out.push_back(kp_x * scale_x);
+          out.push_back(kp_y * scale_y);
         } else {
           // Invalid keypoint, use (0, 0) as placeholder
           out.push_back(0.0f);
@@ -122,7 +142,16 @@ bool OnnxRunner::load(const std::string& model_path) {
   if (model_path.empty()) return false;
   try {
     impl_ = std::make_unique<OnnxRunnerImpl>();
-    impl_->session_options.SetIntraOpNumThreads(1);
+    int num_threads = 4;
+    const char* env_threads = std::getenv("ONNX_NUM_THREADS");
+    if (env_threads && env_threads[0] != '\0') {
+      int parsed = std::atoi(env_threads);
+      if (parsed > 0 && parsed <= 32) num_threads = parsed;
+    }
+    unsigned int hw = std::thread::hardware_concurrency();
+    if (hw > 0 && num_threads > static_cast<int>(hw))
+      num_threads = static_cast<int>(hw);
+    impl_->session_options.SetIntraOpNumThreads(num_threads);
     impl_->session_options.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_EXTENDED);
     impl_->session = std::make_unique<Ort::Session>(impl_->env, model_path.c_str(), impl_->session_options);
 
@@ -149,6 +178,7 @@ bool OnnxRunner::load(const std::string& model_path) {
       input_size_ = (h == w) ? h : 192;
     }
 
+    input_data_.resize(1 * 3 * input_size_ * input_size_);
     loaded_ = true;
     return true;
   } catch (const std::exception& e) {
@@ -168,13 +198,12 @@ std::vector<float> OnnxRunner::run(const std::uint8_t* image, int width, int hei
 
   try {
     const int size = input_size_;
-    std::vector<float> input_data(1 * 3 * size * size);
-    resize_and_normalize_nchw(image, width, height, size, input_data.data());
+    resize_and_normalize_nchw(image, width, height, size, input_data_.data());
 
     std::array<int64_t, 4> input_shape = {1, 3, size, size};
     Ort::MemoryInfo mem_info = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
     Ort::Value input_tensor = Ort::Value::CreateTensor<float>(
-        mem_info, input_data.data(), input_data.size(),
+        mem_info, input_data_.data(), input_data_.size(),
         input_shape.data(), input_shape.size());
 
     auto output_tensors = impl_->session->Run(
@@ -195,12 +224,13 @@ std::vector<float> OnnxRunner::run(const std::uint8_t* image, int width, int hei
     if (shape.size() >= 2 && shape[1] > 50) {
       // Likely YOLOv8 format: (1, num_detections, detection_size)
       // Try post-processing for YOLOv8 pose (17 keypoints)
-      auto yolov8_result = postprocess_yolov8_pose(data, count, 17);
+      // Scale coordinates from model space (input_size x input_size) to original image space
+      auto yolov8_result = postprocess_yolov8_pose(data, count, 17, size, width, height);
       if (!yolov8_result.empty()) {
         return yolov8_result;
       }
       // If post-processing didn't work, try with 33 keypoints (full body)
-      yolov8_result = postprocess_yolov8_pose(data, count, 33);
+      yolov8_result = postprocess_yolov8_pose(data, count, 33, size, width, height);
       if (!yolov8_result.empty()) {
         return yolov8_result;
       }
