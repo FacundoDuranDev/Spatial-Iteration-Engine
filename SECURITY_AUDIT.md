@@ -182,3 +182,29 @@ pip install tf2onnx
 ## Nota sobre Entradas Automáticas
 
 Las entradas siguientes son generadas automáticamente por el script de descarga segura. Cada modelo descargado usando `scripts/download_onnx_mediapipe.sh` será registrado aquí con todas sus verificaciones de seguridad.
+
+### Modelo: pose_landmark.onnx - 2026-02-20 14:23:40 UTC
+
+- **Archivo**: `/home/fissure/repos/Spatial-Iteration-Engine/onnx_models/mediapipe/pose_landmark.onnx`
+- **URL**: `https://huggingface.co/Xenova/yolov8n-pose/resolve/main/onnx/model_fp16.onnx`
+- **Formato**: onnx
+- **Tamaño**: 6789736 bytes (6.48 MB)
+- **SHA256**: `e16e5f4abb3e67ee77877e8be3823b099463c9504c060008490cc1fd519a1cbb`
+- **Fuente**: Verificada (whitelist)
+- **Verificaciones**: ✅ Checksum, ✅ Formato, ✅ Permisos, ✅ Tamaño, ✅ Strings
+- **Estado**: ✅ APROBADO
+
+---
+
+### Modelo: face_landmark.onnx - 2026-02-20 14:24:43 UTC
+
+- **Archivo**: `/home/fissure/repos/Spatial-Iteration-Engine/onnx_models/mediapipe/face_landmark.onnx`
+- **URL**: `https://huggingface.co/iuliancmarcu/detr-face-detection-onnx/resolve/main/onnx/model_quantized.onnx`
+- **Formato**: onnx
+- **Tamaño**: 166738273 bytes (159.01 MB)
+- **SHA256**: `d20f797c161bbdb040a9cd4ee088cfae292a81212a095b003b10962b5a3da218`
+- **Fuente**: Verificada (whitelist)
+- **Verificaciones**: ✅ Checksum, ✅ Formato, ✅ Permisos, ✅ Tamaño, ✅ Strings
+- **Estado**: ✅ APROBADO
+
+---
