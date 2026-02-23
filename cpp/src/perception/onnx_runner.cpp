@@ -196,6 +196,7 @@ std::vector<float> OnnxRunner::run(const std::uint8_t* image, int width, int hei
   if (!loaded_ || !impl_ || !image || width <= 0 || height <= 0)
     return {};
 
+  std::lock_guard<std::mutex> lock(run_mutex_);
   try {
     const int size = input_size_;
     resize_and_normalize_nchw(image, width, height, size, input_data_.data());
