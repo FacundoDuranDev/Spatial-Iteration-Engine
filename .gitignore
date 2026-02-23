@@ -87,6 +87,12 @@ Makefile
 Thumbs.db
 desktop.ini
 
+# Claude Code
+CLAUDE.md
+
+# Research (internal notes, not versioned)
+research/
+
 # IDEs y editores
 .vscode/
 .idea/
@@ -144,6 +150,11 @@ data/processed/
 *.flv
 *.wmv
 *.webm
+
+# Imágenes de prueba (solo para testing interno)
+test_images/
+*.test.jpg
+*.test.png
 
 # Archivos de backup
 *.bak
