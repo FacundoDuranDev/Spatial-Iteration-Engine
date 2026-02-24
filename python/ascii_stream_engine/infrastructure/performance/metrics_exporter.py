@@ -30,7 +30,7 @@ class MetricsExporter:
         """
         self._aggregator = aggregator
         self._budget_tracker = budget_tracker
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
 
     def export_snapshot(self) -> str:
         """Export current state as a JSON string.

@@ -32,7 +32,15 @@ class TestBudgetTrackerBasic:
 
     def test_phase_budgets_defined(self):
         """All expected phases have budgets."""
-        expected = {"capture", "analysis", "tracking", "transformation", "filtering", "rendering", "writing"}
+        expected = {
+            "capture",
+            "analysis",
+            "tracking",
+            "transformation",
+            "filtering",
+            "rendering",
+            "writing",
+        }
         assert set(BudgetTracker.PHASE_BUDGETS.keys()) == expected
 
 

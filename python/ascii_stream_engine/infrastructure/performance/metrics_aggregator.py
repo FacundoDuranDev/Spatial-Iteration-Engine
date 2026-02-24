@@ -104,13 +104,9 @@ class MetricsAggregator:
         now = time.perf_counter()
         cutoff = now - seconds
         with self._lock:
-            return [
-                dict(s) for s in self._snapshots if s["timestamp"] >= cutoff
-            ]
+            return [dict(s) for s in self._snapshots if s["timestamp"] >= cutoff]
 
-    def get_trend(
-        self, metric_key: str, seconds: float = 60.0
-    ) -> List[Tuple[float, float]]:
+    def get_trend(self, metric_key: str, seconds: float = 60.0) -> List[Tuple[float, float]]:
         """Get a time-series of a specific metric.
 
         Args:

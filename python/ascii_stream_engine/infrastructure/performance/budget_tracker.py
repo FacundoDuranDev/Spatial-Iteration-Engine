@@ -151,7 +151,9 @@ class BudgetTracker:
                     utilization[phase] = 0.0
                     continue
                 avg_ms = (sum(history) / len(history)) * 1000.0
-                utilization[phase] = (avg_ms / budget.budget_ms) * 100.0 if budget.budget_ms > 0 else 0.0
+                utilization[phase] = (
+                    (avg_ms / budget.budget_ms) * 100.0 if budget.budget_ms > 0 else 0.0
+                )
         return utilization
 
     def get_p95(self, phase: str) -> float:
