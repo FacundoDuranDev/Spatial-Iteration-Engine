@@ -1,7 +1,7 @@
 """Tests for Phase 5: Performance Monitor Panel."""
 
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from ascii_stream_engine.domain.config import EngineConfig
 from ascii_stream_engine.tests import has_module

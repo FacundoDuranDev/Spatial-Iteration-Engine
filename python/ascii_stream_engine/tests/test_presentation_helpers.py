@@ -3,7 +3,7 @@
 import threading
 import time
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from ascii_stream_engine.tests import has_module
 
