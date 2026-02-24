@@ -24,23 +24,47 @@ struct OnnxRunnerImpl {
 
 namespace {
 
-/** Resize RGB image (width*height*3) to target_size x target_size, nearest neighbor, into float NCHW 0..1. */
-void resize_and_normalize_nchw(
+struct LetterboxInfo {
+  float scale;   // min(target/src_w, target/src_h)
+  float pad_x;   // horizontal padding in model pixels
+  float pad_y;   // vertical padding in model pixels
+};
+
+/** Letterbox resize: maintain aspect ratio, pad with black, output float NCHW 0..1. */
+void letterbox_and_normalize_nchw(
     const std::uint8_t* src,
     int src_w,
     int src_h,
     int target_size,
-    float* dst) {
+    float* dst,
+    LetterboxInfo& info) {
+  float scale_w = static_cast<float>(target_size) / src_w;
+  float scale_h = static_cast<float>(target_size) / src_h;
+  info.scale = std::min(scale_w, scale_h);
+
+  int new_w = static_cast<int>(src_w * info.scale);
+  int new_h = static_cast<int>(src_h * info.scale);
+  info.pad_x = (target_size - new_w) / 2.0f;
+  info.pad_y = (target_size - new_h) / 2.0f;
+
+  // Initialize to black
+  std::memset(dst, 0, sizeof(float) * 3 * target_size * target_size);
+
+  int dx_off = static_cast<int>(info.pad_x);
+  int dy_off = static_cast<int>(info.pad_y);
   const int c = 3;
-  for (int dy = 0; dy < target_size; ++dy) {
-    for (int dx = 0; dx < target_size; ++dx) {
-      int sx = (dx * src_w) / target_size;
-      int sy = (dy * src_h) / target_size;
+
+  for (int dy = 0; dy < new_h; ++dy) {
+    for (int dx = 0; dx < new_w; ++dx) {
+      int sx = dx * src_w / new_w;
+      int sy = dy * src_h / new_h;
       if (sx >= src_w) sx = src_w - 1;
       if (sy >= src_h) sy = src_h - 1;
       const std::uint8_t* p = src + (sy * src_w + sx) * c;
+      int ox = dx_off + dx;
+      int oy = dy_off + dy;
       for (int ch = 0; ch < c; ++ch)
-        dst[ch * target_size * target_size + dy * target_size + dx] = p[ch] / 255.f;
+        dst[ch * target_size * target_size + oy * target_size + ox] = p[ch] / 255.f;
     }
   }
 }
@@ -76,59 +100,44 @@ std::vector<float> output_to_xy(const float* data, size_t count) {
  * @param orig_width Original image width
  * @param orig_height Original image height
  */
+/** Post-process YOLOv8 pose output with letterbox-aware coordinate mapping.
+ * Returns keypoints in PIXEL coordinates of the original image. */
 std::vector<float> postprocess_yolov8_pose(
-    const float* data, 
-    size_t count, 
-    int num_keypoints = 17,
-    int model_size = 640,
-    int orig_width = 640,
-    int orig_height = 480) {
+    const float* data,
+    size_t count,
+    int num_keypoints,
+    const LetterboxInfo& lb) {
   std::vector<float> out;
-  
-  // YOLOv8 pose output format: (num_detections, 4+1+num_keypoints*3)
-  // Each detection: [bbox_x, bbox_y, bbox_w, bbox_h, conf, kp1_x, kp1_y, kp1_conf, ...]
-  const int detection_size = 4 + 1 + num_keypoints * 3;  // bbox(4) + conf(1) + keypoints(3*num_keypoints)
-  
-  if (count < detection_size) {
-    // Not enough data for even one detection, return as-is
-    return output_to_xy(data, count);
-  }
-  
-  // Calculate scale factors to convert from model space to original image space
-  float scale_x = static_cast<float>(orig_width) / static_cast<float>(model_size);
-  float scale_y = static_cast<float>(orig_height) / static_cast<float>(model_size);
-  
-  // Find first detection with confidence > 0.5
+
+  const int detection_size = 4 + 1 + num_keypoints * 3;
+  if (count < static_cast<size_t>(detection_size))
+    return {};
+
   size_t num_detections = count / detection_size;
   for (size_t i = 0; i < num_detections; ++i) {
     const float* det = data + i * detection_size;
-    float conf = det[4];  // Confidence is at index 4
-    
+    float conf = det[4];
+
     if (conf > 0.5f) {
-      // Extract keypoints (skip bbox and conf)
-      const float* keypoints = det + 5;  // Start after bbox(4) + conf(1)
+      const float* keypoints = det + 5;
       out.reserve(num_keypoints * 2);
       for (int k = 0; k < num_keypoints; ++k) {
         float kp_x = keypoints[k * 3 + 0];
         float kp_y = keypoints[k * 3 + 1];
         float kp_conf = keypoints[k * 3 + 2];
-        
-        // Only include keypoints with confidence > 0.3
+
         if (kp_conf > 0.3f) {
-          // Scale from model space (model_size x model_size) to original image space
-          out.push_back(kp_x * scale_x);
-          out.push_back(kp_y * scale_y);
+          // Undo letterbox: model pixels → original pixels
+          out.push_back((kp_x - lb.pad_x) / lb.scale);
+          out.push_back((kp_y - lb.pad_y) / lb.scale);
         } else {
-          // Invalid keypoint, use (0, 0) as placeholder
           out.push_back(0.0f);
           out.push_back(0.0f);
         }
       }
-      return out;  // Return first valid detection
+      return out;
     }
   }
-  
-  // No valid detections found, return empty
   return {};
 }
 
@@ -199,7 +208,8 @@ std::vector<float> OnnxRunner::run(const std::uint8_t* image, int width, int hei
   std::lock_guard<std::mutex> lock(run_mutex_);
   try {
     const int size = input_size_;
-    resize_and_normalize_nchw(image, width, height, size, input_data_.data());
+    LetterboxInfo lb{};
+    letterbox_and_normalize_nchw(image, width, height, size, input_data_.data(), lb);
 
     std::array<int64_t, 4> input_shape = {1, 3, size, size};
     Ort::MemoryInfo mem_info = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
@@ -223,36 +233,37 @@ std::vector<float> OnnxRunner::run(const std::uint8_t* image, int width, int hei
       if (n > best_count) { best_count = n; best_idx = i; }
     }
 
-    const auto& out = output_tensors[best_idx];
-    auto info = out.GetTensorTypeAndShapeInfo();
-    size_t count = info.GetElementCount();
-    const float* data = out.GetTensorData<float>();
+    const auto& out_tensor = output_tensors[best_idx];
+    auto tinfo = out_tensor.GetTensorTypeAndShapeInfo();
+    size_t count = tinfo.GetElementCount();
+    const float* data = out_tensor.GetTensorData<float>();
     if (!data) return {};
 
-    // YOLOv8 detection models produce very large outputs (>10k elements)
-    // with many anchors. Landmark models produce much smaller outputs.
+    // YOLOv8 detection models produce very large outputs (>10k elements).
     if (count > 10000) {
-      auto yolov8_result = postprocess_yolov8_pose(data, count, 17, size, width, height);
-      if (!yolov8_result.empty()) {
-        return yolov8_result;
-      }
-      yolov8_result = postprocess_yolov8_pose(data, count, 33, size, width, height);
-      if (!yolov8_result.empty()) {
-        return yolov8_result;
-      }
+      auto yolov8_result = postprocess_yolov8_pose(data, count, 17, lb);
+      if (!yolov8_result.empty()) return yolov8_result;
+      yolov8_result = postprocess_yolov8_pose(data, count, 33, lb);
+      if (!yolov8_result.empty()) return yolov8_result;
     }
 
     // Standard landmark output: extract (x,y) from (x,y,z) triplets
     auto result = output_to_xy(data, count);
 
-    // Normalize to [0,1] if coords are in model input space (values > 1).
-    // Some models (e.g. MediaPipe face) already output [0,1]; others
-    // (e.g. hand_landmark) output in model-pixel space (0..input_size).
     if (!result.empty()) {
       float max_val = *std::max_element(result.begin(), result.end());
-      if (max_val > 1.5f) {
-        float inv = 1.0f / static_cast<float>(size);
-        for (auto& v : result) v *= inv;
+
+      // Convert all coordinates to model pixel space first
+      // Face model outputs [0,1], hand model outputs [0,input_size]
+      if (max_val <= 1.5f) {
+        for (auto& v : result) v *= static_cast<float>(size);
+      }
+
+      // Undo letterbox: model pixels → original pixels
+      float inv_scale = 1.0f / lb.scale;
+      for (size_t i = 0; i < result.size(); i += 2) {
+        result[i]     = (result[i]     - lb.pad_x) * inv_scale;
+        result[i + 1] = (result[i + 1] - lb.pad_y) * inv_scale;
       }
     }
     return result;

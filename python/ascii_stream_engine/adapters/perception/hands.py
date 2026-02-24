@@ -31,6 +31,12 @@ class HandLandmarkAnalyzer(BaseAnalyzer):
             out = np.asarray(out, dtype=np.float32)
             if out.ndim != 2 or out.shape[0] == 0:
                 return {}
+            # C++ returns pixel coords; normalize to 0-1 for the renderer
+            h, w = frame.shape[:2]
+            if h > 0 and w > 0:
+                out[:, 0] /= w
+                out[:, 1] /= h
+                np.clip(out, 0.0, 1.0, out=out)
             # Cuando C++ devuelva 42 puntos: left 21, right 21
             n = out.shape[0]
             if n >= 42:

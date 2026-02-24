@@ -276,6 +276,14 @@ def build_general_control_panel(
             engine.start()
         status.value = _status_style(f"Cámara cambiada a índice {camera_index.value}.", "ok")
 
+    def _sync_renderer() -> None:
+        """Set renderer based on current view mode + AI overlay state."""
+        base = AsciiRenderer() if render_mode.value == "ascii" else PassthroughRenderer()
+        if LandmarksOverlayRenderer and ai_viz_dd.value == "Overlay landmarks":
+            engine.set_renderer(LandmarksOverlayRenderer(inner=base))
+        else:
+            engine.set_renderer(base)
+
     def apply_settings(_=None) -> None:
         was_running = engine.is_running
         if was_running:
@@ -295,10 +303,7 @@ def build_general_control_panel(
             frame_buffer_size=frame_buffer_slider.value,
             bitrate=bitrate_text.value,
         )
-        if render_mode.value == "ascii":
-            engine.set_renderer(AsciiRenderer())
-        else:
-            engine.set_renderer(PassthroughRenderer())
+        _sync_renderer()
         if was_running:
             engine.start()
         status.value = _status_style("Ajustes de vista aplicados.", "ok")
@@ -403,7 +408,7 @@ def build_general_control_panel(
     pose_cb = widgets.Checkbox(value=_analyzer_enabled("pose"), description="Detección pose (pose)")
     ai_viz_dd = widgets.Dropdown(
         options=["Normal (según ASCII/RAW)", "Overlay landmarks"],
-        value="Normal (según ASCII/RAW)",
+        value="Overlay landmarks" if LandmarksOverlayRenderer else "Normal (según ASCII/RAW)",
         description="Visualización",
     )
     apply_ai_btn = widgets.Button(description="Aplicar IA")
@@ -468,14 +473,10 @@ def build_general_control_panel(
             ap.set_enabled("face", face_cb.value)
             ap.set_enabled("hands", hands_cb.value)
             ap.set_enabled("pose", pose_cb.value)
-        if LandmarksOverlayRenderer and ai_viz_dd.value == "Overlay landmarks":
-            engine.set_renderer(LandmarksOverlayRenderer())
-            status.value = _status_style("IA: overlay de landmarks activo. Activa cara/manos/pose y pulsa Actualizar estado detector.", "ok")
+        _sync_renderer()
+        if ai_viz_dd.value == "Overlay landmarks":
+            status.value = _status_style("IA: overlay de landmarks activo.", "ok")
         else:
-            if render_mode.value == "ascii":
-                engine.set_renderer(AsciiRenderer())
-            else:
-                engine.set_renderer(PassthroughRenderer())
             status.value = _status_style("IA: visualización normal (según pestaña Vista).", "info")
         if was_running:
             engine.start()

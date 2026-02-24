@@ -32,10 +32,22 @@ def _draw_points(
 
 
 class LandmarksOverlayRenderer:
-    """Dibuja face (verde), hands (izq rojo, der azul), pose (amarillo) sobre el frame."""
+    """Dibuja face (verde), hands (izq rojo, der azul), pose (amarillo) sobre el frame.
+
+    Wraps an inner renderer (Passthrough, ASCII, etc). If inner produces an image,
+    landmarks are drawn on top. If inner is None, works directly on the raw frame.
+    """
 
     def __init__(self, inner: Optional[FrameRenderer] = None) -> None:
         self._inner = inner
+
+    @property
+    def inner(self) -> Optional[FrameRenderer]:
+        return self._inner
+
+    @inner.setter
+    def inner(self, renderer: Optional[FrameRenderer]) -> None:
+        self._inner = renderer
 
     def output_size(self, config: EngineConfig) -> Tuple[int, int]:
         if self._inner:
@@ -50,11 +62,28 @@ class LandmarksOverlayRenderer:
         config: EngineConfig,
         analysis: Optional[dict] = None,
     ) -> RenderFrame:
-        if frame.ndim == 2:
-            frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
-        elif frame.shape[2] == 3 and frame.dtype != np.uint8:
-            frame = np.asarray(frame, dtype=np.uint8)
-        img = frame.copy()
+        # If we have an inner renderer, let it render first, then overlay landmarks
+        if self._inner:
+            inner_result = self._inner.render(frame, config, analysis)
+            # Convert inner result back to BGR numpy for drawing
+            if inner_result.image is not None:
+                img = np.array(inner_result.image)
+                # PIL Image is RGB, convert to BGR for cv2 drawing
+                img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+            else:
+                # Inner produced text-only (ASCII). Fall back to raw frame.
+                if frame.ndim == 2:
+                    img = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
+                else:
+                    img = frame.copy()
+        else:
+            if frame.ndim == 2:
+                img = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
+            elif frame.shape[2] == 3 and frame.dtype != np.uint8:
+                img = np.asarray(frame, dtype=np.uint8)
+            else:
+                img = frame.copy()
+
         h, w = img.shape[:2]
 
         total_pts = 0
@@ -81,7 +110,7 @@ class LandmarksOverlayRenderer:
                 arr = pose["joints"]
                 total_pts += (arr.size // 2) if hasattr(arr, "size") else 0
 
-        # Indicador visible: "IA" o "IA (N)" para que se vea que el overlay está activo
+        # Indicador visible
         label = "IA" if total_pts == 0 else f"IA ({total_pts})"
         cv2.putText(
             img, label, (12, h - 12),
