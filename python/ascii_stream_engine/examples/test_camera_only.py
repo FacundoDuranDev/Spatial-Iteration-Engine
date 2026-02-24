@@ -6,8 +6,11 @@ Uso: python python/ascii_stream_engine/examples/test_camera_only.py [índice]
   índice: 0 por defecto. En Linux a veces la cámara real es 2 (prueba 0, 2, 4).
 Salir: pulsar 'q' en la ventana o Ctrl+C.
 """
+
 import sys
+
 import cv2
+
 
 def main():
     index = int(sys.argv[1]) if len(sys.argv) > 1 else 0
@@ -28,6 +31,7 @@ def main():
     cap.release()
     cv2.destroyAllWindows()
     print("Listo.")
+
 
 if __name__ == "__main__":
     main()
