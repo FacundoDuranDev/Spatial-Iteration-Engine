@@ -8,7 +8,6 @@ import numpy as np
 
 from ...domain.config import EngineConfig
 from ...domain.tracking_data import TrackingData, Trajectory
-
 from .base import BaseTracker
 
 
@@ -49,9 +48,7 @@ class OpenCVTracker(BaseTracker):
         create_func = tracker_map.get(self.tracker_type.upper(), cv2.TrackerCSRT_create)
         return create_func()
 
-    def track(
-        self, frame: np.ndarray, detections: dict, config: EngineConfig
-    ) -> TrackingData:
+    def track(self, frame: np.ndarray, detections: dict, config: EngineConfig) -> TrackingData:
         """
         Trackea objetos usando OpenCV trackers.
 
@@ -149,4 +146,3 @@ class OpenCVTracker(BaseTracker):
         super().reset()
         self._trackers.clear()
         self._lost_frames.clear()
-
