@@ -37,14 +37,38 @@ class OpenCVCameraSource:
 
     @_silence_stderr
     def _open_impl(self) -> None:
+        cap = self._try_open(self._camera_index)
+        if cap is not None:
+            self._cap = cap
+            return
+
+        # Fallback: probar otros índices cercanos si el pedido no funciona
+        for idx in range(6):
+            if idx == self._camera_index:
+                continue
+            cap = self._try_open(idx)
+            if cap is not None:
+                self._camera_index = idx
+                self._cap = cap
+                return
+
+    def _try_open(self, index: int) -> Optional[cv2.VideoCapture]:
+        """Intenta abrir una cámara y verifica que produzca frames."""
         if sys.platform == "linux":
-            cap = cv2.VideoCapture(self._camera_index, cv2.CAP_V4L2)
+            cap = cv2.VideoCapture(index, cv2.CAP_V4L2)
             if not cap.isOpened():
-                cap = cv2.VideoCapture(self._camera_index)
+                cap = cv2.VideoCapture(index)
         else:
-            cap = cv2.VideoCapture(self._camera_index)
+            cap = cv2.VideoCapture(index)
+        if not cap.isOpened():
+            return None
         cap.set(cv2.CAP_PROP_BUFFERSIZE, self._buffer_size)
-        self._cap = cap
+        # Verificar que realmente produce frames
+        ret, frame = cap.read()
+        if not ret or frame is None:
+            cap.release()
+            return None
+        return cap
 
     def read(self) -> Optional[np.ndarray]:
         if self._cap is None or not self._cap.isOpened():
