@@ -8,6 +8,14 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 ## [Unreleased]
 
 ### Added
+- `feat(presentation)`: Advanced diagnostics panel (`build_advanced_diagnostics_panel`) with profiler stats, memory, CPU, error breakdown, auto-refresh
+- `feat(presentation)`: Perception control panel (`build_perception_control_panel`) with per-analyzer toggles, confidence thresholds, model info, visualization mode
+- `feat(presentation)`: Filter designer panel (`build_filter_designer_panel`) with per-filter parameter sliders, enable/disable checkboxes, clear all
+- `feat(presentation)`: Output manager panel (`build_output_manager_panel`) with multi-sink configuration, add/remove sinks, status display
+- `feat(presentation)`: Performance monitor panel (`build_performance_monitor_panel`) with latency budget visualization, FPS gauge, degradation suggestions, bottleneck detection
+- `feat(presentation)`: Preset manager panel (`build_preset_manager_panel`) with save/load/delete named presets, JSON import/export
+- `feat(presentation)`: Full dashboard (`build_full_dashboard`) combining all 7 panels in a tabbed interface
+- `feat(presentation)`: Shared helpers: `_status_style` (module-level), `_periodic_refresh`, `_safe_engine_call`, `_make_labeled_section`
 - Estructura de proyecto reorganizada con separación clara entre `python/` y `cpp/`
 - Documentación de gitflow (`GITFLOW.md`) con reglas y buenas prácticas
 - Sistema de changelog para tracking de cambios
