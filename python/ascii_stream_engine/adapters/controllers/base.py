@@ -99,7 +99,9 @@ class BaseController:
             except Exception as e:
                 logger.error(f"Error en callback de controlador '{self.name}': {e}", exc_info=True)
 
-    def _publish_event(self, command: str, params: Dict[str, Any], value: Optional[Any] = None) -> None:
+    def _publish_event(
+        self, command: str, params: Dict[str, Any], value: Optional[Any] = None
+    ) -> None:
         """
         Publica un evento de control.
 
@@ -130,4 +132,3 @@ class BaseController:
     def _do_disconnect(self) -> None:
         """Implementación específica de desconexión (debe ser sobrescrita)."""
         raise NotImplementedError("_do_disconnect debe ser implementado por la subclase")
-

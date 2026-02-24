@@ -107,4 +107,3 @@ class ControlMapping:
         """Limpia todos los mapeos."""
         self._mappings.clear()
         logger.debug("Todos los mapeos han sido limpiados")
-

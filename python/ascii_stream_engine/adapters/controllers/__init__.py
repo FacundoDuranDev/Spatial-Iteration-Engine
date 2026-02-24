@@ -7,6 +7,7 @@ from .controller_manager import ControllerManager
 # Importar controladores con manejo de dependencias opcionales
 try:
     from .midi_controller import MidiController
+
     MIDI_AVAILABLE = True
 except ImportError:
     MIDI_AVAILABLE = False
@@ -14,6 +15,7 @@ except ImportError:
 
 try:
     from .osc_controller import OscController
+
     OSC_AVAILABLE = True
 except ImportError:
     OSC_AVAILABLE = False
@@ -30,4 +32,3 @@ if MIDI_AVAILABLE:
 
 if OSC_AVAILABLE:
     __all__.append("OscController")
-
