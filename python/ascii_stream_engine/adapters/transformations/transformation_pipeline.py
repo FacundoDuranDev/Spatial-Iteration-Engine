@@ -52,4 +52,3 @@ class TransformationPipeline:
         for transform in reversed(self._transforms):
             result = transform.inverse(result)
         return result
-
