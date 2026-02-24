@@ -25,7 +25,23 @@ See `SECURITY_MODEL_DOWNLOAD.md` for verification procedures.
 | CPU latency (measured) | ~15-25ms at 640x640 input (1 thread) |
 | Status | APPROVED, working |
 
-### face_landmark.onnx (DETR face detection)
+### face_detection_yunet.onnx (YuNet face detection)
+
+| Field | Value |
+|---|---|
+| Name | YuNet face detection |
+| File | `onnx_models/mediapipe/face_detection_yunet.onnx` |
+| Source | OpenCV Zoo: https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet |
+| Size | 228 KB |
+| Input | BGR image, any size (set via `cv2.FaceDetectorYN.setInputSize`) |
+| Output | `(N, 15)` per detection: bbox(4) + 5 landmarks(10) + score(1) |
+| Post-processing | Built-in NMS via `cv2.FaceDetectorYN.detect()` |
+| Landmarks | 5 points: right eye, left eye, nose tip, right mouth corner, left mouth corner |
+| CPU latency (measured) | ~2-3ms at 640x480 input |
+| Status | APPROVED, WORKING via `cv2.FaceDetectorYN` (requires OpenCV 4.5.4+) |
+| Notes | Pure Python adapter — no C++ dependency. Replaced non-working DETR face_landmark.onnx. |
+
+### face_landmark.onnx (DETR face detection — DEPRECATED)
 
 | Field | Value |
 |---|---|
@@ -34,22 +50,21 @@ See `SECURITY_MODEL_DOWNLOAD.md` for verification procedures.
 | Source | HuggingFace: iuliancmarcu/detr-face-detection-onnx |
 | SHA256 | `d20f797c161bbdb040a9cd4ee088cfae292a81212a095b003b10962b5a3da218` |
 | Size | 159.01 MB |
-| Input | Needs investigation -- model may not match expected NCHW contract |
-| Output | Needs investigation |
-| CPU latency (measured) | Not verified (model may be incompatible with current runner) |
-| Status | APPROVED for storage, NOT WORKING in pipeline |
-| Notes | DETR model may require different preprocessing than the generic OnnxRunner provides. Need to verify input tensor name, shape, and normalization. Consider replacing with a lighter face detection model. |
+| Status | DEPRECATED — replaced by face_detection_yunet.onnx |
+| Notes | DETR model incompatible with generic OnnxRunner. Kept for reference. |
 
-### hand_landmark (MediaPipe)
+### hand_landmark (MediaPipe Python)
 
 | Field | Value |
 |---|---|
 | Name | MediaPipe hand landmarks |
-| File | `onnx_models/mediapipe/tflite/hand/` |
-| Source | MediaPipe official |
-| Format | TFLite (NOT ONNX) |
-| Status | NOT WORKING -- needs TFLite-to-ONNX conversion |
-| Notes | The downloaded file is a TFLite ZIP archive, not an ONNX model. Requires conversion via `tf2onnx` or replacement with an ONNX-native hand detection model. |
+| Source | MediaPipe Python SDK (`mediapipe.solutions.hands`) |
+| Format | Bundled in `mediapipe` pip package (no external ONNX file needed) |
+| Input | RGB image, any size |
+| Output | 21 landmarks per hand, normalized 0-1, up to 2 hands |
+| CPU latency (measured) | ~5-8ms for 2 hands at 640x480 |
+| Status | APPROVED, WORKING via `mediapipe` Python package |
+| Notes | Pure Python adapter. Graceful fallback to empty dict if mediapipe not installed. Replaced non-working TFLite-based approach. |
 
 ---
 

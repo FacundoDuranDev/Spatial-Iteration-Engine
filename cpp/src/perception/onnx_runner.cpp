@@ -63,8 +63,11 @@ void letterbox_and_normalize_nchw(
       const std::uint8_t* p = src + (sy * src_w + sx) * c;
       int ox = dx_off + dx;
       int oy = dy_off + dy;
-      for (int ch = 0; ch < c; ++ch)
-        dst[ch * target_size * target_size + oy * target_size + ox] = p[ch] / 255.f;
+      for (int ch = 0; ch < c; ++ch) {
+        // BGR→RGB: swap channels 0↔2
+        int src_ch = (ch == 0) ? 2 : (ch == 2) ? 0 : ch;
+        dst[ch * target_size * target_size + oy * target_size + ox] = p[src_ch] / 255.f;
+      }
     }
   }
 }
@@ -118,7 +121,7 @@ std::vector<float> postprocess_yolov8_pose(
     const float* det = data + i * detection_size;
     float conf = det[4];
 
-    if (conf > 0.5f) {
+    if (conf > 0.25f) {
       const float* keypoints = det + 5;
       out.reserve(num_keypoints * 2);
       for (int k = 0; k < num_keypoints; ++k) {
@@ -241,9 +244,26 @@ std::vector<float> OnnxRunner::run(const std::uint8_t* image, int width, int hei
 
     // YOLOv8 detection models produce very large outputs (>10k elements).
     if (count > 10000) {
-      auto yolov8_result = postprocess_yolov8_pose(data, count, 17, lb);
+      auto shape = tinfo.GetShape();
+      const float* yolo_data = data;
+      std::vector<float> transposed;
+
+      // YOLOv8 outputs (1, 56, 8400) but postprocessing expects (1, 8400, 56).
+      // Detect and transpose if needed: shape[1] < shape[2] means features < detections.
+      if (shape.size() == 3 && shape[1] < shape[2]) {
+        int64_t rows = shape[1];  // e.g. 56
+        int64_t cols = shape[2];  // e.g. 8400
+        transposed.resize(static_cast<size_t>(rows * cols));
+        for (int64_t r = 0; r < rows; ++r)
+          for (int64_t c_idx = 0; c_idx < cols; ++c_idx)
+            transposed[static_cast<size_t>(c_idx * rows + r)] =
+                data[static_cast<size_t>(r * cols + c_idx)];
+        yolo_data = transposed.data();
+      }
+
+      auto yolov8_result = postprocess_yolov8_pose(yolo_data, count, 17, lb);
       if (!yolov8_result.empty()) return yolov8_result;
-      yolov8_result = postprocess_yolov8_pose(data, count, 33, lb);
+      yolov8_result = postprocess_yolov8_pose(yolo_data, count, 33, lb);
       if (!yolov8_result.empty()) return yolov8_result;
     }
 
