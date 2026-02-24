@@ -276,6 +276,14 @@ def build_general_control_panel(
             engine.start()
         status.value = _status_style(f"Cámara cambiada a índice {camera_index.value}.", "ok")
 
+    def _sync_renderer() -> None:
+        """Set renderer based on current view mode + AI overlay state."""
+        base = AsciiRenderer() if render_mode.value == "ascii" else PassthroughRenderer()
+        if LandmarksOverlayRenderer and ai_viz_dd.value == "Overlay landmarks":
+            engine.set_renderer(LandmarksOverlayRenderer(inner=base))
+        else:
+            engine.set_renderer(base)
+
     def apply_settings(_=None) -> None:
         was_running = engine.is_running
         if was_running:
@@ -295,10 +303,7 @@ def build_general_control_panel(
             frame_buffer_size=frame_buffer_slider.value,
             bitrate=bitrate_text.value,
         )
-        if render_mode.value == "ascii":
-            engine.set_renderer(AsciiRenderer())
-        else:
-            engine.set_renderer(PassthroughRenderer())
+        _sync_renderer()
         if was_running:
             engine.start()
         status.value = _status_style("Ajustes de vista aplicados.", "ok")
@@ -389,12 +394,21 @@ def build_general_control_panel(
     except Exception:
         LandmarksOverlayRenderer = None
 
-    face_cb = widgets.Checkbox(value=False, description="Detección cara (face)")
-    hands_cb = widgets.Checkbox(value=False, description="Detección manos (hands)")
-    pose_cb = widgets.Checkbox(value=False, description="Detección pose (pose)")
+    # Sincronizar checkboxes con el estado real de los analyzers
+    def _analyzer_enabled(name: str) -> bool:
+        if not hasattr(engine, "analyzer_pipeline"):
+            return False
+        for a in engine.analyzer_pipeline.analyzers:
+            if getattr(a, "name", "") == name:
+                return getattr(a, "enabled", False)
+        return False
+
+    face_cb = widgets.Checkbox(value=_analyzer_enabled("face"), description="Detección cara (face)")
+    hands_cb = widgets.Checkbox(value=_analyzer_enabled("hands"), description="Detección manos (hands)")
+    pose_cb = widgets.Checkbox(value=_analyzer_enabled("pose"), description="Detección pose (pose)")
     ai_viz_dd = widgets.Dropdown(
         options=["Normal (según ASCII/RAW)", "Overlay landmarks"],
-        value="Normal (según ASCII/RAW)",
+        value="Overlay landmarks" if LandmarksOverlayRenderer else "Normal (según ASCII/RAW)",
         description="Visualización",
     )
     apply_ai_btn = widgets.Button(description="Aplicar IA")
@@ -440,7 +454,7 @@ def build_general_control_panel(
         if has_analyzers and not a and engine.is_running:
             out += "<br><small>Sin datos aún (activa al menos una detección arriba).</small>"
         elif has_analyzers and not any(_count_points(a.get(k)) for k in ("face", "hands", "pose")):
-            out += "<br><small>Todo en 0: los stubs C++ no devuelven puntos. Con modelos reales verás datos aquí.</small>"
+            out += "<br><small>Todo en 0: verifica que los modelos ONNX estén en onnx_models/mediapipe/ y que haya una persona visible.</small>"
         elif not has_analyzers:
             out += "<br><small style='color:#856404'>No hay módulo de percepción. Arranca Jupyter con PYTHONPATH=python:cpp/build (tras cpp/build.sh).</small>"
         return out
@@ -459,14 +473,10 @@ def build_general_control_panel(
             ap.set_enabled("face", face_cb.value)
             ap.set_enabled("hands", hands_cb.value)
             ap.set_enabled("pose", pose_cb.value)
-        if LandmarksOverlayRenderer and ai_viz_dd.value == "Overlay landmarks":
-            engine.set_renderer(LandmarksOverlayRenderer())
-            status.value = _status_style("IA: overlay de landmarks activo. Activa cara/manos/pose y pulsa Actualizar estado detector.", "ok")
+        _sync_renderer()
+        if ai_viz_dd.value == "Overlay landmarks":
+            status.value = _status_style("IA: overlay de landmarks activo.", "ok")
         else:
-            if render_mode.value == "ascii":
-                engine.set_renderer(AsciiRenderer())
-            else:
-                engine.set_renderer(PassthroughRenderer())
             status.value = _status_style("IA: visualización normal (según pestaña Vista).", "info")
         if was_running:
             engine.start()
@@ -474,6 +484,17 @@ def build_general_control_panel(
     apply_ai_btn.on_click(apply_ai)
     apply_ai_btn.layout = Layout(width="120px") if Layout else None
     refresh_detector_btn.layout = Layout(width="200px") if Layout else None
+
+    # Aplicar cambios de checkbox en tiempo real (sin necesidad de "Aplicar IA")
+    def _on_analyzer_toggle(change):
+        if hasattr(engine, "analyzer_pipeline"):
+            ap = engine.analyzer_pipeline
+            ap.set_enabled("face", face_cb.value)
+            ap.set_enabled("hands", hands_cb.value)
+            ap.set_enabled("pose", pose_cb.value)
+
+    for cb in (face_cb, hands_cb, pose_cb):
+        cb.observe(_on_analyzer_toggle, names="value")
 
     _has_analyzers = (
         hasattr(engine, "analyzer_pipeline")

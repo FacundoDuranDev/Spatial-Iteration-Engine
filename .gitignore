@@ -48,6 +48,7 @@ id_rsa.pub
 
 # Archivos grandes que no deben estar en el repositorio
 *.sh
+!scripts/*.sh
 graveyard/*.sh
 **/Miniconda*.sh
 **/Anaconda*.sh
@@ -85,6 +86,12 @@ Makefile
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Claude Code
+CLAUDE.md
+
+# Research (internal notes, not versioned)
+research/
 
 # IDEs y editores
 .vscode/
@@ -124,14 +131,12 @@ htmlcov/
 .hypothesis/
 
 # Archivos de modelos grandes (si no se deben versionar)
-*.onnx
 *.pb
 *.h5
 *.pth
 *.pt
 *.ckpt
 *.weights
-!onnx_models/**/*.onnx  # Permitir modelos en onnx_models/ si están versionados
 
 # Archivos de datos grandes (ajustar según necesidad)
 data/raw/
@@ -143,6 +148,11 @@ data/processed/
 *.flv
 *.wmv
 *.webm
+
+# Imágenes de prueba (solo para testing interno)
+test_images/
+*.test.jpg
+*.test.png
 
 # Archivos de backup
 *.bak

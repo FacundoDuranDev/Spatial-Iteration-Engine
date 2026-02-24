@@ -28,6 +28,12 @@ class FaceLandmarkAnalyzer(BaseAnalyzer):
             out = _perception_cpp.detect_face(frame)
             if out is None or out.size == 0:
                 return {}
+            # C++ returns pixel coords; normalize to 0-1 for the renderer
+            h, w = frame.shape[:2]
+            if h > 0 and w > 0:
+                out[:, 0] /= w
+                out[:, 1] /= h
+                np.clip(out, 0.0, 1.0, out=out)
             return {"points": out}
         except Exception:
             return {}

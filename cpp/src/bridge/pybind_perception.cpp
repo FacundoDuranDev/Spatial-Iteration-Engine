@@ -43,7 +43,11 @@ PYBIND11_MODULE(perception_cpp, m) {
         int h = static_cast<int>(buf.shape[0]);
         int w = static_cast<int>(buf.shape[1]);
         std::uint8_t* ptr = static_cast<std::uint8_t*>(buf.ptr);
-        auto data = perception::run_face(ptr, w, h);
+        std::vector<float> data;
+        {
+          py::gil_scoped_release release;
+          data = perception::run_face(ptr, w, h);
+        }
         return landmarks_to_numpy(data);
       },
       py::arg("frame"),
@@ -57,7 +61,11 @@ PYBIND11_MODULE(perception_cpp, m) {
         int h = static_cast<int>(buf.shape[0]);
         int w = static_cast<int>(buf.shape[1]);
         std::uint8_t* ptr = static_cast<std::uint8_t*>(buf.ptr);
-        auto data = perception::run_hands(ptr, w, h);
+        std::vector<float> data;
+        {
+          py::gil_scoped_release release;
+          data = perception::run_hands(ptr, w, h);
+        }
         return landmarks_to_numpy(data);
       },
       py::arg("frame"),
@@ -71,7 +79,11 @@ PYBIND11_MODULE(perception_cpp, m) {
         int h = static_cast<int>(buf.shape[0]);
         int w = static_cast<int>(buf.shape[1]);
         std::uint8_t* ptr = static_cast<std::uint8_t*>(buf.ptr);
-        auto data = perception::run_pose(ptr, w, h);
+        std::vector<float> data;
+        {
+          py::gil_scoped_release release;
+          data = perception::run_pose(ptr, w, h);
+        }
         return landmarks_to_numpy(data);
       },
       py::arg("frame"),

@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -37,6 +38,8 @@ class OnnxRunner {
   bool loaded_ = false;
   int input_size_ = 192;
   std::unique_ptr<OnnxRunnerImpl> impl_;
+  std::vector<float> input_data_;
+  std::mutex run_mutex_;
 };
 
 }  // namespace perception

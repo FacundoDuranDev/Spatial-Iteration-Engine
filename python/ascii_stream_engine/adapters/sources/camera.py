@@ -35,16 +35,54 @@ class OpenCVCameraSource:
         self.close()
         self._open_impl()
 
+    @staticmethod
+    def _available_indices() -> list:
+        """Detecta índices de cámara válidos en el sistema."""
+        if sys.platform == "linux":
+            indices = []
+            for name in sorted(os.listdir("/dev")):
+                if name.startswith("video") and name[5:].isdigit():
+                    indices.append(int(name[5:]))
+            return indices if indices else [0]
+        return list(range(4))
+
     @_silence_stderr
     def _open_impl(self) -> None:
-        if sys.platform == "linux":
-            cap = cv2.VideoCapture(self._camera_index, cv2.CAP_V4L2)
+        cap = self._try_open(self._camera_index)
+        if cap is not None:
+            self._cap = cap
+            return
+
+        # Fallback: probar otros índices que existan en el sistema
+        for idx in self._available_indices():
+            if idx == self._camera_index:
+                continue
+            cap = self._try_open(idx)
+            if cap is not None:
+                self._camera_index = idx
+                self._cap = cap
+                return
+
+    def _try_open(self, index: int) -> Optional[cv2.VideoCapture]:
+        """Intenta abrir una cámara y verifica que produzca frames."""
+        try:
+            if sys.platform == "linux":
+                cap = cv2.VideoCapture(index, cv2.CAP_V4L2)
+                if not cap.isOpened():
+                    cap = cv2.VideoCapture(index)
+            else:
+                cap = cv2.VideoCapture(index)
             if not cap.isOpened():
-                cap = cv2.VideoCapture(self._camera_index)
-        else:
-            cap = cv2.VideoCapture(self._camera_index)
-        cap.set(cv2.CAP_PROP_BUFFERSIZE, self._buffer_size)
-        self._cap = cap
+                return None
+            cap.set(cv2.CAP_PROP_BUFFERSIZE, self._buffer_size)
+            # Verificar que realmente produce frames
+            ret, frame = cap.read()
+            if not ret or frame is None:
+                cap.release()
+                return None
+            return cap
+        except Exception:
+            return None
 
     def read(self) -> Optional[np.ndarray]:
         if self._cap is None or not self._cap.isOpened():

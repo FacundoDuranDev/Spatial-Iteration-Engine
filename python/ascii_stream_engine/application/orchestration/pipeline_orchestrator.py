@@ -139,7 +139,7 @@ class PipelineOrchestrator:
                 frame_id=frame_id,
                 timestamp=timestamp,
             )
-            self._event_bus.publish(event, "frame_captured")
+            self._event_bus.publish_async(event, "frame_captured")
 
         # Fase 2: Análisis
         if self._profiler:
@@ -182,7 +182,7 @@ class PipelineOrchestrator:
                 timestamp=timestamp,
                 analysis_time=analysis_time if self._profiler else 0.0,
             )
-            self._event_bus.publish(event, "analysis_complete")
+            self._event_bus.publish_async(event, "analysis_complete")
 
         # Fase 3: Transformaciones Espaciales
         if self._profiler:
@@ -220,7 +220,7 @@ class PipelineOrchestrator:
                         filter_name="filter_pipeline",
                         timestamp=timestamp,
                     )
-                    self._event_bus.publish(event, "filter_applied")
+                    self._event_bus.publish_async(event, "filter_applied")
 
         if self._profiler:
             self._profiler.end_phase(LoopProfiler.PHASE_FILTERING)
@@ -255,7 +255,7 @@ class PipelineOrchestrator:
                 render_time=render_time if self._profiler else 0.0,
                 output_size=output_size,
             )
-            self._event_bus.publish(event, "render_complete")
+            self._event_bus.publish_async(event, "render_complete")
 
         # Fase 6: Salida
         if self._profiler:
@@ -284,7 +284,7 @@ class PipelineOrchestrator:
                 timestamp=timestamp,
                 write_time=write_time,
             )
-            self._event_bus.publish(event, "frame_written")
+            self._event_bus.publish_async(event, "frame_written")
 
         return True, None
 
