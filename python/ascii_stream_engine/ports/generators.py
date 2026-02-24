@@ -30,4 +30,3 @@ class ContentGenerator(Protocol):
             delta_time: Tiempo transcurrido desde la última actualización
         """
         ...
-
