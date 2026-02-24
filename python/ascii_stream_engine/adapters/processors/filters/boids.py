@@ -95,9 +95,9 @@ class BoidsFilter(BaseFilter):
                 np.random.uniform(0, h, size=n),
             ]
         ).astype(np.float32)
-        self._velocities = np.random.uniform(
-            -self._max_speed, self._max_speed, size=(n, 2)
-        ).astype(np.float32)
+        self._velocities = np.random.uniform(-self._max_speed, self._max_speed, size=(n, 2)).astype(
+            np.float32
+        )
 
     def _update(self, h, w, analysis):
         """Update boid positions and velocities using flocking rules."""
@@ -154,9 +154,7 @@ class BoidsFilter(BaseFilter):
         self._velocities += steer * 0.1
 
         # Clamp speed
-        speed = np.sqrt(
-            self._velocities[:, 0] ** 2 + self._velocities[:, 1] ** 2 + 1e-10
-        )
+        speed = np.sqrt(self._velocities[:, 0] ** 2 + self._velocities[:, 1] ** 2 + 1e-10)
         too_fast = speed > self._max_speed
         if np.any(too_fast):
             scale = np.where(too_fast, self._max_speed / speed, 1.0)

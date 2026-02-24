@@ -106,9 +106,7 @@ class RadialCollapseFilter(BaseFilter):
 
         # Rebuild maps if needed
         needs_rebuild = (
-            self._params_dirty
-            or (h, w) != self._last_shape
-            or current_center != self._last_center
+            self._params_dirty or (h, w) != self._last_shape or current_center != self._last_center
         )
         if needs_rebuild:
             self._build_maps(h, w, cx, cy)
@@ -140,12 +138,12 @@ class RadialCollapseFilter(BaseFilter):
         dy = map_y - cy_px
 
         # Radius (normalized by diagonal half-length)
-        diag = np.sqrt(float(w ** 2 + h ** 2)) / 2.0
-        r = np.sqrt(dx ** 2 + dy ** 2) / max(diag, 1.0)
+        diag = np.sqrt(float(w**2 + h**2)) / 2.0
+        r = np.sqrt(dx**2 + dy**2) / max(diag, 1.0)
 
         # Falloff: Gaussian-like decay from center
-        falloff_sq = max(self._falloff ** 2, 1e-6)
-        weight = np.exp(-(r ** 2) / falloff_sq)
+        falloff_sq = max(self._falloff**2, 1e-6)
+        weight = np.exp(-(r**2) / falloff_sq)
 
         # Distortion factor
         if self._mode == "collapse":
