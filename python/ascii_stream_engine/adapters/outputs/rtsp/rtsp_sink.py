@@ -1,31 +1,43 @@
+"""RTSP output sink using ffmpeg subprocess.
+
+Streams rendered frames via RTSP using ffmpeg as the encoding and
+transport backend. Supports configurable codec, bitrate, preset,
+and multi-client streaming via external RTSP servers (e.g. MediaMTX).
+"""
+
 import logging
 import subprocess
 from typing import Optional, Tuple
 
 from PIL import Image
 
-from ascii_stream_engine.domain.config import EngineConfig
-from ascii_stream_engine.domain.types import RenderFrame
+from ....domain.config import EngineConfig
+from ....domain.types import RenderFrame
+from ....ports.output_capabilities import (
+    OutputCapabilities,
+    OutputCapability,
+    OutputQuality,
+)
+from .._subprocess_utils import cleanup_subprocess
 
 logger = logging.getLogger(__name__)
 
 
 class FfmpegRtspSink:
-    """
-    Backend de salida RTSP usando ffmpeg con soporte multi-cliente.
+    """RTSP streaming output sink via ffmpeg subprocess.
 
-    Este backend utiliza ffmpeg para transmitir video a través de RTSP.
-    Para soporte multi-cliente completo, se puede usar con un servidor RTSP
-    externo o configurar ffmpeg con parámetros que permitan múltiples conexiones.
+    Uses ffmpeg to encode raw video frames and stream them over RTSP.
+    For full multi-client support, pair with an external RTSP server
+    such as MediaMTX (formerly rtsp-simple-server).
 
     Args:
-        rtsp_url: URL RTSP completa (ej: "rtsp://localhost:8554/stream")
-        bitrate: Bitrate de video (ej: "1500k", "2m")
-        codec: Codec de video a usar (default: "libx264")
-        preset: Preset de codificación (default: "ultrafast" para baja latencia)
-        tune: Tune de codificación (default: "zerolatency")
-        rtsp_transport: Protocolo de transporte RTSP (default: "tcp")
-        max_clients: Número máximo de clientes simultáneos (para configuración)
+        rtsp_url: Full RTSP URL (e.g. "rtsp://localhost:8554/stream").
+        bitrate: Video bitrate (e.g. "1500k", "2m").
+        codec: Video codec (default: "libx264").
+        preset: Encoding preset (default: "ultrafast" for low latency).
+        tune: Encoding tune (default: "zerolatency").
+        rtsp_transport: RTSP transport protocol (default: "tcp").
+        max_clients: Maximum simultaneous clients (informational).
     """
 
     def __init__(
@@ -44,26 +56,25 @@ class FfmpegRtspSink:
         self._preset = preset or "ultrafast"
         self._tune = tune or "zerolatency"
         self._rtsp_transport = rtsp_transport or "tcp"
-        self._max_clients = max_clients
+        self._max_clients = max_clients or 10
         self._proc: Optional[subprocess.Popen] = None
         self._output_size: Optional[Tuple[int, int]] = None
+        self._is_open = False
 
     def open(self, config: EngineConfig, output_size: Tuple[int, int]) -> None:
-        """
-        Abre el output RTSP y inicia el proceso ffmpeg.
+        """Open the RTSP output and start the ffmpeg process.
 
         Args:
-            config: Configuración del engine
-            output_size: Tamaño de salida (ancho, alto)
+            config: Engine configuration.
+            output_size: Output dimensions as (width, height).
         """
         self.close()
         self._output_size = output_size
 
-        # Construir URL RTSP
-        # Si no se proporciona URL, usar valores de config
+        # Build RTSP URL
         if not self._rtsp_url:
             host = config.host if config.host != "127.0.0.1" else "0.0.0.0"
-            port = config.port if config.port != 1234 else 8554  # Puerto RTSP por defecto
+            port = config.port if config.port != 1234 else 8554
             stream_path = "stream"
             rtsp_url = f"rtsp://{host}:{port}/{stream_path}"
         else:
@@ -72,8 +83,6 @@ class FfmpegRtspSink:
         bitrate = self._bitrate or config.bitrate
         out_w, out_h = output_size
 
-        # Construir comando ffmpeg para RTSP
-        # Usar TCP por defecto para mejor compatibilidad multi-cliente
         cmd = [
             "ffmpeg",
             "-loglevel",
@@ -88,7 +97,7 @@ class FfmpegRtspSink:
             str(config.fps),
             "-i",
             "-",
-            "-an",  # Sin audio
+            "-an",
             "-c:v",
             self._codec,
             "-preset",
@@ -101,23 +110,17 @@ class FfmpegRtspSink:
             "rtsp",
             "-rtsp_transport",
             self._rtsp_transport,
+            rtsp_url,
         ]
 
-        # Agregar parámetros adicionales para soporte multi-cliente si es necesario
-        # Nota: ffmpeg por sí solo no es un servidor RTSP completo multi-cliente,
-        # pero podemos configurarlo para aceptar múltiples conexiones con parámetros adecuados
         if self._max_clients:
-            # Para soporte multi-cliente real, se recomienda usar un servidor RTSP externo
-            # como MediaMTX (anteriormente rtsp-simple-server) o similar
             logger.info(
-                f"Configurado para hasta {self._max_clients} clientes simultáneos. "
-                "Para soporte multi-cliente completo, considere usar un servidor RTSP externo."
+                f"Configured for up to {self._max_clients} simultaneous clients. "
+                "For full multi-client support, use an external RTSP server."
             )
 
-        cmd.append(rtsp_url)
-
-        logger.info(f"Iniciando servidor RTSP en {rtsp_url}")
-        logger.debug(f"Comando ffmpeg: {' '.join(cmd)}")
+        logger.info(f"Starting RTSP output at {rtsp_url}")
+        logger.debug(f"ffmpeg command: {' '.join(cmd)}")
 
         try:
             self._proc = subprocess.Popen(
@@ -126,22 +129,21 @@ class FfmpegRtspSink:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
+            self._is_open = True
         except FileNotFoundError:
             raise RuntimeError(
-                "ffmpeg no encontrado. Por favor, instala ffmpeg para usar el output RTSP."
+                "ffmpeg not found. Please install ffmpeg to use the RTSP output."
             )
         except Exception as e:
-            raise RuntimeError(f"Error al iniciar servidor RTSP: {e}")
+            raise RuntimeError(f"Error starting RTSP output: {e}")
 
     def write(self, frame: RenderFrame) -> None:
-        """
-        Escribe un frame al stream RTSP.
+        """Write a frame to the RTSP stream.
 
         Args:
-            frame: Frame a escribir
+            frame: Rendered frame to stream.
         """
-        if not self._proc or not self._proc.stdin:
-            logger.warning("Intento de escribir frame pero el proceso no está abierto")
+        if not self._is_open or not self._proc or not self._proc.stdin:
             return
 
         try:
@@ -152,39 +154,57 @@ class FfmpegRtspSink:
                 self._proc.stdin.write(image.tobytes())
                 self._proc.stdin.flush()
         except BrokenPipeError:
-            logger.error("Pipe roto - el proceso ffmpeg puede haber terminado")
+            logger.error("Broken pipe - ffmpeg process may have terminated")
             self._proc = None
+            self._is_open = False
         except Exception as e:
-            logger.error(f"Error al escribir frame: {e}")
+            logger.error(f"Error writing frame: {e}")
 
     def close(self) -> None:
-        """Cierra el output RTSP y termina el proceso ffmpeg."""
-        if self._proc and self._proc.stdin:
-            try:
-                self._proc.stdin.close()
-            except Exception as e:
-                logger.debug(f"Error al cerrar stdin: {e}")
+        """Close the RTSP output and terminate the ffmpeg process."""
+        cleanup_subprocess(self._proc)
+        self._proc = None
+        self._is_open = False
+        self._output_size = None
 
-        if self._proc:
-            try:
-                # Esperar a que termine normalmente
-                self._proc.wait(timeout=1)
-            except subprocess.TimeoutExpired:
-                try:
-                    # Intentar terminar suavemente
-                    self._proc.terminate()
-                    self._proc.wait(timeout=1)
-                except subprocess.TimeoutExpired:
-                    # Forzar terminación si es necesario
-                    logger.warning("Forzando terminación del proceso ffmpeg")
-                    self._proc.kill()
-                    self._proc.wait()
-            except Exception as e:
-                logger.debug(f"Error al esperar proceso: {e}")
-            finally:
-                self._proc = None
+    def is_open(self) -> bool:
+        """Check if the sink is open and ready to write."""
+        return self._is_open and self._proc is not None and self._proc.stdin is not None
 
-        logger.info("Output RTSP cerrado")
+    def get_capabilities(self) -> OutputCapabilities:
+        """Get the capabilities of this RTSP sink."""
+        return OutputCapabilities(
+            capabilities=(
+                OutputCapability.STREAMING
+                | OutputCapability.RTSP
+                | OutputCapability.TCP
+                | OutputCapability.LOW_LATENCY
+                | OutputCapability.CUSTOM_BITRATE
+                | OutputCapability.MULTI_CLIENT
+            ),
+            estimated_latency_ms=100.0,
+            supported_qualities=[
+                OutputQuality.LOW,
+                OutputQuality.MEDIUM,
+                OutputQuality.HIGH,
+            ],
+            max_clients=self._max_clients,
+            protocol_name="RTSP/H.264",
+            metadata={
+                "codec": self._codec,
+                "preset": self._preset,
+                "tune": self._tune,
+                "transport": self._rtsp_transport,
+            },
+        )
+
+    def get_estimated_latency_ms(self) -> Optional[float]:
+        """Get the estimated latency in milliseconds."""
+        return 100.0
+
+    def supports_multiple_clients(self) -> bool:
+        """RTSP inherently supports multiple consumers via an RTSP server."""
+        return True
 
     def __enter__(self):
         """Context manager entry."""

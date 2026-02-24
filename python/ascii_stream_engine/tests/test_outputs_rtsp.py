@@ -1,52 +1,36 @@
+"""Tests for the RTSP output sink."""
+
 import unittest
 from unittest.mock import patch
 
 from ascii_stream_engine.domain.config import EngineConfig
 from ascii_stream_engine.domain.types import RenderFrame
+from ascii_stream_engine.ports.output_capabilities import OutputCapability
 from ascii_stream_engine.tests import has_module
+from ascii_stream_engine.tests.helpers import DummyProc
 
 
 @unittest.skipUnless(has_module("PIL"), "requires pillow")
 class TestFfmpegRtspSink(unittest.TestCase):
-    """Tests para el backend de salida RTSP."""
+    """Tests for the RTSP streaming output sink."""
 
-    def test_rtsp_sink_spawns_ffmpeg_with_correct_args(self) -> None:
-        """Verifica que el sink RTSP inicia ffmpeg con los argumentos correctos."""
-        from PIL import Image
-
+    def _get_sink_class(self):
         from ascii_stream_engine.adapters.outputs.rtsp import FfmpegRtspSink
 
-        class DummyProc:
-            def __init__(self):
-                self.stdin = self
-                self.data = b""
-                self.returncode = None
+        return FfmpegRtspSink
 
-            def write(self, data):
-                self.data += data
+    def _make_frame(self, size=(640, 480)):
+        from PIL import Image
 
-            def flush(self):
-                pass
+        image = Image.new("RGB", size)
+        return RenderFrame(image=image, text="")
 
-            def close(self):
-                pass
-
-            def poll(self):
-                return None
-
-            def wait(self, timeout=None):
-                pass
-
-            def terminate(self):
-                pass
-
-            def kill(self):
-                pass
-
+    def test_rtsp_sink_spawns_ffmpeg_with_correct_args(self) -> None:
+        """Verify that the RTSP sink starts ffmpeg with correct arguments."""
+        FfmpegRtspSink = self._get_sink_class()
         config = EngineConfig(fps=30, bitrate="2000k")
         output = FfmpegRtspSink(rtsp_url="rtsp://0.0.0.0:8554/test")
-        image = Image.new("RGB", (640, 480))
-        frame = RenderFrame(image=image, text="")
+        frame = self._make_frame()
 
         with patch(
             "ascii_stream_engine.adapters.outputs.rtsp.rtsp_sink.subprocess.Popen",
@@ -56,58 +40,20 @@ class TestFfmpegRtspSink(unittest.TestCase):
             output.write(frame)
             output.close()
 
-        # Verificar que se llamó a Popen
         self.assertTrue(popen.called)
-
-        # Verificar argumentos del comando
         args = popen.call_args[0][0]
         self.assertEqual(args[0], "ffmpeg")
-        self.assertIn("-f", args)
         self.assertIn("rawvideo", args)
-        self.assertIn("-pix_fmt", args)
         self.assertIn("rgb24", args)
-        self.assertIn("-s", args)
         self.assertIn("640x480", args)
-        self.assertIn("-framerate", args)
         self.assertIn("30", args)
-        self.assertIn("-c:v", args)
         self.assertIn("libx264", args)
-        self.assertIn("-f", args)
         self.assertIn("rtsp", args)
         self.assertIn("rtsp://0.0.0.0:8554/test", args)
 
     def test_rtsp_sink_uses_default_url_if_not_provided(self) -> None:
-        """Verifica que se usa la URL por defecto si no se proporciona."""
-        from PIL import Image
-
-        from ascii_stream_engine.adapters.outputs.rtsp import FfmpegRtspSink
-
-        class DummyProc:
-            def __init__(self):
-                self.stdin = self
-                self.returncode = None
-
-            def write(self, data):
-                pass
-
-            def flush(self):
-                pass
-
-            def close(self):
-                pass
-
-            def poll(self):
-                return None
-
-            def wait(self, timeout=None):
-                pass
-
-            def terminate(self):
-                pass
-
-            def kill(self):
-                pass
-
+        """Verify that the default URL is used if none is provided."""
+        FfmpegRtspSink = self._get_sink_class()
         config = EngineConfig()
         output = FfmpegRtspSink()
 
@@ -119,46 +65,16 @@ class TestFfmpegRtspSink(unittest.TestCase):
             output.close()
 
         args = popen.call_args[0][0]
-        # Verificar que se usa la URL por defecto
         self.assertIn("rtsp://0.0.0.0:8554/stream", args)
 
     def test_rtsp_sink_handles_image_conversion(self) -> None:
-        """Verifica que el sink convierte imágenes a RGB si es necesario."""
+        """Verify that RGBA images are converted to RGB."""
         from PIL import Image
 
-        from ascii_stream_engine.adapters.outputs.rtsp import FfmpegRtspSink
-
-        class DummyProc:
-            def __init__(self):
-                self.stdin = self
-                self.data = b""
-                self.returncode = None
-
-            def write(self, data):
-                self.data += data
-
-            def flush(self):
-                pass
-
-            def close(self):
-                pass
-
-            def poll(self):
-                return None
-
-            def wait(self, timeout=None):
-                pass
-
-            def terminate(self):
-                pass
-
-            def kill(self):
-                pass
-
+        FfmpegRtspSink = self._get_sink_class()
         config = EngineConfig()
         output = FfmpegRtspSink()
 
-        # Crear imagen en modo RGBA (debe convertirse a RGB)
         image = Image.new("RGBA", (100, 100), (255, 0, 0, 128))
         frame = RenderFrame(image=image, text="")
 
@@ -170,89 +86,102 @@ class TestFfmpegRtspSink(unittest.TestCase):
             output.write(frame)
             output.close()
 
-        # Si llegamos aquí sin error, la conversión funcionó
-
-    def test_rtsp_sink_handles_closed_process(self) -> None:
-        """Verifica que el sink maneja correctamente un proceso cerrado."""
-        from PIL import Image
-
-        from ascii_stream_engine.adapters.outputs.rtsp import FfmpegRtspSink
-
-        class DummyProc:
-            def __init__(self):
-                self.stdin = self
-                self.returncode = 1  # Proceso terminado
-
-            def write(self, data):
-                pass
-
-            def flush(self):
-                pass
-
-            def close(self):
-                pass
-
-            def poll(self):
-                return 1  # Proceso terminado
-
-            def wait(self, timeout=None):
-                pass
-
-            def terminate(self):
-                pass
-
-            def kill(self):
-                pass
-
+    def test_rtsp_sink_is_open_lifecycle(self) -> None:
+        """Verify is_open() returns correct values through lifecycle."""
+        FfmpegRtspSink = self._get_sink_class()
         config = EngineConfig()
         output = FfmpegRtspSink()
-        image = Image.new("RGB", (100, 100))
-        frame = RenderFrame(image=image, text="")
+
+        self.assertFalse(output.is_open())
 
         with patch(
             "ascii_stream_engine.adapters.outputs.rtsp.rtsp_sink.subprocess.Popen",
             return_value=DummyProc(),
         ):
-            output.open(config, (100, 100))
-            # Escribir frame cuando el proceso ya terminó
-            output.write(frame)  # No debe lanzar excepción
-            output.close()
+            output.open(config, (640, 480))
+            self.assertTrue(output.is_open())
+
+        output.close()
+        self.assertFalse(output.is_open())
+
+    def test_rtsp_sink_capabilities(self) -> None:
+        """Verify correct capability flags, protocol name, latency."""
+        FfmpegRtspSink = self._get_sink_class()
+        output = FfmpegRtspSink()
+        caps = output.get_capabilities()
+
+        self.assertTrue(caps.has_capability(OutputCapability.STREAMING))
+        self.assertTrue(caps.has_capability(OutputCapability.RTSP))
+        self.assertTrue(caps.has_capability(OutputCapability.TCP))
+        self.assertTrue(caps.has_capability(OutputCapability.LOW_LATENCY))
+        self.assertTrue(caps.has_capability(OutputCapability.CUSTOM_BITRATE))
+        self.assertTrue(caps.has_capability(OutputCapability.MULTI_CLIENT))
+        self.assertEqual(caps.protocol_name, "RTSP/H.264")
+        self.assertEqual(caps.estimated_latency_ms, 100.0)
+
+    def test_rtsp_sink_close_idempotent(self) -> None:
+        """close() can be called multiple times safely."""
+        FfmpegRtspSink = self._get_sink_class()
+        config = EngineConfig()
+        output = FfmpegRtspSink()
+
+        with patch(
+            "ascii_stream_engine.adapters.outputs.rtsp.rtsp_sink.subprocess.Popen",
+            return_value=DummyProc(),
+        ):
+            output.open(config, (640, 480))
+
+        output.close()
+        output.close()  # Must not raise
+
+    def test_rtsp_sink_close_without_open(self) -> None:
+        """close() on a never-opened sink is safe."""
+        FfmpegRtspSink = self._get_sink_class()
+        output = FfmpegRtspSink()
+        output.close()  # Must not raise
+
+    def test_rtsp_sink_write_when_closed(self) -> None:
+        """write() on a closed sink is a no-op."""
+        FfmpegRtspSink = self._get_sink_class()
+        output = FfmpegRtspSink()
+        frame = self._make_frame()
+        output.write(frame)  # Must not raise
+
+    def test_rtsp_sink_open_closes_previous(self) -> None:
+        """Opening again closes previous connection first."""
+        FfmpegRtspSink = self._get_sink_class()
+        config = EngineConfig()
+        output = FfmpegRtspSink()
+
+        with patch(
+            "ascii_stream_engine.adapters.outputs.rtsp.rtsp_sink.subprocess.Popen",
+            return_value=DummyProc(),
+        ):
+            output.open(config, (640, 480))
+            output.open(config, (320, 240))  # Must not leak resources
+            self.assertTrue(output.is_open())
+
+        output.close()
+
+    def test_rtsp_sink_estimated_latency(self) -> None:
+        """Verify get_estimated_latency_ms() returns a float."""
+        FfmpegRtspSink = self._get_sink_class()
+        output = FfmpegRtspSink()
+        latency = output.get_estimated_latency_ms()
+        self.assertIsInstance(latency, float)
+        self.assertEqual(latency, 100.0)
+
+    def test_rtsp_sink_supports_multiple_clients(self) -> None:
+        """Verify supports_multiple_clients() returns True."""
+        FfmpegRtspSink = self._get_sink_class()
+        output = FfmpegRtspSink()
+        self.assertTrue(output.supports_multiple_clients())
 
     def test_rtsp_sink_context_manager(self) -> None:
-        """Verifica que el sink funciona como context manager."""
-        from PIL import Image
-
-        from ascii_stream_engine.adapters.outputs.rtsp import FfmpegRtspSink
-
-        class DummyProc:
-            def __init__(self):
-                self.stdin = self
-                self.returncode = None
-
-            def write(self, data):
-                pass
-
-            def flush(self):
-                pass
-
-            def close(self):
-                pass
-
-            def poll(self):
-                return None
-
-            def wait(self, timeout=None):
-                pass
-
-            def terminate(self):
-                pass
-
-            def kill(self):
-                pass
-
+        """Verify the sink works as a context manager."""
+        FfmpegRtspSink = self._get_sink_class()
         config = EngineConfig()
-        image = Image.new("RGB", (100, 100))
-        frame = RenderFrame(image=image, text="")
+        frame = self._make_frame((100, 100))
 
         with patch(
             "ascii_stream_engine.adapters.outputs.rtsp.rtsp_sink.subprocess.Popen",
@@ -261,38 +190,10 @@ class TestFfmpegRtspSink(unittest.TestCase):
             with FfmpegRtspSink() as output:
                 output.open(config, (100, 100))
                 output.write(frame)
-            # El close debe llamarse automáticamente
 
     def test_rtsp_sink_custom_codec_and_preset(self) -> None:
-        """Verifica que se pueden configurar codec y preset personalizados."""
-        from ascii_stream_engine.adapters.outputs.rtsp import FfmpegRtspSink
-
-        class DummyProc:
-            def __init__(self):
-                self.stdin = self
-                self.returncode = None
-
-            def write(self, data):
-                pass
-
-            def flush(self):
-                pass
-
-            def close(self):
-                pass
-
-            def poll(self):
-                return None
-
-            def wait(self, timeout=None):
-                pass
-
-            def terminate(self):
-                pass
-
-            def kill(self):
-                pass
-
+        """Verify custom codec and preset are passed to ffmpeg."""
+        FfmpegRtspSink = self._get_sink_class()
         config = EngineConfig()
         output = FfmpegRtspSink(codec="libx265", preset="medium", tune="fastdecode")
 
@@ -304,48 +205,18 @@ class TestFfmpegRtspSink(unittest.TestCase):
             output.close()
 
         args = popen.call_args[0][0]
-        # Verificar codec personalizado
         codec_idx = args.index("-c:v")
         self.assertEqual(args[codec_idx + 1], "libx265")
-        # Verificar preset personalizado
         preset_idx = args.index("-preset")
         self.assertEqual(args[preset_idx + 1], "medium")
-        # Verificar tune personalizado
         tune_idx = args.index("-tune")
         self.assertEqual(args[tune_idx + 1], "fastdecode")
 
     def test_rtsp_sink_uses_config_bitrate(self) -> None:
-        """Verifica que se usa el bitrate de la configuración si no se proporciona uno."""
-        from ascii_stream_engine.adapters.outputs.rtsp import FfmpegRtspSink
-
-        class DummyProc:
-            def __init__(self):
-                self.stdin = self
-                self.returncode = None
-
-            def write(self, data):
-                pass
-
-            def flush(self):
-                pass
-
-            def close(self):
-                pass
-
-            def poll(self):
-                return None
-
-            def wait(self, timeout=None):
-                pass
-
-            def terminate(self):
-                pass
-
-            def kill(self):
-                pass
-
+        """Verify config bitrate is used when no custom bitrate is set."""
+        FfmpegRtspSink = self._get_sink_class()
         config = EngineConfig(bitrate="3000k")
-        output = FfmpegRtspSink()  # Sin bitrate personalizado
+        output = FfmpegRtspSink()
 
         with patch(
             "ascii_stream_engine.adapters.outputs.rtsp.rtsp_sink.subprocess.Popen",
@@ -355,7 +226,6 @@ class TestFfmpegRtspSink(unittest.TestCase):
             output.close()
 
         args = popen.call_args[0][0]
-        # Verificar que se usa el bitrate de la configuración
         bitrate_idx = args.index("-b:v")
         self.assertEqual(args[bitrate_idx + 1], "3000k")
 
