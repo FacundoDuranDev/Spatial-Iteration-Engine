@@ -219,4 +219,3 @@ class StageExecutor:
             StageResult indicando éxito o fallo
         """
         return self.execute("output", output_func)
-

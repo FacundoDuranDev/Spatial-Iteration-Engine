@@ -31,4 +31,3 @@ class Controller(Protocol):
             callback: Función que será llamada con cada mensaje
         """
         ...
-

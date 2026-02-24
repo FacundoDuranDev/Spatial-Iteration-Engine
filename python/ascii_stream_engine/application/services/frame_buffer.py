@@ -118,4 +118,3 @@ class FrameBuffer:
         """
         with self._lock:
             return len(self._buffer) >= self._max_size
-

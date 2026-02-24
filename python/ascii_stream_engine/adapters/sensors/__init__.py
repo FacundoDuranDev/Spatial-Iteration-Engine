@@ -6,6 +6,7 @@ from .sensor_fusion import SensorFusion
 # Importar sensores con manejo de dependencias opcionales
 try:
     from .audio_sensor import AudioSensor
+
     AUDIO_AVAILABLE = True
 except ImportError:
     AUDIO_AVAILABLE = False
@@ -13,6 +14,7 @@ except ImportError:
 
 try:
     from .depth_sensor import DepthSensor
+
     DEPTH_AVAILABLE = True
 except ImportError:
     DEPTH_AVAILABLE = False
@@ -28,4 +30,3 @@ if AUDIO_AVAILABLE:
 
 if DEPTH_AVAILABLE:
     __all__.append("DepthSensor")
-

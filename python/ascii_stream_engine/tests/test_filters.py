@@ -1,7 +1,7 @@
 import unittest
 
-from ascii_stream_engine.tests import has_module
 from ascii_stream_engine.adapters.processors import BaseFilter, InvertFilter
+from ascii_stream_engine.tests import has_module
 
 
 class DummyConfig:

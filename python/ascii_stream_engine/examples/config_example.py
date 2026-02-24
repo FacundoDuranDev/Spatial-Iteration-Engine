@@ -2,11 +2,11 @@
 
 from ascii_stream_engine import (
     EngineConfig,
+    list_predefined_profiles,
     load_config_from_file,
     load_config_from_profile,
-    list_predefined_profiles,
-    save_config_to_file,
     merge_configs,
+    save_config_to_file,
 )
 
 
@@ -26,9 +26,7 @@ def example_predefined_profiles():
     print()
 
     # Cargar perfil con sobrescrituras
-    config = load_config_from_profile(
-        "balanced", overrides={"host": "192.168.1.100", "port": 5000}
-    )
+    config = load_config_from_profile("balanced", overrides={"host": "192.168.1.100", "port": 5000})
     print(f"Configuración 'balanced' con sobrescrituras:")
     print(f"  Host: {config.host}, Port: {config.port}")
     print()
@@ -129,4 +127,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

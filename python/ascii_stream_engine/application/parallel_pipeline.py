@@ -210,4 +210,3 @@ class ResultAggregator:
         merged = self._results.copy()
         merged.update(results)
         return merged
-

@@ -123,4 +123,3 @@ class OutputCapabilities:
             "protocol_name": self.protocol_name,
             "metadata": self.metadata,
         }
-

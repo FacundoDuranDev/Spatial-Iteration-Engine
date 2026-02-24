@@ -67,7 +67,9 @@ class AdaptiveQuality:
                 self.current_quality - self.quality_step,
             )
             if new_quality != self.current_quality:
-                logger.debug(f"Reduciendo calidad: {self.current_quality:.2f} -> {new_quality:.2f} (FPS: {avg_fps:.1f})")
+                logger.debug(
+                    f"Reduciendo calidad: {self.current_quality:.2f} -> {new_quality:.2f} (FPS: {avg_fps:.1f})"
+                )
                 self.current_quality = new_quality
         elif avg_fps > self.target_fps * 1.1:
             # FPS alto, aumentar calidad
@@ -76,7 +78,9 @@ class AdaptiveQuality:
                 self.current_quality + self.quality_step,
             )
             if new_quality != self.current_quality:
-                logger.debug(f"Aumentando calidad: {self.current_quality:.2f} -> {new_quality:.2f} (FPS: {avg_fps:.1f})")
+                logger.debug(
+                    f"Aumentando calidad: {self.current_quality:.2f} -> {new_quality:.2f} (FPS: {avg_fps:.1f})"
+                )
                 self.current_quality = new_quality
 
         return self.current_quality
@@ -129,4 +133,3 @@ class AdaptiveQuality:
             "max_fps": max(self._fps_history),
             "target_fps": self.target_fps,
         }
-

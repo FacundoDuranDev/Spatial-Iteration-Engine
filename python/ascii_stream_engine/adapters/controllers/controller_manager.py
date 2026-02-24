@@ -4,7 +4,6 @@ import logging
 from typing import Dict, List, Optional
 
 from ...infrastructure.event_bus import EventBus
-
 from .base import BaseController
 from .control_mapping import ControlMapping
 
@@ -63,7 +62,9 @@ class ControllerManager:
                 try:
                     controller.connect()
                 except Exception as e:
-                    logger.error(f"Error conectando controlador '{controller.name}': {e}", exc_info=True)
+                    logger.error(
+                        f"Error conectando controlador '{controller.name}': {e}", exc_info=True
+                    )
 
     def disconnect_all(self) -> None:
         """Desconecta todos los controladores."""
@@ -72,7 +73,9 @@ class ControllerManager:
                 try:
                     controller.disconnect()
                 except Exception as e:
-                    logger.error(f"Error desconectando controlador '{controller.name}': {e}", exc_info=True)
+                    logger.error(
+                        f"Error desconectando controlador '{controller.name}': {e}", exc_info=True
+                    )
 
     def get_controller(self, name: str) -> Optional[BaseController]:
         """
@@ -126,4 +129,3 @@ class ControllerManager:
         self.disconnect_all()
         self._controllers.clear()
         logger.debug("Todos los controladores han sido limpiados")
-

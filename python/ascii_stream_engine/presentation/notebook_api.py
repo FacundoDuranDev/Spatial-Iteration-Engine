@@ -25,12 +25,8 @@ def build_control_panel(engine: StreamEngine) -> Dict[str, List[object]]:
 
     cfg = engine.get_config()
     fps = widgets.IntSlider(value=cfg.fps, min=5, max=60, description="FPS")
-    grid_w = widgets.IntSlider(
-        value=cfg.grid_w, min=40, max=200, description="Grid W"
-    )
-    grid_h = widgets.IntSlider(
-        value=cfg.grid_h, min=20, max=120, description="Grid H"
-    )
+    grid_w = widgets.IntSlider(value=cfg.grid_w, min=40, max=200, description="Grid W")
+    grid_h = widgets.IntSlider(value=cfg.grid_h, min=20, max=120, description="Grid H")
     contrast = widgets.FloatSlider(
         value=cfg.contrast, min=0.5, max=3.0, step=0.1, description="Contraste"
     )
@@ -118,7 +114,9 @@ def build_general_control_panel(
         color = {"ok": "#d4edda", "warn": "#fff3cd", "info": "#e7f1ff"}.get(kind, "#f8f9fa")
         return f'<div style="padding:8px 10px; background:{color}; border-radius:6px; margin:6px 0; border:1px solid #dee2e6; font-size:13px;">{msg}</div>'
 
-    status = widgets.HTML(value=_status_style("Listo. Usa las pestañas y pulsa Start en Motor.", "info"))
+    status = widgets.HTML(
+        value=_status_style("Listo. Usa las pestañas y pulsa Start en Motor.", "info")
+    )
 
     # Network controls
     network_mode = widgets.Dropdown(
@@ -127,13 +125,23 @@ def build_general_control_panel(
         description="Modo red",
         style={"description_width": "80px"},
     )
-    host_input = widgets.Text(value=cfg.host, description="Host", style={"description_width": "80px"})
-    port_input = widgets.IntText(value=cfg.port, description="Puerto", style={"description_width": "80px"})
-    apply_net_btn = widgets.Button(description="Aplicar red", layout=Layout(width="120px") if Layout else None)
+    host_input = widgets.Text(
+        value=cfg.host, description="Host", style={"description_width": "80px"}
+    )
+    port_input = widgets.IntText(
+        value=cfg.port, description="Puerto", style={"description_width": "80px"}
+    )
+    apply_net_btn = widgets.Button(
+        description="Aplicar red", layout=Layout(width="120px") if Layout else None
+    )
 
     # Camera controls
-    camera_index = widgets.IntText(value=0, description="Cámara", style={"description_width": "80px"})
-    apply_camera_btn = widgets.Button(description="Aplicar cámara", layout=Layout(width="130px") if Layout else None)
+    camera_index = widgets.IntText(
+        value=0, description="Cámara", style={"description_width": "80px"}
+    )
+    apply_camera_btn = widgets.Button(
+        description="Aplicar cámara", layout=Layout(width="130px") if Layout else None
+    )
 
     # Filters (incl. C++ para MVP_02)
     if filters is None:
@@ -149,23 +157,14 @@ def build_general_control_panel(
         if DetailBoostFilter:
             filters["Detail Boost"] = DetailBoostFilter()
 
-    filter_checkboxes = {
-        name: widgets.Checkbox(value=False, description=name)
-        for name in filters
-    }
+    filter_checkboxes = {name: widgets.Checkbox(value=False, description=name) for name in filters}
 
     # ASCII/RAW controls
-    dense_charset = (
-        " .'`^\\\",:;Il!i~+_-?][}{1)(|\\\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$"
-    )
+    dense_charset = " .'`^\\\",:;Il!i~+_-?][}{1)(|\\\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$"
 
     fps_slider = widgets.IntSlider(value=cfg.fps, min=10, max=60, description="FPS")
-    grid_w_slider = widgets.IntSlider(
-        value=cfg.grid_w, min=60, max=200, description="Grid W"
-    )
-    grid_h_slider = widgets.IntSlider(
-        value=cfg.grid_h, min=20, max=120, description="Grid H"
-    )
+    grid_w_slider = widgets.IntSlider(value=cfg.grid_w, min=60, max=200, description="Grid W")
+    grid_h_slider = widgets.IntSlider(value=cfg.grid_h, min=20, max=120, description="Grid H")
 
     charset_options = {
         "Simple": " .:-=+*#",
@@ -211,10 +210,18 @@ def build_general_control_panel(
     )
     bitrate_text = widgets.Text(value=str(cfg.bitrate), description="Bitrate")
 
-    apply_settings_btn = widgets.Button(description="Aplicar ajustes", layout=Layout(width="140px") if Layout else None)
-    clear_filters_btn = widgets.Button(description="Quitar todos", layout=Layout(width="120px") if Layout else None)
-    start_btn = widgets.Button(description="▶ Iniciar", layout=Layout(width="100px") if Layout else None)
-    stop_btn = widgets.Button(description="■ Detener", layout=Layout(width="100px") if Layout else None)
+    apply_settings_btn = widgets.Button(
+        description="Aplicar ajustes", layout=Layout(width="140px") if Layout else None
+    )
+    clear_filters_btn = widgets.Button(
+        description="Quitar todos", layout=Layout(width="120px") if Layout else None
+    )
+    start_btn = widgets.Button(
+        description="▶ Iniciar", layout=Layout(width="100px") if Layout else None
+    )
+    stop_btn = widgets.Button(
+        description="■ Detener", layout=Layout(width="100px") if Layout else None
+    )
 
     def _sync_host(change) -> None:
         mode = change["new"]
@@ -233,7 +240,9 @@ def build_general_control_panel(
         elif hasattr(engine, "filters"):
             engine.filters[:] = selected
         if selected:
-            status.value = _status_style(f"Filtros activos: {', '.join([f.name for f in selected])}", "ok")
+            status.value = _status_style(
+                f"Filtros activos: {', '.join([f.name for f in selected])}", "ok"
+            )
         else:
             status.value = _status_style("Sin filtros: imagen normal.", "info")
 
@@ -315,7 +324,9 @@ def build_general_control_panel(
 
     def start_engine(_=None) -> None:
         engine.start()
-        status.value = _status_style("● Motor en marcha. El preview se actualiza en la celda de arriba.", "ok")
+        status.value = _status_style(
+            "● Motor en marcha. El preview se actualiza en la celda de arriba.", "ok"
+        )
 
     def stop_engine(_=None) -> None:
         engine.stop()
@@ -362,7 +373,9 @@ def build_general_control_panel(
     filters_box = widgets.VBox(
         [
             widgets.HTML("<b>Filtros de imagen</b>"),
-            widgets.HTML("<small>Se aplican antes del render (ASCII/RAW). Puedes combinar varios.</small>"),
+            widgets.HTML(
+                "<small>Se aplican antes del render (ASCII/RAW). Puedes combinar varios.</small>"
+            ),
             row1,
             row2,
             clear_filters_btn,
@@ -404,7 +417,9 @@ def build_general_control_panel(
         return False
 
     face_cb = widgets.Checkbox(value=_analyzer_enabled("face"), description="Detección cara (face)")
-    hands_cb = widgets.Checkbox(value=_analyzer_enabled("hands"), description="Detección manos (hands)")
+    hands_cb = widgets.Checkbox(
+        value=_analyzer_enabled("hands"), description="Detección manos (hands)"
+    )
     pose_cb = widgets.Checkbox(value=_analyzer_enabled("pose"), description="Detección pose (pose)")
     ai_viz_dd = widgets.Dropdown(
         options=["Normal (según ASCII/RAW)", "Overlay landmarks"],
@@ -502,13 +517,15 @@ def build_general_control_panel(
     )
     ai_aviso = widgets.HTML(
         value=(
-            '<div style="padding:8px; background:#fff3cd; border-radius:4px; font-size:12px; margin:4px 0;">'
-            "<b>Sin módulo de percepción.</b> Arranca Jupyter con <code>PYTHONPATH=python:cpp/build</code> "
-            "(tras <code>bash cpp/build.sh</code>) para que la detección y el overlay funcionen."
-            "</div>"
+            (
+                '<div style="padding:8px; background:#fff3cd; border-radius:4px; font-size:12px; margin:4px 0;">'
+                "<b>Sin módulo de percepción.</b> Arranca Jupyter con <code>PYTHONPATH=python:cpp/build</code> "
+                "(tras <code>bash cpp/build.sh</code>) para que la detección y el overlay funcionen."
+                "</div>"
+            )
+            if not _has_analyzers
+            else ""
         )
-        if not _has_analyzers
-        else ""
     )
     if _has_analyzers:
         ai_aviso = widgets.HTML(
@@ -531,9 +548,7 @@ def build_general_control_panel(
         layout=Layout(padding="0 0 10px 0") if Layout else None,
     )
 
-    tabs = widgets.Tab(
-        children=[network_box, engine_box, filters_box, settings_box, ai_box]
-    )
+    tabs = widgets.Tab(children=[network_box, engine_box, filters_box, settings_box, ai_box])
     tabs.set_title(0, "Red")
     tabs.set_title(1, "Motor")
     tabs.set_title(2, "Filtros")
@@ -617,6 +632,7 @@ def _get_device_info() -> Dict[str, Any]:
         pass
     try:
         import cv2
+
         info["cv2_version"] = cv2.__version__
         cap_backend = cv2.CAP_V4L2 if sys.platform == "linux" else getattr(cv2, "CAP_ANY", 0)
         # Redirigir fd 2 (stderr) para silenciar avisos de OpenCV en C++
@@ -721,7 +737,9 @@ def build_diagnostics_panel(engine: Optional[StreamEngine] = None) -> Dict[str, 
     def run_benchmark(_=None) -> None:
         if engine is None:
             with benchmark_output:
-                print("No hay engine asociado. Crea un StreamEngine y pásalo a build_diagnostics_panel(engine=...).")
+                print(
+                    "No hay engine asociado. Crea un StreamEngine y pásalo a build_diagnostics_panel(engine=...)."
+                )
             return
         secs = max(1, min(60, int(benchmark_seconds.value)))
         benchmark_btn.disabled = True
@@ -735,13 +753,19 @@ def build_diagnostics_panel(engine: Optional[StreamEngine] = None) -> Dict[str, 
                 time.sleep(secs)
                 if not was_running:
                     engine.stop()
-                report = engine.get_profiling_report() if hasattr(engine, "get_profiling_report") else ""
+                report = (
+                    engine.get_profiling_report() if hasattr(engine, "get_profiling_report") else ""
+                )
                 summary = engine.metrics.get_summary()
                 with benchmark_output:
                     print("=== Benchmark {} s ===\n".format(secs))
-                    print("Métricas: FPS={:.1f}  frames={}  latency_avg={:.2f} ms".format(
-                        summary["fps"], summary["frames_processed"], summary["latency_avg"] * 1000
-                    ))
+                    print(
+                        "Métricas: FPS={:.1f}  frames={}  latency_avg={:.2f} ms".format(
+                            summary["fps"],
+                            summary["frames_processed"],
+                            summary["latency_avg"] * 1000,
+                        )
+                    )
                     if report:
                         print("\n" + report)
             except Exception as e:
@@ -757,31 +781,39 @@ def build_diagnostics_panel(engine: Optional[StreamEngine] = None) -> Dict[str, 
     refresh_btn.on_click(refresh)
     benchmark_btn.on_click(run_benchmark)
 
-    section_devices = widgets.VBox([
-        widgets.HTML("<b>Dispositivos conectados</b>"),
-        devices_html,
-        refresh_btn,
-    ])
-    section_latency = widgets.VBox([
-        widgets.HTML("<b>Latencia del proceso</b>"),
-        latency_html,
-        widgets.HTML("<small>Pulsa Actualizar con el engine en marcha para refrescar.</small>"),
-    ])
-    section_benchmark = widgets.VBox([
-        widgets.HTML("<b>Benchmarking</b>"),
-        widgets.HBox([benchmark_seconds, widgets.HTML("s")]),
-        benchmark_btn,
-        benchmark_output,
-    ])
+    section_devices = widgets.VBox(
+        [
+            widgets.HTML("<b>Dispositivos conectados</b>"),
+            devices_html,
+            refresh_btn,
+        ]
+    )
+    section_latency = widgets.VBox(
+        [
+            widgets.HTML("<b>Latencia del proceso</b>"),
+            latency_html,
+            widgets.HTML("<small>Pulsa Actualizar con el engine en marcha para refrescar.</small>"),
+        ]
+    )
+    section_benchmark = widgets.VBox(
+        [
+            widgets.HTML("<b>Benchmarking</b>"),
+            widgets.HBox([benchmark_seconds, widgets.HTML("s")]),
+            benchmark_btn,
+            benchmark_output,
+        ]
+    )
 
-    panel = widgets.VBox([
-        widgets.HTML("<h3>Diagnóstico y benchmarking</h3>"),
-        section_devices,
-        widgets.HTML("<br>"),
-        section_latency,
-        widgets.HTML("<br>"),
-        section_benchmark,
-    ])
+    panel = widgets.VBox(
+        [
+            widgets.HTML("<h3>Diagnóstico y benchmarking</h3>"),
+            section_devices,
+            widgets.HTML("<br>"),
+            section_latency,
+            widgets.HTML("<br>"),
+            section_benchmark,
+        ]
+    )
     display(panel)
 
     return {
@@ -817,9 +849,7 @@ def build_engine_for_notebook(
         import ipywidgets as widgets
         from IPython.display import display
     except ImportError as exc:
-        raise ImportError(
-            "Instala ipywidgets e ipython: pip install ipywidgets ipython"
-        ) from exc
+        raise ImportError("Instala ipywidgets e ipython: pip install ipywidgets ipython") from exc
 
     image_widget = widgets.Image(format="jpeg")
     display(widgets.HTML("<b>Preview (la imagen aparece al pulsar Start)</b>"))
@@ -835,11 +865,14 @@ def build_engine_for_notebook(
             HandLandmarkAnalyzer,
             PoseLandmarkAnalyzer,
         )
-        analyzers = AnalyzerPipeline([
-            FaceLandmarkAnalyzer(),
-            HandLandmarkAnalyzer(),
-            PoseLandmarkAnalyzer(),
-        ])
+
+        analyzers = AnalyzerPipeline(
+            [
+                FaceLandmarkAnalyzer(),
+                HandLandmarkAnalyzer(),
+                PoseLandmarkAnalyzer(),
+            ]
+        )
     except Exception:
         pass
 

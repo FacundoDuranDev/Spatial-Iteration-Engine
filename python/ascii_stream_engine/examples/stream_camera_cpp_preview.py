@@ -8,14 +8,16 @@ Desde la raíz del repo:
   Índice por defecto: 0. Si la cámara no enciende, prueba 2 o 4 (ej: ...stream_camera_cpp_preview.py 2)
 o: ./run_preview_raw.sh
 """
+
 import sys
+
 from ascii_stream_engine import (
     EngineConfig,
-    StreamEngine,
+    FilterPipeline,
     OpenCVCameraSource,
     PassthroughRenderer,
     PreviewSink,
-    FilterPipeline,
+    StreamEngine,
 )
 from ascii_stream_engine.adapters.processors import (
     CppBrightnessContrastFilter,
@@ -26,10 +28,12 @@ from ascii_stream_engine.adapters.processors import (
 def main() -> None:
     camera_index = int(sys.argv[1]) if len(sys.argv) > 1 else 0
     config = EngineConfig(host="127.0.0.1", port=1234)
-    filters = FilterPipeline([
-        CppBrightnessContrastFilter(brightness_delta=10, contrast_factor=1.1),
-        CppInvertFilter(),
-    ])
+    filters = FilterPipeline(
+        [
+            CppBrightnessContrastFilter(brightness_delta=10, contrast_factor=1.1),
+            CppInvertFilter(),
+        ]
+    )
     engine = StreamEngine(
         source=OpenCVCameraSource(camera_index),
         renderer=PassthroughRenderer(),

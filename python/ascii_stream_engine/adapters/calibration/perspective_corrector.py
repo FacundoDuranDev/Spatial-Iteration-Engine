@@ -87,7 +87,9 @@ class PerspectiveCorrector:
         self._perspective_matrix = cv2.getPerspectiveTransform(src_points, dst_points)
         logger.debug("Matriz de perspectiva calculada")
 
-    def apply_perspective_transform(self, image: np.ndarray, size: Optional[Tuple[int, int]] = None) -> np.ndarray:
+    def apply_perspective_transform(
+        self, image: np.ndarray, size: Optional[Tuple[int, int]] = None
+    ) -> np.ndarray:
         """
         Aplica la transformación de perspectiva.
 
@@ -128,4 +130,3 @@ class PerspectiveCorrector:
             corrected = self.apply_perspective_transform(corrected)
 
         return corrected
-

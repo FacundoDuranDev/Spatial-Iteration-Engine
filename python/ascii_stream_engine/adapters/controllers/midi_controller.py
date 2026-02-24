@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 # Intentar importar librerías MIDI
 try:
     import rtmidi
+
     RTMIDI_AVAILABLE = True
 except ImportError:
     RTMIDI_AVAILABLE = False
@@ -17,6 +18,7 @@ except ImportError:
 
 try:
     import mido
+
     MIDO_AVAILABLE = True
 except ImportError:
     MIDO_AVAILABLE = False
@@ -172,4 +174,3 @@ class MidiController(BaseController):
         elif self._midi_port and hasattr(self._midi_port, "close"):
             self._midi_port.close()
             self._midi_port = None
-

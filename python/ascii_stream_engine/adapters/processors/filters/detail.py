@@ -19,9 +19,7 @@ class DetailBoostFilter(BaseFilter):
         self._clip_limit = clip_limit
         self._tile_grid_size = tile_grid_size
         self._sharpness = sharpness
-        self._clahe = cv2.createCLAHE(
-            clipLimit=self._clip_limit, tileGridSize=self._tile_grid_size
-        )
+        self._clahe = cv2.createCLAHE(clipLimit=self._clip_limit, tileGridSize=self._tile_grid_size)
 
     def apply(self, frame, config, analysis=None):
         # Optimización: usar cache de conversiones para evitar conversiones redundantes

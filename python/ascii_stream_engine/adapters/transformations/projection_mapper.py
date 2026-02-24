@@ -35,4 +35,3 @@ class ProjectionMapper(BaseSpatialTransform):
         """Aplica el mapeo inverso."""
         h, w = frame.shape[:2]
         return cv2.warpPerspective(frame, self._inverse_matrix, (w, h))
-

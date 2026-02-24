@@ -7,7 +7,7 @@ import numpy as np
 
 class SpatialTransform(Protocol):
     """Protocolo para transformaciones espaciales.
-    
+
     Las transformaciones espaciales modifican la geometría del frame,
     como rotaciones, escalados, warping, corrección de perspectiva, etc.
     """
@@ -59,4 +59,3 @@ class SpatialTransform(Protocol):
             Matriz de transformación o None si no está disponible
         """
         ...
-

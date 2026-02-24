@@ -8,7 +8,6 @@ import numpy as np
 
 from ...domain.config import EngineConfig
 from ...domain.tracking_data import TrackingData, Trajectory
-
 from .base import BaseTracker
 
 
@@ -50,23 +49,17 @@ class KalmanTracker(BaseTracker):
         kf.measurementMatrix = np.array([[1, 0, 0, 0], [0, 1, 0, 0]], np.float32)
 
         # Covarianza del proceso
-        kf.processNoiseCov = (
-            np.eye(4, dtype=np.float32) * self.process_noise
-        )
+        kf.processNoiseCov = np.eye(4, dtype=np.float32) * self.process_noise
 
         # Covarianza de medición
-        kf.measurementNoiseCov = (
-            np.eye(2, dtype=np.float32) * self.measurement_noise
-        )
+        kf.measurementNoiseCov = np.eye(2, dtype=np.float32) * self.measurement_noise
 
         # Covarianza del error a posteriori
         kf.errorCovPost = np.eye(4, dtype=np.float32)
 
         return kf
 
-    def track(
-        self, frame: np.ndarray, detections: dict, config: EngineConfig
-    ) -> TrackingData:
+    def track(self, frame: np.ndarray, detections: dict, config: EngineConfig) -> TrackingData:
         """
         Trackea objetos usando filtro de Kalman.
 
@@ -157,4 +150,3 @@ class KalmanTracker(BaseTracker):
         super().reset()
         self._kalman_filters.clear()
         self._initialized.clear()
-

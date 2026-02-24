@@ -6,16 +6,18 @@ Preview desde archivo de video → 1 filtro C++ → PassthroughRenderer → Prev
 Uso (desde la raíz del repo):
   PYTHONPATH=python:cpp/build python python/ascii_stream_engine/examples/stream_preview_file.py /ruta/al/video.mp4
 """
+
 import sys
+
 from ascii_stream_engine import (
     EngineConfig,
-    StreamEngine,
+    FilterPipeline,
     PassthroughRenderer,
     PreviewSink,
-    FilterPipeline,
+    StreamEngine,
 )
-from ascii_stream_engine.adapters.sources import VideoFileSource
 from ascii_stream_engine.adapters.processors import CppInvertFilter
+from ascii_stream_engine.adapters.sources import VideoFileSource
 
 
 def main() -> None:

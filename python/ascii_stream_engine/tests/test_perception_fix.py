@@ -5,10 +5,10 @@ import pytest
 
 from ascii_stream_engine.domain.config import EngineConfig
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_config() -> EngineConfig:
     """Minimal config for analyzer calls."""
@@ -20,6 +20,7 @@ def _synthetic_frame(w: int = 640, h: int = 480) -> np.ndarray:
     frame = np.zeros((h, w, 3), dtype=np.uint8)
     # Draw a bright oval to give detectors something to find
     import cv2
+
     cv2.ellipse(frame, (w // 2, h // 2), (80, 100), 0, 0, 360, (200, 180, 160), -1)
     # Draw some features inside the oval
     cv2.circle(frame, (w // 2 - 25, h // 2 - 20), 8, (255, 255, 255), -1)  # left eye
@@ -32,27 +33,32 @@ def _synthetic_frame(w: int = 640, h: int = 480) -> np.ndarray:
 # Face analyzer tests
 # ---------------------------------------------------------------------------
 
+
 class TestFaceLandmarkAnalyzer:
     def test_import(self):
         from ascii_stream_engine.adapters.perception.face import FaceLandmarkAnalyzer
+
         analyzer = FaceLandmarkAnalyzer()
         assert analyzer.name == "face"
         assert analyzer.enabled is True
 
     def test_none_frame_returns_empty(self):
         from ascii_stream_engine.adapters.perception.face import FaceLandmarkAnalyzer
+
         analyzer = FaceLandmarkAnalyzer()
         result = analyzer.analyze(None, _make_config())
         assert result == {}
 
     def test_disabled_returns_empty(self):
         from ascii_stream_engine.adapters.perception.face import FaceLandmarkAnalyzer
+
         analyzer = FaceLandmarkAnalyzer(enabled=False)
         result = analyzer.analyze(_synthetic_frame(), _make_config())
         assert result == {}
 
     def test_no_crash_on_black_frame(self):
         from ascii_stream_engine.adapters.perception.face import FaceLandmarkAnalyzer
+
         analyzer = FaceLandmarkAnalyzer()
         black = np.zeros((480, 640, 3), dtype=np.uint8)
         result = analyzer.analyze(black, _make_config())
@@ -62,14 +68,17 @@ class TestFaceLandmarkAnalyzer:
     def test_detection_output_format(self):
         """If face detected, output should have correct structure."""
         from ascii_stream_engine.adapters.perception.face import (
-            FaceLandmarkAnalyzer,
             _FACE_DETECTOR_AVAILABLE,
+            FaceLandmarkAnalyzer,
         )
+
         if not _FACE_DETECTOR_AVAILABLE:
             pytest.skip("cv2.FaceDetectorYN not available (OpenCV < 4.5.4)")
 
         import os
+
         from ascii_stream_engine.adapters.perception.face import _DEFAULT_MODEL_PATH
+
         if not os.path.isfile(_DEFAULT_MODEL_PATH):
             pytest.skip("face_detection_yunet.onnx not found")
 
@@ -100,21 +109,25 @@ class TestFaceLandmarkAnalyzer:
 # Hands analyzer tests
 # ---------------------------------------------------------------------------
 
+
 class TestHandLandmarkAnalyzer:
     def test_import(self):
         from ascii_stream_engine.adapters.perception.hands import HandLandmarkAnalyzer
+
         analyzer = HandLandmarkAnalyzer()
         assert analyzer.name == "hands"
         assert analyzer.enabled is True
 
     def test_none_frame_returns_empty(self):
         from ascii_stream_engine.adapters.perception.hands import HandLandmarkAnalyzer
+
         analyzer = HandLandmarkAnalyzer()
         result = analyzer.analyze(None, _make_config())
         assert result == {}
 
     def test_disabled_returns_empty(self):
         from ascii_stream_engine.adapters.perception.hands import HandLandmarkAnalyzer
+
         analyzer = HandLandmarkAnalyzer(enabled=False)
         result = analyzer.analyze(_synthetic_frame(), _make_config())
         assert result == {}
@@ -122,9 +135,10 @@ class TestHandLandmarkAnalyzer:
     def test_graceful_fallback_no_mediapipe(self):
         """If mediapipe is not installed, should return empty dict (not crash)."""
         from ascii_stream_engine.adapters.perception.hands import (
-            HandLandmarkAnalyzer,
             _MP_AVAILABLE,
+            HandLandmarkAnalyzer,
         )
+
         if _MP_AVAILABLE:
             pytest.skip("mediapipe IS available, can't test fallback")
         analyzer = HandLandmarkAnalyzer()
@@ -135,9 +149,10 @@ class TestHandLandmarkAnalyzer:
     def test_mediapipe_output_format(self):
         """If mediapipe available, output should have correct structure."""
         from ascii_stream_engine.adapters.perception.hands import (
-            HandLandmarkAnalyzer,
             _MP_AVAILABLE,
+            HandLandmarkAnalyzer,
         )
+
         if not _MP_AVAILABLE:
             pytest.skip("mediapipe not installed")
 
@@ -170,15 +185,18 @@ class TestHandLandmarkAnalyzer:
 # Pose analyzer tests
 # ---------------------------------------------------------------------------
 
+
 class TestPoseLandmarkAnalyzer:
     def test_import(self):
         from ascii_stream_engine.adapters.perception.pose import PoseLandmarkAnalyzer
+
         analyzer = PoseLandmarkAnalyzer()
         assert analyzer.name == "pose"
         assert analyzer.enabled is True
 
     def test_none_frame_returns_empty(self):
         from ascii_stream_engine.adapters.perception.pose import PoseLandmarkAnalyzer
+
         analyzer = PoseLandmarkAnalyzer()
         result = analyzer.analyze(None, _make_config())
         assert result == {}
@@ -186,9 +204,10 @@ class TestPoseLandmarkAnalyzer:
     def test_graceful_fallback_no_cpp(self):
         """Without C++ module, should return empty dict."""
         from ascii_stream_engine.adapters.perception.pose import (
-            PoseLandmarkAnalyzer,
             _CPP_AVAILABLE,
+            PoseLandmarkAnalyzer,
         )
+
         if _CPP_AVAILABLE:
             pytest.skip("perception_cpp IS available, can't test fallback")
         analyzer = PoseLandmarkAnalyzer()
@@ -199,9 +218,10 @@ class TestPoseLandmarkAnalyzer:
     def test_cpp_output_format(self):
         """If C++ module available, output should have correct structure."""
         from ascii_stream_engine.adapters.perception.pose import (
-            PoseLandmarkAnalyzer,
             _CPP_AVAILABLE,
+            PoseLandmarkAnalyzer,
         )
+
         if not _CPP_AVAILABLE:
             pytest.skip("perception_cpp not available")
 
@@ -225,18 +245,22 @@ class TestPoseLandmarkAnalyzer:
 # Coordinate normalization tests
 # ---------------------------------------------------------------------------
 
+
 class TestCoordinateNormalization:
     def test_face_coords_in_range(self):
         """Face points must always be in [0, 1] regardless of frame size."""
         from ascii_stream_engine.adapters.perception.face import (
-            FaceLandmarkAnalyzer,
             _FACE_DETECTOR_AVAILABLE,
+            FaceLandmarkAnalyzer,
         )
+
         if not _FACE_DETECTOR_AVAILABLE:
             pytest.skip("FaceDetectorYN not available")
 
         import os
+
         from ascii_stream_engine.adapters.perception.face import _DEFAULT_MODEL_PATH
+
         if not os.path.isfile(_DEFAULT_MODEL_PATH):
             pytest.skip("face_detection_yunet.onnx not found")
 
@@ -254,6 +278,7 @@ class TestCoordinateNormalization:
 # Perception __init__ tests
 # ---------------------------------------------------------------------------
 
+
 class TestPerceptionInit:
     def test_all_analyzers_importable(self):
         from ascii_stream_engine.adapters.perception import (
@@ -261,6 +286,7 @@ class TestPerceptionInit:
             HandLandmarkAnalyzer,
             PoseLandmarkAnalyzer,
         )
+
         assert FaceLandmarkAnalyzer.name == "face"
         assert HandLandmarkAnalyzer.name == "hands"
         assert PoseLandmarkAnalyzer.name == "pose"

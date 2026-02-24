@@ -8,13 +8,15 @@ Uso (desde la raíz del repo):
   PYTHONPATH=python:cpp/build python python/ascii_stream_engine/examples/stream_preview_pattern.py
 o: ./run_preview_pattern.sh
 """
+
 import sys
+
 from ascii_stream_engine import (
     EngineConfig,
-    StreamEngine,
+    FilterPipeline,
     PassthroughRenderer,
     PreviewSink,
-    FilterPipeline,
+    StreamEngine,
 )
 from ascii_stream_engine.adapters.processors import CppInvertFilter
 
@@ -26,7 +28,9 @@ except ImportError:
 
 def main() -> None:
     config = EngineConfig(host="127.0.0.1", port=1234, frame_buffer_size=0, sleep_on_empty=0.001)
-    source = GeneratorSource(PatternGenerator(pattern_type="turing", speed=0.5), width=640, height=480)
+    source = GeneratorSource(
+        PatternGenerator(pattern_type="turing", speed=0.5), width=640, height=480
+    )
     filters = FilterPipeline([CppInvertFilter()])
     engine = StreamEngine(
         source=source,

@@ -11,9 +11,9 @@ import time
 import unittest
 from unittest.mock import Mock, patch
 
-from ascii_stream_engine.domain.config import ConfigValidationError, EngineConfig
 from ascii_stream_engine.application.engine import StreamEngine
 from ascii_stream_engine.application.pipeline import AnalyzerPipeline, FilterPipeline
+from ascii_stream_engine.domain.config import ConfigValidationError, EngineConfig
 from ascii_stream_engine.domain.types import RenderFrame
 
 
@@ -686,4 +686,3 @@ class TestComponentErrorHandling(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

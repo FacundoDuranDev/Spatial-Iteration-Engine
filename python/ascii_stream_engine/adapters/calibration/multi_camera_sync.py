@@ -23,9 +23,12 @@ class MultiCameraSync:
         self._frames: Dict[str, tuple] = {}  # {camera_id: (frame, timestamp)}
         self._lock = None
         import threading
+
         self._lock = threading.Lock()
 
-    def add_frame(self, camera_id: str, frame: np.ndarray, timestamp: Optional[float] = None) -> None:
+    def add_frame(
+        self, camera_id: str, frame: np.ndarray, timestamp: Optional[float] = None
+    ) -> None:
         """
         Agrega un frame de una cámara.
 
@@ -40,7 +43,9 @@ class MultiCameraSync:
         with self._lock:
             self._frames[camera_id] = (frame, timestamp)
 
-    def get_synchronized_frames(self, camera_ids: Optional[List[str]] = None) -> Optional[Dict[str, np.ndarray]]:
+    def get_synchronized_frames(
+        self, camera_ids: Optional[List[str]] = None
+    ) -> Optional[Dict[str, np.ndarray]]:
         """
         Obtiene frames sincronizados de múltiples cámaras.
 
@@ -75,4 +80,3 @@ class MultiCameraSync:
         """Limpia todos los frames almacenados."""
         with self._lock:
             self._frames.clear()
-

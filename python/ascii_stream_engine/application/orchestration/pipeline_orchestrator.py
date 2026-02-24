@@ -23,8 +23,8 @@ from ...ports.sources import FrameSource
 from ..pipeline import (
     AnalyzerPipeline,
     FilterPipeline,
-    TransformationPipeline,
     TrackingPipeline,
+    TransformationPipeline,
 )
 from .stage_executor import StageExecutor, StageResult
 
@@ -114,9 +114,7 @@ class PipelineOrchestrator:
             self._profiler.start_phase(LoopProfiler.PHASE_CAPTURE)
 
         if frame is None:
-            capture_result = self._stage_executor.execute_capture(
-                lambda: self._source.read()
-            )
+            capture_result = self._stage_executor.execute_capture(lambda: self._source.read())
             if not capture_result.success:
                 if self._profiler:
                     self._profiler.end_phase(LoopProfiler.PHASE_CAPTURE)
@@ -262,9 +260,7 @@ class PipelineOrchestrator:
             self._profiler.start_phase(LoopProfiler.PHASE_WRITING)
 
         write_start = time.perf_counter()
-        output_result = self._stage_executor.execute_output(
-            lambda: self._sink.write(rendered)
-        )
+        output_result = self._stage_executor.execute_output(lambda: self._sink.write(rendered))
         if not output_result.success:
             if self._profiler:
                 self._profiler.end_phase(LoopProfiler.PHASE_WRITING)
@@ -295,4 +291,3 @@ class PipelineOrchestrator:
     def update_config(self, config: EngineConfig) -> None:
         """Actualiza la configuración del orquestador."""
         self._config = config
-

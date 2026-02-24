@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 # Intentar importar librerías GPU
 try:
     import cupy as cp
+
     CUPY_AVAILABLE = True
 except ImportError:
     CUPY_AVAILABLE = False
@@ -17,6 +18,7 @@ except ImportError:
 
 try:
     import pyopencl as cl
+
     OPENCL_AVAILABLE = True
 except ImportError:
     OPENCL_AVAILABLE = False
@@ -157,6 +159,7 @@ class GPUAccelerator:
         """
         if not self._available:
             import cv2
+
             return cv2.resize(frame, size)
 
         try:
@@ -164,12 +167,14 @@ class GPUAccelerator:
                 gpu_frame = self.to_gpu(frame)
                 # CuPy no tiene resize directo, usar scipy o fallback a CPU
                 import cv2
+
                 return cv2.resize(frame, size)
             else:
                 import cv2
+
                 return cv2.resize(frame, size)
         except Exception as e:
             logger.error(f"Error redimensionando en GPU: {e}", exc_info=True)
             import cv2
-            return cv2.resize(frame, size)
 
+            return cv2.resize(frame, size)

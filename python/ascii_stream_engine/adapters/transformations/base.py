@@ -31,4 +31,3 @@ class BaseSpatialTransform:
             Frame transformado inversamente
         """
         return frame
-

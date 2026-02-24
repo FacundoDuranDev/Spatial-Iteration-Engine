@@ -9,6 +9,7 @@ from .base import BaseFilter
 
 try:
     import render_bridge as _render_bridge
+
     _CPP_BRIDGE_AVAILABLE = True
 except ImportError:
     _render_bridge = None

@@ -101,4 +101,3 @@ class CalibrationStorage:
             camera_id = file_path.stem.replace("_calibration", "")
             calibrations.append(camera_id)
         return calibrations
-

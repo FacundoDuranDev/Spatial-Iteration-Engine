@@ -32,4 +32,3 @@ class Sensor(Protocol):
             True si el sensor está disponible
         """
         ...
-
