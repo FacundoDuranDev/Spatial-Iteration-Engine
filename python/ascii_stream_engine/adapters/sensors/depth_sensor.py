@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 # Intentar importar librerías de profundidad
 try:
     import pyrealsense2 as rs
+
     REALSENSE_AVAILABLE = True
 except ImportError:
     REALSENSE_AVAILABLE = False
@@ -116,8 +117,12 @@ class DepthSensor(BaseSensor):
             self._config = rs.config()
 
             # Configurar streams
-            self._config.enable_stream(rs.stream.depth, self.width, self.height, rs.format.z16, self.fps)
-            self._config.enable_stream(rs.stream.color, self.width, self.height, rs.format.bgr8, self.fps)
+            self._config.enable_stream(
+                rs.stream.depth, self.width, self.height, rs.format.z16, self.fps
+            )
+            self._config.enable_stream(
+                rs.stream.color, self.width, self.height, rs.format.bgr8, self.fps
+            )
 
             # Iniciar pipeline
             self._pipeline.start(self._config)
@@ -147,4 +152,3 @@ class DepthSensor(BaseSensor):
                 pass
             self._pipeline = None
             self._config = None
-

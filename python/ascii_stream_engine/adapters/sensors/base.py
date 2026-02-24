@@ -111,4 +111,3 @@ class BaseSensor:
     def _do_is_available(self) -> bool:
         """Implementación específica de verificación de disponibilidad (debe ser sobrescrita)."""
         return True  # Por defecto, disponible
-

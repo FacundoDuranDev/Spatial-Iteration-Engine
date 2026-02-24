@@ -154,4 +154,3 @@ class SensorFusion(BaseSensor):
         """
         self._sensors = [s for s in self._sensors if s.name != sensor_name]
         logger.debug(f"Sensor '{sensor_name}' removido de la fusión")
-
