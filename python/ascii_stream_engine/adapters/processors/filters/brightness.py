@@ -7,9 +7,7 @@ class BrightnessFilter(BaseFilter):
     name = "brightness"
 
     def apply(self, frame, config, analysis=None):
-        if getattr(config, "contrast", 1.0) == 1.0 and getattr(
-            config, "brightness", 0
-        ) == 0:
+        if getattr(config, "contrast", 1.0) == 1.0 and getattr(config, "brightness", 0) == 0:
             return frame
         return cv2.convertScaleAbs(
             frame,

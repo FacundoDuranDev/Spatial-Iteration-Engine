@@ -19,4 +19,3 @@ warnings.warn(
 )
 
 __all__ = ["BaseAnalyzer", "FaceHaarAnalyzer"]
-
