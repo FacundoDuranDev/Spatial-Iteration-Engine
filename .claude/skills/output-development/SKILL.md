@@ -362,11 +362,14 @@ def test_mysink_open_closes_previous():
 
 ## Planned Sinks (MVP_04)
 
-| Sink | Protocol | Status | Key dependency |
-|---|---|---|---|
-| `FfmpegRtspSink` | RTSP via ffmpeg | Planned | ffmpeg with RTSP support |
-| `WebRTCOutput` | WebRTC via aiortc | Planned | `aiortc` package |
-| NDI Output | NDI via ndi-python | Future | `ndi-python` package |
+| Sink | Protocol | Status | Priority | Key dependency |
+|---|---|---|---|---|
+| `OscOutput` | OSC (Open Sound Control) | Planned | **High** | `python-osc` package |
+| `FfmpegRtspSink` | RTSP via ffmpeg | Planned | Medium | ffmpeg with RTSP support |
+| `WebRTCOutput` | WebRTC via aiortc | Planned | Medium | `aiortc` package |
+| NDI Output | NDI via ndi-python | Future | Low | `ndi-python` package |
+
+**OSC Output** is top priority (ranked #1 by multi-AI review). It's the standard protocol for VJ/live performance ecosystems: TouchDesigner, Max/MSP, Resolume, Ableton. Sends perception data (face/hands/pose coordinates) and engine state as OSC messages over UDP.
 
 All planned sinks MUST follow the try/except import pattern in `__init__.py`.
 

@@ -23,7 +23,7 @@ description: Use when adding, modifying, or debugging AI analyzers, ONNX models,
 | `cpp/src/perception/pose_landmarks.cpp` | Pose C++ runner |
 | `cpp/src/bridge/pybind_perception.cpp` | pybind11 bridge |
 
-**Pattern:** Copy `face.py` for Python, `face_landmarks.cpp` for C++. Follow the pattern exactly.
+**Pattern:** Copy `pose.py` for new C++ perception adapters (TARGET pattern), `face_landmarks.cpp` for C++ runners. Follow the pattern exactly.
 
 ## Overview
 
@@ -124,9 +124,9 @@ m.def("detect_mymodel",
 
 **Mandatory:** `py::gil_scoped_release` wrapping inference. Never access `py::*` inside release block.
 
-## Python Adapter Pattern
+## Python Adapter Pattern A (TARGET — C++ OnnxRunner)
 
-Copy from `face.py` and adapt:
+Copy from `pose.py` for new analyzers. This is the target pattern for all perception:
 
 ```python
 """My analyzer (C++ perception_cpp). MVP_03."""
@@ -173,6 +173,17 @@ class MyAnalyzer(BaseAnalyzer):
 - Return `{}` on ANY failure
 - `name` attribute matches analysis dict key
 
+## Python Adapter Pattern B (TEMPORARY — Native Library)
+
+Currently used by `face.py` (cv2.FaceDetectorYN) and `hands.py` (mediapipe). These work but will be migrated to Pattern A. Key differences:
+
+- Library handles its own model loading (no OnnxRunner)
+- Library may require specific input format (e.g., mediapipe needs RGB)
+- Lazy initialization via `_ensure_detector()` / `_ensure_hands()` pattern
+- Each library has its own output format requiring adapter-specific parsing
+
+**Do NOT create new analyzers using Pattern B.** All new analyzers must use Pattern A.
+
 ## Contracts
 
 | Contract | Rule |
@@ -189,23 +200,96 @@ class MyAnalyzer(BaseAnalyzer):
 
 The shared C++ inference engine (`onnx_runner.cpp`):
 
-- **Preprocessing:** Letterbox resize (aspect-ratio preserving, black padding) to model input size, then NCHW float32 0-1
-- **Post-processing:** YOLOv8 pose (confidence > 0.5, keypoint confidence > 0.3) or standard landmark (x,y,z) triplets
-- **Coordinate mapping:** Undoes letterbox padding to return pixel coords in original image space
+- **Preprocessing:** `letterbox_and_normalize_nchw()` — Letterbox resize (aspect-ratio preserving, black padding) to model input size, then NCHW float32 0-1. **Includes BGR→RGB swap** (channels 0↔2).
+- **Post-processing (YOLOv8):** `postprocess_yolov8_pose()` — Confidence threshold 0.25 (detection), 0.3 (keypoints). Standard YOLOv8 thresholds.
+- **Post-processing (landmarks):** `output_to_xy()` — Extracts (x,y) from (x,y,z) triplets, auto-detects coordinate scale.
+- **YOLOv8 output transpose:** Auto-detects `(1, 56, 8400)` format and transposes to `(1, 8400, 56)` when `shape[1] < shape[2]`.
+- **Coordinate mapping:** Undoes letterbox padding via `LetterboxInfo` to return **pixel coords** in original image space. Python normalizes to 0-1.
 - **Thread safety:** `std::mutex run_mutex_` protects inference
 - **Buffer reuse:** `input_data_` member preallocated, rewritten each frame
 - **Threading:** `ONNX_NUM_THREADS` env var, defaults to `min(4, hw_concurrency)`
 
-## Current Model Status
+## Current Architecture State (Hybrid — Temporary)
 
-| Model | Status | Issue |
+The perception pipeline currently uses **3 different backends**. All are C++ under the hood, but the inconsistency adds complexity. The goal is to migrate all analyzers to the unified OnnxRunner pattern (Pattern A).
+
+| Analyzer | Backend | C++ Under Hood? | Python Adapter | Status |
+|----------|---------|-----------------|----------------|--------|
+| Face | `cv2.FaceDetectorYN` (YuNet ONNX) | Yes (OpenCV DNN) | `face.py` | **Working — TEMPORARY** |
+| Hands | `mediapipe.solutions.hands` | Yes (TFLite C++) | `hands.py` | **Working — TEMPORARY** |
+| Pose | `perception_cpp.detect_pose()` → OnnxRunner | Yes (ONNX Runtime) | `pose.py` | **Working — TARGET PATTERN** |
+
+### Python Adapter Patterns
+
+**Pattern A (TARGET — copy from `pose.py`):** Python calls `perception_cpp.detect_X(frame)` which delegates to our C++ OnnxRunner. Minimal Python, maximum consistency.
+
+**Pattern B (TEMPORARY — `face.py`, `hands.py`):** Python calls a native library (cv2/mediapipe) that uses its own C++ backend. Works, but different error modes, different model formats, and harder to profile.
+
+### Current Model Status
+
+| Model | Backend | Status |
 |---|---|---|
-| YOLOv8n-pose (pose) | Working | ~15-25ms CPU |
-| face_landmark_qualcomm.onnx (face) | Working | Needs accuracy validation |
-| hand_landmark_new.onnx (hands) | Working | Needs accuracy validation |
-| face_detection_yunet.onnx | Untracked | Needs integration |
+| `yolov8n-pose.onnx` (pose) | OnnxRunner (C++) | Working (~15-25ms CPU) |
+| `face_detection_yunet.onnx` (face) | cv2.FaceDetectorYN | Working — TEMPORARY backend |
+| `hand_landmark_new.onnx` (hands) | Unused | Landmark-only model, needs palm crop |
+| `face_landmark_qualcomm.onnx` (face) | Unused | **DEPRECATED** — DETR 159MB, wrong architecture |
 
 See `rules/MODEL_REGISTRY.md` for full details and candidate models.
+
+### Face Output Format (Current)
+
+```python
+# face.py returns:
+{
+    "faces": [                          # list of detected faces
+        {
+            "bbox": [x, y, w, h],       # normalized 0-1
+            "confidence": float,         # detection score
+            "points": ndarray(5, 2),     # 5 facial landmarks, normalized 0-1
+        },
+        ...
+    ],
+    "points": ndarray(N, 2),            # all landmarks concatenated (backward compat)
+}
+```
+
+## Migration to Unified C++ OnnxRunner
+
+**Goal:** All 3 analyzers follow `pose.py` pattern → `perception_cpp.detect_X()` → C++ OnnxRunner.
+
+### Face Migration (Priority 1 — Easiest)
+
+The `face_detection_yunet.onnx` model is ALREADY an ONNX model. Steps:
+
+1. **C++ side:** Load `face_detection_yunet.onnx` in OnnxRunner
+2. **Add YuNet post-processing in C++:** Output is `(N, 15)` per detection: bbox(4) + landmarks(10) + score(1)
+3. **New pybind function:** `perception_cpp.detect_face(frame)` returning structured data
+4. **Update `face.py`:** Replace cv2.FaceDetectorYN with `perception_cpp.detect_face()` call
+5. Remove cv2 dependency from face analyzer
+
+### Hands Migration (Priority 2 — Harder)
+
+MediaPipe Hands uses a 2-stage pipeline (palm detection + hand landmark). Options:
+
+- **Option A:** Find a single-shot hand detection+landmark ONNX model
+- **Option B:** Port both palm detection and hand landmark ONNX models to OnnxRunner
+- **Option C:** Keep mediapipe but wrap in same interface pattern
+
+Steps for Option A/B:
+1. Source ONNX hand model(s) from whitelisted sources
+2. Add C++ runner(s) for hand detection
+3. New pybind function: `perception_cpp.detect_hands(frame)`
+4. Update `hands.py` to call `perception_cpp.detect_hands()`
+
+### Migration Checklist Per Analyzer
+
+- [ ] C++ runner loads ONNX model via OnnxRunner
+- [ ] Post-processing in C++ (model-specific output parsing)
+- [ ] Pybind bridge with `py::gil_scoped_release`
+- [ ] Python adapter calls `perception_cpp.detect_X()`
+- [ ] Coordinates returned as pixel values (Python normalizes to 0-1)
+- [ ] Fallback to `{}` on any failure
+- [ ] Tests pass with and without C++ module
 
 ## Testing
 

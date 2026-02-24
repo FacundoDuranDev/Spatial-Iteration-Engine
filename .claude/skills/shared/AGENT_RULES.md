@@ -103,26 +103,61 @@ If you hit a blocker that takes more than 10 minutes to resolve:
 
 ---
 
+## Team Structure: Lead + Builders (17 Agents Total)
+
+Each team has **2-3 agents** with distinct roles:
+
+| Role | Responsibility | Active During |
+|------|---------------|---------------|
+| **Lead** | Research, design, contracts (Phase 1). Integration, registration, `make check` (Phase 7). Also implements components during Phases 2-6. | All phases |
+| **Builder A** | Implements assigned components in parallel with Lead. | Phases 2-6 only |
+| **Builder B** *(3-agent teams only)* | Implements additional components in parallel. | Phases 2-6 only |
+
+**Agent counts per team:**
+- 3 agents: Perception, Filters, Outputs (more independent components)
+- 2 agents: Infrastructure, Renderers, Presentation (more sequential work)
+- 1 agent: Innovation (research only), Coordination (monitoring only)
+
+### Builder Rules
+
+If you are a **Builder** (not Lead):
+- Implement ONLY your assigned components (listed in your prompt)
+- Do NOT register components in `__init__.py` — Lead handles Phase 7
+- Do NOT run `make check` — Lead handles final integration
+- DO write unit tests for each component you build
+- DO update `progress.md` when you finish each component
+- If you need an API contract, read `findings.md` (Lead writes it in Phase 1)
+
+### Lead Rules
+
+If you are the **Lead**:
+- Phase 1: You work alone. Survey code, design contracts, write `findings.md`
+- Phases 2-6: Launch Builders via `Task` tool, then implement your own assigned components
+- Phase 7: You work alone. Register all components, run `make check`, update CHANGELOG
+- You are responsible for assigning components to Builders (see LAUNCH_GUIDE.md for assignments)
+
+---
+
 ## Maximizing Agent Capabilities
 
-### Use Parallel Agents (Task Tool)
+### Parallel Work Within Teams
 
-When your team has independent work items, launch them in parallel:
+Leads launch Builders as parallel agents using the Task tool:
 
 ```
-# Example: Phase 2 has 3 independent filter implementations
-# Launch all 3 as parallel agents instead of doing them sequentially
+# Lead launches Builder A and Builder B, then works on their own components
+# Each agent works on independent files — no shared file editing
 ```
 
 **Parallelize when:**
 - Multiple files to create that don't depend on each other
+- Different components assigned to different Builders
 - Tests to write for different components
-- Research tasks across different domains
 
 **Don't parallelize when:**
 - One component depends on another's output
 - You're editing the same file from multiple agents
-- Registration steps that modify `__init__.py`
+- Registration steps that modify `__init__.py` (Lead only, Phase 7)
 
 ### Use Worktrees for Isolation
 
@@ -206,9 +241,10 @@ perf(filters): move physarum simulation to C++
 ### Branch Discipline
 
 - Work ONLY on your team's branch
+- **NEVER run `git push`** — it will prompt for a passphrase and block your session forever. All work stays local.
 - Never push to `main` or `develop` directly
-- Create PRs to `develop` when phases are complete
 - Don't merge — let Coordination handle merge order
+- Commits are LOCAL ONLY. The user will push and create PRs in the morning.
 
 ---
 
@@ -220,7 +256,7 @@ Know what already exists before building:
 |--------|-------|-----------|
 | Filters (Python) | 5 | brightness, edges, detail, invert, conversion_cache |
 | Filters (C++) | 4 | brightness_contrast, channel_swap, grayscale, invert |
-| Analyzers | 3 | face, hands, pose |
+| Analyzers | 3 | face (cv2 — temporary), hands (mediapipe — temporary), pose (OnnxRunner — target) |
 | Renderers | 4 | ascii, passthrough, landmarks_overlay, cpp_deformed |
 | Outputs | 5 | udp, preview, notebook_preview, ascii_recorder, composite |
 | Infrastructure | 5 | event_bus, logging, metrics, profiling, message_queue |
@@ -228,6 +264,8 @@ Know what already exists before building:
 | Sources | 2 | camera, video_file |
 
 **Total: 29 existing components.** Your new work extends this, never replaces it.
+
+**Perception hybrid state:** Face uses cv2.FaceDetectorYN, hands uses mediapipe, pose uses our C++ OnnxRunner. All are C++ under the hood but through different APIs. Migration to unified OnnxRunner for all 3 is planned — see `perception-development/SKILL.md` for details. New analyzers MUST use the OnnxRunner pattern (copy `pose.py`).
 
 ---
 

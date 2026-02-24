@@ -333,6 +333,46 @@ All infrastructure components are thread-safe:
 
 **Pattern:** Acquire lock, copy data, release lock, process outside lock.
 
+## Planned Infrastructure (from AI Architecture Review)
+
+These improvements were identified by multi-AI consensus (ChatGPT, DeepSeek, Claude) as highest-impact additions:
+
+### Async Perception Thread + Double Buffering (Consensus #1 Performance)
+
+Run perception in a separate thread with double buffering to prevent blocking the main pipeline:
+
+```
+Main thread:    capture → [latest_frame buffer] → filters → render → output
+Perception thread: [latest_frame buffer] → analyze → [latest_analysis buffer]
+```
+
+- Main loop reads `latest_analysis` (may be 1 frame behind — acceptable for 30fps)
+- Eliminates 15ms+ perception blocking from the critical path
+- Requires thread-safe frame/analysis buffers (use existing `FrameBuffer` pattern)
+
+### Config Persistence — JSON Save/Load (Consensus #1 Quick Win)
+
+Save/load `EngineConfig` to JSON for session persistence:
+
+```python
+# infrastructure/config_persistence.py
+def save_config(config: EngineConfig, path: str) -> None: ...
+def load_config(path: str) -> EngineConfig: ...
+```
+
+- Serialize all config fields to JSON
+- Load at startup, save on explicit user action (not auto-save)
+- Presentation layer provides save/load buttons
+
+### Profiler Dashboard
+
+Real-time latency breakdown visualization:
+
+- Per-stage timing (capture, analysis, filters, render, output)
+- Rolling FPS graph
+- Bottleneck detection (highlight stages exceeding budget)
+- Exposed via `LoopProfiler.get_summary_dict()` for notebook widget consumption
+
 ## Contracts
 
 | Contract | Rule |

@@ -186,15 +186,33 @@ Filters can read perception results via the `analysis` parameter:
 ```python
 def apply(self, frame, config, analysis=None):
     if analysis and "face" in analysis:
-        points = analysis["face"]["points"]  # (N, 2) normalized 0-1
-        h, w = frame.shape[:2]
-        # Convert to pixel coords for drawing
-        px = (points[:, 0] * w).astype(int)
-        py = (points[:, 1] * h).astype(int)
+        face_data = analysis["face"]
+
+        # Structured face data (preferred):
+        for face in face_data.get("faces", []):
+            bbox = face["bbox"]           # [x, y, w, h] normalized 0-1
+            conf = face["confidence"]      # detection score
+            lm = face["points"]            # ndarray(5, 2) facial landmarks
+
+        # Backward-compatible flat landmarks:
+        points = face_data.get("points")   # (N, 2) all landmarks concatenated
+        if points is not None:
+            h, w = frame.shape[:2]
+            px = (points[:, 0] * w).astype(int)
+            py = (points[:, 1] * h).astype(int)
+
+    if analysis and "hands" in analysis:
+        left = analysis["hands"].get("left")    # (21, 2) or empty
+        right = analysis["hands"].get("right")  # (21, 2) or empty
+
+    if analysis and "pose" in analysis:
+        joints = analysis["pose"].get("joints") # (N, 2) normalized 0-1
     # ...
 ```
 
-Analysis dict keys: `face.points`, `hands.{left,right}`, `pose.joints`. All coords normalized 0-1.
+Analysis dict keys: `face.{faces, points}`, `hands.{left, right}`, `pose.joints`. All coords normalized 0-1.
+
+**Note on frame copy budget:** At 1080p, each `frame.copy()` is ~6MB. With 7 filters active, that's 42MB/frame of memory traffic. Prefer no-op returns (return `frame` directly) and minimize copies.
 
 ## Stateful Filters
 

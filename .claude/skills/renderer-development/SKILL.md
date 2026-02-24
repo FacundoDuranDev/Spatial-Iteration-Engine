@@ -168,10 +168,18 @@ Renderers can use perception results for visualization:
 
 ```python
 if analysis:
-    # Face: green dots
+    # Face: green dots + optional bounding boxes
     face = analysis.get("face", {})
     if face.get("points") is not None:
         _draw_points(img, face["points"], (0, 255, 0))  # BGR green
+
+    # Face bounding boxes (new structured data)
+    h, w = img.shape[:2]
+    for f in face.get("faces", []):
+        bx, by, bw, bh = f["bbox"]  # normalized 0-1
+        x1, y1 = int(bx * w), int(by * h)
+        x2, y2 = int((bx + bw) * w), int((by + bh) * h)
+        cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 1)
 
     # Hands: left=red, right=blue
     hands = analysis.get("hands", {})
@@ -192,6 +200,21 @@ All coordinates are normalized 0-1. Scale by `(w, h)` to get pixel positions:
 h, w = img.shape[:2]
 px = int(point[0] * w)
 py = int(point[1] * h)
+```
+
+### Face Analysis Dict Structure
+
+```python
+analysis["face"] = {
+    "faces": [                          # list of detected faces
+        {
+            "bbox": [x, y, w, h],       # normalized 0-1
+            "confidence": float,         # detection score
+            "points": ndarray(5, 2),     # 5 facial landmarks
+        },
+    ],
+    "points": ndarray(N, 2),            # all landmarks concatenated (backward compat)
+}
 ```
 
 ## Performance Patterns
