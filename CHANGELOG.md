@@ -8,6 +8,14 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 ## [Unreleased]
 
 ### Added
+- `feat(filters)`: Optical Flow Particles filter -- motion-reactive particle system (stateful)
+- `feat(filters)`: Stippling / Pointillism filter -- LUT-cached dot placement effect
+- `feat(filters)`: UV Math Displacement filter -- parametric math-based remap distortion
+- `feat(filters)`: Edge-Aware Smoothing filter -- bilateral filter with blend control
+- `feat(filters)`: Radial Collapse / Singularity filter -- polar coordinate remap distortion
+- `feat(filters)`: Physarum Simulation Overlay filter -- slime mold simulation (C++ wrapper ready)
+- `feat(filters)`: Boids / Flocking Particles filter -- flocking particle system (stateful)
+- `feat(filters)`: C++ Physarum wrapper with Python fallback (`CppPhysarumFilter`)
 - Estructura de proyecto reorganizada con separación clara entre `python/` y `cpp/`
 - Documentación de gitflow (`GITFLOW.md`) con reglas y buenas prácticas
 - Sistema de changelog para tracking de cambios
