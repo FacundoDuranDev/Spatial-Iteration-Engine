@@ -13,7 +13,7 @@ from ...ports.processors import Analyzer, ProcessorPipeline
 
 class AnalyzerPipeline(ProcessorPipeline):
     """Pipeline para ejecutar múltiples analizadores en secuencia.
-    
+
     Los analizadores extraen información/metadata de los frames sin modificar
     el frame original. Los resultados se combinan en un diccionario.
     """
@@ -117,10 +117,7 @@ class AnalyzerPipeline(ProcessorPipeline):
         Returns:
             Diccionario con resultados de todos los analizadores
         """
-        active = [
-            a for a in self.snapshot()
-            if not hasattr(a, "enabled") or getattr(a, "enabled")
-        ]
+        active = [a for a in self.snapshot() if not hasattr(a, "enabled") or getattr(a, "enabled")]
         if not active:
             return {}
 
@@ -169,4 +166,3 @@ class AnalyzerPipeline(ProcessorPipeline):
         """Context manager para acceso thread-safe a los analizadores."""
         with self._lock:
             yield self._analyzers
-
