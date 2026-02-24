@@ -3,9 +3,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+from ascii_stream_engine.adapters.outputs.ascii_recorder import AsciiFrameRecorder
 from ascii_stream_engine.domain.config import EngineConfig
 from ascii_stream_engine.domain.types import RenderFrame
-from ascii_stream_engine.adapters.outputs.ascii_recorder import AsciiFrameRecorder
 from ascii_stream_engine.ports.output_capabilities import OutputCapability
 from ascii_stream_engine.tests import has_module
 

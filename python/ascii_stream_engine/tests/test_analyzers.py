@@ -1,8 +1,8 @@
 import unittest
 from unittest.mock import patch
 
-from ascii_stream_engine.tests import has_module
 from ascii_stream_engine.adapters.processors import BaseAnalyzer
+from ascii_stream_engine.tests import has_module
 
 
 class TestAnalyzers(unittest.TestCase):
