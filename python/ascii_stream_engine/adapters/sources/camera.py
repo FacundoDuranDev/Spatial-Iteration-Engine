@@ -8,6 +8,7 @@ import numpy as np
 
 def _silence_stderr(f):
     """Decorador que redirige fd 2 a /dev/null durante la ejecución (silencia OpenCV C++)."""
+
     def _run(*args, **kwargs):
         stderr_fd = sys.stderr.fileno()
         save_fd = os.dup(stderr_fd)
@@ -19,6 +20,7 @@ def _silence_stderr(f):
             os.dup2(save_fd, stderr_fd)
             os.close(devnull)
             os.close(save_fd)
+
     return _run
 
 

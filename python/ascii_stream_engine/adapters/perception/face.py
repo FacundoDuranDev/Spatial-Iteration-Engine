@@ -13,6 +13,7 @@ from ascii_stream_engine.domain.config import EngineConfig
 _CV2_VERSION = tuple(int(x) for x in cv2.__version__.split(".")[:3] if x.isdigit())
 _FACE_DETECTOR_AVAILABLE = _CV2_VERSION >= (4, 5, 4) and hasattr(cv2, "FaceDetectorYN")
 
+
 def _find_model_path() -> str:
     """Locate face_detection_yunet.onnx from env var or common relative paths."""
     env_dir = os.environ.get("ONNX_MODELS_DIR", "")
@@ -25,13 +26,17 @@ def _find_model_path() -> str:
     base = os.path.dirname(__file__)
     for depth in range(3, 8):
         candidate = os.path.normpath(
-            os.path.join(base, *[".."] * depth, "onnx_models", "mediapipe", "face_detection_yunet.onnx")
+            os.path.join(
+                base, *[".."] * depth, "onnx_models", "mediapipe", "face_detection_yunet.onnx"
+            )
         )
         if os.path.isfile(candidate):
             return candidate
 
     # Try relative to cwd
-    cwd_candidate = os.path.join(os.getcwd(), "onnx_models", "mediapipe", "face_detection_yunet.onnx")
+    cwd_candidate = os.path.join(
+        os.getcwd(), "onnx_models", "mediapipe", "face_detection_yunet.onnx"
+    )
     if os.path.isfile(cwd_candidate):
         return cwd_candidate
 
@@ -116,11 +121,13 @@ class FaceLandmarkAnalyzer(BaseAnalyzer):
                     landmarks[i, 1] = float(det[4 + i * 2 + 1] / h)
 
                 np.clip(landmarks, 0.0, 1.0, out=landmarks)
-                faces.append({
-                    "bbox": bbox,
-                    "confidence": conf,
-                    "points": landmarks,
-                })
+                faces.append(
+                    {
+                        "bbox": bbox,
+                        "confidence": conf,
+                        "points": landmarks,
+                    }
+                )
                 all_points.append(landmarks)
 
             if not all_points:

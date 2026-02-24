@@ -113,12 +113,10 @@ class LandmarksOverlayRenderer:
         # Indicador visible
         label = "IA" if total_pts == 0 else f"IA ({total_pts})"
         cv2.putText(
-            img, label, (12, h - 12),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2, cv2.LINE_AA
+            img, label, (12, h - 12), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2, cv2.LINE_AA
         )
         cv2.putText(
-            img, label, (12, h - 12),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 1, cv2.LINE_AA
+            img, label, (12, h - 12), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 1, cv2.LINE_AA
         )
 
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
