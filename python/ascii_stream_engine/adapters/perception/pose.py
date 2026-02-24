@@ -4,11 +4,12 @@ from typing import Any, Dict
 
 import numpy as np
 
-from ascii_stream_engine.domain.config import EngineConfig
 from ascii_stream_engine.adapters.processors.analyzers.base import BaseAnalyzer
+from ascii_stream_engine.domain.config import EngineConfig
 
 try:
     import perception_cpp as _perception_cpp
+
     _CPP_AVAILABLE = True
 except ImportError:
     _perception_cpp = None
