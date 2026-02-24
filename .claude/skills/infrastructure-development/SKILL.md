@@ -5,6 +5,32 @@ description: Use when adding, modifying, or debugging cross-cutting infrastructu
 
 # Infrastructure Development
 
+> **FIRST:** Read `.claude/skills/shared/AGENT_RULES.md` for build environment, anti-blocking protocol, and communication rules.
+
+## Existing Components (DO NOT recreate)
+
+| File | Purpose |
+|------|---------|
+| `infrastructure/__init__.py` | Infrastructure module init |
+| `infrastructure/event_bus.py` | EventBus pub/sub (thread-safe, RLock) |
+| `infrastructure/logging.py` | StructuredLogger, ConsoleFormatter, JSON |
+| `infrastructure/metrics.py` | EngineMetrics (FPS, errors, latency) |
+| `infrastructure/profiling.py` | LoopProfiler (per-phase timing) |
+| `infrastructure/message_queue.py` | MessageQueue (thread-safe, background) |
+| `infrastructure/performance/frame_skipper.py` | Adaptive frame skipping |
+| `infrastructure/performance/adaptive_quality.py` | Dynamic resolution scaling |
+| `infrastructure/performance/gpu_accelerator.py` | GPU acceleration (optional) |
+| `infrastructure/plugins/plugin_manager.py` | PluginManager with hot-reload |
+| `infrastructure/plugins/plugin_interface.py` | Plugin base classes |
+| `infrastructure/plugins/plugin_loader.py` | Dynamic module loading |
+| `infrastructure/plugins/plugin_registry.py` | Thread-safe plugin registry |
+| `infrastructure/plugins/plugin_metadata.py` | Plugin metadata dataclass |
+| `application/services/frame_buffer.py` | Thread-safe FrameBuffer |
+| `application/services/error_handler.py` | ErrorHandler → EventBus |
+| `application/services/retry_manager.py` | RetryManager with backoff |
+
+**Pattern:** Follow `event_bus.py` for thread-safe infrastructure, `plugin_manager.py` for file-watching services.
+
 ## Overview
 
 Develop cross-cutting infrastructure that supports the pipeline without being part of it. Infrastructure provides event-driven communication, observability (logging, metrics, profiling), performance optimization (frame skipping, adaptive quality), plugin management, and application services (error handling, retry, frame buffering).

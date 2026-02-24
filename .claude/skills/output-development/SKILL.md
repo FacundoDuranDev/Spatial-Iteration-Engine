@@ -5,6 +5,23 @@ description: Use when adding, modifying, or debugging output sinks (UDP, RTSP, W
 
 # Output Development
 
+> **FIRST:** Read `.claude/skills/shared/AGENT_RULES.md` for build environment, anti-blocking protocol, and communication rules.
+
+## Existing Components (DO NOT recreate)
+
+| File | Purpose |
+|------|---------|
+| `adapters/outputs/__init__.py` | Output registry — add new sinks here |
+| `adapters/outputs/udp.py` | FfmpegUdpOutput (COPY subprocess pattern from this) |
+| `adapters/outputs/preview_sink.py` | PreviewSink (cv2.imshow, reference for simple sinks) |
+| `adapters/outputs/notebook_preview_sink.py` | NotebookPreviewSink (JPEG encoding pattern) |
+| `adapters/outputs/ascii_recorder.py` | AsciiFrameRecorder (file-based text sink) |
+| `adapters/outputs/composite.py` | CompositeOutputSink (fan-out pattern) |
+| `ports/outputs.py` | OutputSink protocol (READ-ONLY) |
+| `ports/output_capabilities.py` | OutputCapabilities, flags (READ-ONLY) |
+
+**Pattern:** Copy `udp.py` for subprocess/streaming sinks, `preview_sink.py` for simple sinks.
+
 ## Overview
 
 Develop output sinks that consume `RenderFrame` objects and deliver them to destinations (network streams, display windows, files, notebooks). Sinks are the final pipeline stage: they receive the rendered frame and write it out.

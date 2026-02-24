@@ -5,6 +5,29 @@ description: Use when adding, modifying, or debugging image filters in Python or
 
 # Filter Development
 
+> **FIRST:** Read `.claude/skills/shared/AGENT_RULES.md` for build environment, anti-blocking protocol, and communication rules.
+> **MANDATORY:** `conda activate spatial-iteration-engine` before ANY C++ build or test.
+
+## Existing Components (DO NOT recreate)
+
+| File | Purpose |
+|------|---------|
+| `adapters/processors/filters/__init__.py` | Filter registry — add new filters here |
+| `adapters/processors/filters/base.py` | BaseFilter — extend this |
+| `adapters/processors/filters/brightness.py` | Pure Python brightness (reference pattern) |
+| `adapters/processors/filters/edges.py` | Pure Python edge detection (reference pattern) |
+| `adapters/processors/filters/detail.py` | Pure Python detail enhancement |
+| `adapters/processors/filters/invert.py` | Pure Python color inversion |
+| `adapters/processors/filters/conversion_cache.py` | Shared color conversion cache |
+| `adapters/processors/filters/cpp_invert.py` | C++ wrapper pattern (COPY THIS for new C++ filters) |
+| `adapters/processors/filters/cpp_brightness_contrast.py` | C++ brightness/contrast |
+| `adapters/processors/filters/cpp_channel_swap.py` | C++ channel swap |
+| `adapters/processors/filters/cpp_grayscale.py` | C++ grayscale |
+| `cpp/src/filters/` | C++ filter implementations |
+| `cpp/src/bridge/pybind_filters.cpp` | pybind11 bridge for filters |
+
+**Pattern:** Copy `edges.py` for Python filters, `cpp_invert.py` for C++ wrappers. Follow the pattern exactly.
+
 ## Overview
 
 Develop image filters that modify frames in the pipeline. Filters run AFTER perception and BEFORE rendering. They receive the frame + analysis dict and return a modified frame. Two variants: pure Python (OpenCV) and C++ (pybind11 in-place).

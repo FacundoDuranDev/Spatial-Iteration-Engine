@@ -5,6 +5,23 @@ description: Use when adding, modifying, or debugging renderers (ASCII, passthro
 
 # Renderer Development
 
+> **FIRST:** Read `.claude/skills/shared/AGENT_RULES.md` for build environment, anti-blocking protocol, and communication rules.
+> **MANDATORY:** `conda activate spatial-iteration-engine` before ANY C++ build or test.
+
+## Existing Components (DO NOT recreate)
+
+| File | Purpose |
+|------|---------|
+| `adapters/renderers/__init__.py` | Renderer registry — add new renderers here |
+| `adapters/renderers/passthrough_renderer.py` | Simplest renderer (COPY THIS for new renderers) |
+| `adapters/renderers/ascii.py` | ASCII art renderer (complex, reference for caching patterns) |
+| `adapters/renderers/landmarks_overlay_renderer.py` | Overlay decorator (COPY THIS for overlay renderers) |
+| `adapters/renderers/cpp_renderer.py` | C++ render_bridge wrapper |
+| `ports/renderers.py` | FrameRenderer protocol (READ-ONLY) |
+| `domain/types.py` | RenderFrame dataclass (READ-ONLY) |
+
+**Pattern:** Copy `passthrough_renderer.py` for basic renderers, `landmarks_overlay_renderer.py` for overlays.
+
 ## Overview
 
 Develop renderers that convert a processed frame into a `RenderFrame` (PIL Image + optional text/lines). Renderers are the second-to-last pipeline stage: they receive filtered frames + analysis dict and produce the visual output that sinks consume.

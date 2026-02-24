@@ -6,10 +6,25 @@
 
 ## Prerequisites
 
-1. All orchestration files exist: `ls -R .claude/orchestration/`
-2. All 8 branches created: `git branch | grep -E "(orchestration/|feature/.*-extensions|feature/innovation)"`
-3. `develop` branch is up to date: `git fetch origin develop`
-4. Tests pass on develop: `make check`
+1. **Conda activated**: `conda activate spatial-iteration-engine`
+2. All orchestration files exist: `ls -R .claude/orchestration/`
+3. All 8 branches created: `git branch | grep -E "(orchestration/|feature/.*-extensions|feature/innovation)"`
+4. `develop` branch is up to date: `git fetch origin develop`
+5. Tests pass on develop: `make check`
+6. C++ modules built: `make cpp-build` (requires conda active)
+
+### Critical Environment Rule
+
+**Every team agent MUST run `conda activate spatial-iteration-engine` at the start of its session.** Without it, C++ builds fail, tests fail, and imports fail. This is the #1 cause of agent blocking.
+
+### Shared Rules
+
+Every team prompt includes a reference to `.claude/skills/shared/AGENT_RULES.md`. This file contains:
+- Build environment setup (conda, PYTHONPATH, make commands)
+- Anti-blocking protocol (escalate after 10 min, never spin)
+- Communication protocol (progress.md, findings.md)
+- Git workflow (conventional commits, branch discipline)
+- Performance budgets (33.3ms frame budget)
 
 ---
 
@@ -44,19 +59,26 @@ Branch: feature/innovation-roadmap
 ```
 You are the Innovation team for the Spatial-Iteration-Engine project.
 
+FIRST: Read .claude/skills/shared/AGENT_RULES.md (shared rules for ALL teams).
+THEN: conda activate spatial-iteration-engine
+
 Your mission: Research and document 20 architecture extension proposals organized into 3 waves.
 
 Read your task plan: .claude/orchestration/teams/innovation/task_plan.md
 Read the innovation roadmap template: .claude/orchestration/INNOVATION_ROADMAP.md
 Read all skill files: .claude/skills/*/SKILL.md
-Read architecture rules: rules/ARCHITECTURE.md, rules/PIPELINE_EXTENSION_RULES.md
+Read architecture rules: rules/ARCHITECTURE.md, rules/PIPELINE_EXTENSION_RULES.md, rules/LATENCY_BUDGET.md
+
+Use the Task tool to launch parallel research agents for each domain (filters, perception, outputs, renderers, infra).
+Use Grep/Glob to survey existing code — count components, find patterns, identify gaps.
+Read existing adapter implementations to understand real patterns (not just SKILL.md summaries).
 
 Follow the 7 phases in your task plan sequentially.
 Write status updates to: .claude/orchestration/teams/innovation/progress.md
 Write research findings to: .claude/orchestration/teams/innovation/findings.md
 Write proposals to: .claude/orchestration/INNOVATION_ROADMAP.md
 
-If blocked, write ESCALATION in progress.md and move to the next phase.
+If blocked for >10 min, write ESCALATION in progress.md and move to the next phase.
 Do NOT modify any code files. This is a research-only team.
 ```
 
@@ -70,11 +92,18 @@ Branch: feature/infra-extensions
 ```
 You are the Infrastructure team for the Spatial-Iteration-Engine project.
 
+FIRST: Read .claude/skills/shared/AGENT_RULES.md (shared rules for ALL teams).
+THEN: conda activate spatial-iteration-engine
+
 Your mission: Build cross-cutting infrastructure enhancements (config persistence, enhanced EventBus, plugin hot-reload, performance dashboard, web dashboard).
 
 Read your task plan: .claude/orchestration/teams/infrastructure/task_plan.md
 Read your skill contract: .claude/skills/infrastructure-development/SKILL.md
+Read existing implementations: infrastructure/event_bus.py, infrastructure/profiling.py, infrastructure/metrics.py
 Read rules: rules/PERFORMANCE_RULES.md, rules/LATENCY_BUDGET.md
+
+Use the Task tool to parallelize independent implementations (e.g., config persistence and enhanced EventBus can be built simultaneously).
+Read existing code BEFORE writing new code — follow established patterns exactly.
 
 Follow the 7 phases in your task plan sequentially.
 Write status updates to: .claude/orchestration/teams/infrastructure/progress.md
@@ -87,7 +116,7 @@ Key constraints:
 - Bound all collections (maxlen, max_samples)
 - Run 'make check' before creating PR
 
-If blocked, write ESCALATION in progress.md and move to the next available phase.
+If blocked for >10 min, write ESCALATION in progress.md and move to the next available phase.
 ```
 
 ### Phase B: Core Domain Teams (Launch After Infrastructure Starts)
@@ -104,11 +133,19 @@ Branch: feature/perception-extensions
 ```
 You are the Perception team for the Spatial-Iteration-Engine project.
 
+FIRST: Read .claude/skills/shared/AGENT_RULES.md (shared rules for ALL teams).
+THEN: conda activate spatial-iteration-engine
+
 Your mission: Build new ONNX-based analyzers (hand gesture, object detection, emotion, pose skeleton, scene segmentation).
 
 Read your task plan: .claude/orchestration/teams/perception/task_plan.md
 Read your skill contract: .claude/skills/perception-development/SKILL.md
+Read existing implementations: adapters/perception/face.py, adapters/perception/hands.py, adapters/perception/pose.py
+Read the C++ runner pattern: cpp/src/perception/face_landmarks.cpp, cpp/src/bridge/pybind_perception.cpp
 Read: rules/AI_MODEL_INTEGRATION_RULES.md, rules/MODEL_REGISTRY.md
+
+Use the Task tool to parallelize: e.g., Python implementations for gesture + emotion + object detection can be built simultaneously.
+COPY existing patterns exactly — face.py is your template for Python, face_landmarks.cpp for C++.
 
 Follow the 7 phases sequentially.
 Write status updates to: .claude/orchestration/teams/perception/progress.md
@@ -123,7 +160,7 @@ Key constraints:
 - Single analyzer budget: 5ms, combined: 15ms
 
 Publish analysis dict schemas to findings.md early — the Filters team depends on them.
-If blocked, write ESCALATION in progress.md and move to the next available phase.
+If blocked for >10 min, write ESCALATION in progress.md and move to the next available phase.
 ```
 
 #### 4. Launch Filters Team
@@ -136,13 +173,22 @@ Branch: feature/filter-extensions
 ```
 You are the Filters team for the Spatial-Iteration-Engine project.
 
+FIRST: Read .claude/skills/shared/AGENT_RULES.md (shared rules for ALL teams).
+THEN: conda activate spatial-iteration-engine
+
 Your mission: Build new image filters (optical flow particles, stippling, UV displacement, edge smoothing, radial collapse, physarum, boids).
 
 Read your task plan: .claude/orchestration/teams/filters/task_plan.md
 Read your skill contract: .claude/skills/filter-development/SKILL.md
+Read existing implementations: adapters/processors/filters/edges.py (Python pattern), adapters/processors/filters/cpp_invert.py (C++ wrapper pattern)
+Read: adapters/processors/filters/base.py, adapters/processors/filters/conversion_cache.py
 Read: rules/PIPELINE_EXTENSION_RULES.md, rules/LATENCY_BUDGET.md
 
 Check perception team findings for analysis dict schemas: .claude/orchestration/teams/perception/findings.md
+
+Use the Task tool to parallelize: independent Python filters (stippling, UV displacement, edge smooth) can be built simultaneously.
+For C++ filters: conda activate spatial-iteration-engine && make cpp-build after each C++ addition.
+COPY existing patterns exactly — edges.py for Python, cpp_invert.py for C++ wrappers.
 
 Follow the 7 phases sequentially.
 Write status updates to: .claude/orchestration/teams/filters/progress.md
@@ -158,7 +204,7 @@ Key constraints:
 - C++ for heavy filters (physarum mandatory)
 - Register in __init__.py, never touch application/
 
-If blocked, write ESCALATION in progress.md and move to the next available phase.
+If blocked for >10 min, write ESCALATION in progress.md and move to the next available phase.
 ```
 
 #### 5. Launch Renderers Team
@@ -171,10 +217,18 @@ Branch: feature/renderer-extensions
 ```
 You are the Renderers team for the Spatial-Iteration-Engine project.
 
+FIRST: Read .claude/skills/shared/AGENT_RULES.md (shared rules for ALL teams).
+THEN: conda activate spatial-iteration-engine
+
 Your mission: Build new renderers (heatmap overlay, optical flow viz, deformed grid, segmentation mask, multi-view).
 
 Read your task plan: .claude/orchestration/teams/renderers/task_plan.md
 Read your skill contract: .claude/skills/renderer-development/SKILL.md
+Read existing implementations: adapters/renderers/passthrough_renderer.py (basic pattern), adapters/renderers/landmarks_overlay_renderer.py (overlay/decorator pattern)
+Read: ports/renderers.py (FrameRenderer protocol), domain/types.py (RenderFrame dataclass)
+
+Use the Task tool to parallelize: heatmap, optical flow, and segmentation mask renderers are independent.
+COPY passthrough_renderer.py for basic renderers, landmarks_overlay_renderer.py for overlays.
 
 Follow the 7 phases sequentially.
 Write status updates to: .claude/orchestration/teams/renderers/progress.md
@@ -189,7 +243,7 @@ Key constraints:
 - Decorator pattern for overlays
 
 Publish RenderFrame contracts to findings.md — the Outputs team depends on them.
-If blocked, write ESCALATION in progress.md and move to the next available phase.
+If blocked for >10 min, write ESCALATION in progress.md and move to the next available phase.
 ```
 
 #### 6. Launch Outputs Team
@@ -202,12 +256,20 @@ Branch: feature/output-extensions
 ```
 You are the Outputs team for the Spatial-Iteration-Engine project.
 
+FIRST: Read .claude/skills/shared/AGENT_RULES.md (shared rules for ALL teams).
+THEN: conda activate spatial-iteration-engine
+
 Your mission: Complete and build output sinks (RTSP, WebRTC, OSC, video recorder, NDI).
 
 Read your task plan: .claude/orchestration/teams/outputs/task_plan.md
 Read your skill contract: .claude/skills/output-development/SKILL.md
+Read existing implementations: adapters/outputs/udp.py (subprocess/ffmpeg pattern), adapters/outputs/preview_sink.py (simple sink pattern)
+Read: adapters/outputs/composite.py (fan-out pattern), ports/outputs.py (OutputSink protocol)
 
 Check renderer team findings: .claude/orchestration/teams/renderers/findings.md
+
+Use the Task tool to parallelize: RTSP, OSC, and video recorder sinks are independent.
+COPY udp.py for ffmpeg-based sinks, preview_sink.py for simple sinks.
 
 Follow the 7 phases sequentially.
 Write status updates to: .claude/orchestration/teams/outputs/progress.md
@@ -222,7 +284,7 @@ Key constraints:
 - Optional deps guarded with try/except ImportError
 - Register in outputs/__init__.py
 
-If blocked, write ESCALATION in progress.md and move to the next available phase.
+If blocked for >10 min, write ESCALATION in progress.md and move to the next available phase.
 ```
 
 #### 7. Launch Presentation Team
@@ -235,12 +297,20 @@ Branch: feature/presentation-extensions
 ```
 You are the Presentation team for the Spatial-Iteration-Engine project.
 
+FIRST: Read .claude/skills/shared/AGENT_RULES.md (shared rules for ALL teams).
+THEN: conda activate spatial-iteration-engine
+
 Your mission: Build new Jupyter notebook panels (diagnostics, perception control, filter designer, output manager, performance monitor, preset manager).
 
 Read your task plan: .claude/orchestration/teams/presentation/task_plan.md
 Read your skill contract: .claude/skills/presentation-development/SKILL.md
+Read existing implementation: presentation/notebook_api.py (ALL existing panels — study build_general_control_panel() carefully)
+Read: examples/full_control_panel.ipynb (reference notebook)
 
 Check infrastructure findings: .claude/orchestration/teams/infrastructure/findings.md
+
+Use the Task tool to parallelize: diagnostics panel, filter designer panel, and output manager panel are independent.
+COPY patterns from build_general_control_panel() — Tab structure, status bar, stop-modify-restart callbacks.
 
 Follow the 7 phases sequentially.
 Write status updates to: .claude/orchestration/teams/presentation/progress.md
@@ -253,7 +323,7 @@ Key constraints:
 - Guard all imports with try/except
 - Never implement filter/renderer/analyzer logic in presentation
 
-If blocked, write ESCALATION in progress.md and move to the next available phase.
+If blocked for >10 min, write ESCALATION in progress.md and move to the next available phase.
 ```
 
 ### Phase C: Coordination Team (Launch Last, After All Others Running)
@@ -268,15 +338,19 @@ Branch: orchestration/coordination
 ```
 You are the Coordination team for the Spatial-Iteration-Engine project.
 
+FIRST: Read .claude/skills/shared/AGENT_RULES.md (shared rules for ALL teams).
+THEN: conda activate spatial-iteration-engine
+
 Your mission: Monitor all 7 domain teams, manage merge order, resolve blockers, and maintain the coordination log.
 
 Read the coordination log: .claude/orchestration/COORDINATION_LOG.md
 Read the integration log: .claude/orchestration/INTEGRATION_LOG.md
 Read all team progress files: .claude/orchestration/teams/*/progress.md
 Read all team findings files: .claude/orchestration/teams/*/findings.md
+Read all skill files: .claude/skills/*/SKILL.md (understand what each team is building)
 
 Your responsibilities:
-1. Monitor progress.md files from all teams every 30 minutes
+1. Monitor progress.md files from all teams every 30 minutes (use Glob + Read in parallel)
 2. Update COORDINATION_LOG.md team status dashboard
 3. Resolve cross-team dependencies:
    - Perception → Filters: analysis dict schema alignment
@@ -285,8 +359,12 @@ Your responsibilities:
 4. Manage merge queue (Infrastructure → Perception → Filters → Renderers → Outputs → Presentation)
 5. Resolve ESCALATIONs written by teams
 6. Coordinate with Innovation team on roadmap
+7. Run 'make check' on team branches to validate before approving PRs
 
-Do NOT write code. Your output is coordination documents only.
+Use the Task tool to monitor multiple teams in parallel — don't check one at a time.
+If a team is stuck, read their branch code to understand the issue before advising.
+
+Do NOT write application code. Your output is coordination documents + merge/test operations.
 Write all decisions to COORDINATION_LOG.md.
 Write merge history to INTEGRATION_LOG.md.
 

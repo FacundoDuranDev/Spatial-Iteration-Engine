@@ -5,6 +5,26 @@ description: Use when adding, modifying, or debugging AI analyzers, ONNX models,
 
 # Perception Development
 
+> **FIRST:** Read `.claude/skills/shared/AGENT_RULES.md` for build environment, anti-blocking protocol, and communication rules.
+> **MANDATORY:** `conda activate spatial-iteration-engine` before ANY C++ build or test.
+
+## Existing Components (DO NOT recreate)
+
+| File | Purpose |
+|------|---------|
+| `adapters/perception/__init__.py` | Analyzer registry — add new analyzers here |
+| `adapters/perception/face.py` | Face landmarks analyzer (working) |
+| `adapters/perception/hands.py` | Hand landmarks analyzer (working) |
+| `adapters/perception/pose.py` | Pose detection analyzer (working) |
+| `adapters/processors/analyzers/base.py` | BaseAnalyzer — extend this |
+| `cpp/src/perception/onnx_runner.cpp` | Shared ONNX inference engine |
+| `cpp/src/perception/face_landmarks.cpp` | Face C++ runner |
+| `cpp/src/perception/hand_landmarks.cpp` | Hand C++ runner |
+| `cpp/src/perception/pose_landmarks.cpp` | Pose C++ runner |
+| `cpp/src/bridge/pybind_perception.cpp` | pybind11 bridge |
+
+**Pattern:** Copy `face.py` for Python, `face_landmarks.cpp` for C++. Follow the pattern exactly.
+
 ## Overview
 
 Develop AI perception analyzers (face, hands, pose) that run ONNX models in C++ and expose results to Python. Analyzers MUST NOT modify the frame. They return normalized 0-1 coordinates via a dict.

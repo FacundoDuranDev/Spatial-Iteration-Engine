@@ -5,6 +5,32 @@ description: Use when adding, modifying, or debugging Jupyter notebook UI panels
 
 # Presentation Development
 
+> **FIRST:** Read `.claude/skills/shared/AGENT_RULES.md` for build environment, anti-blocking protocol, and communication rules.
+
+## Existing Components (DO NOT recreate)
+
+| File | Purpose |
+|------|---------|
+| `presentation/__init__.py` | Presentation module init |
+| `presentation/notebook_api.py` | Main file — ALL panel functions live here |
+
+### Existing Functions in `notebook_api.py` (extend, don't duplicate):
+| Function | Purpose |
+|----------|---------|
+| `build_control_panel(engine)` | Simple FPS/grid/contrast panel |
+| `build_general_control_panel(engine, filters)` | Full 5-tab panel (Red, Motor, Filtros, Vista, IA) |
+| `build_diagnostics_panel(engine)` | Devices, latency, benchmark |
+| `build_engine_for_notebook(camera_index, config)` | Factory: creates wired engine |
+
+### Example Notebooks:
+| File | Purpose |
+|------|---------|
+| `examples/full_control_panel.ipynb` | Complete demo (reference for new notebooks) |
+| `examples/perception_test_bench.ipynb` | Perception testing |
+| `examples/system_analysis_and_testing.ipynb` | System diagnostics |
+
+**Pattern:** Copy structure from `build_general_control_panel()` for new panels. Always return Dict of widgets.
+
 ## Overview
 
 Develop the Jupyter notebook user interface: control panels, diagnostics, factory functions, and example notebooks. Presentation is the outermost layer — it wires up adapters and engine into interactive widgets for end users.
