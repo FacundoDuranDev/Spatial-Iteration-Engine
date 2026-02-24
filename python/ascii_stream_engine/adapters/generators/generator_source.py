@@ -31,6 +31,7 @@ class GeneratorSource(FrameSource):
         self._open = False
         self._last_time = 0.0
         import time
+
         self._time_module = time
         self._start_time = time.time()
 
@@ -57,4 +58,3 @@ class GeneratorSource(FrameSource):
     def close(self) -> None:
         """Cierra la fuente."""
         self._open = False
-
