@@ -131,9 +131,7 @@ class FfmpegRtspSink:
             )
             self._is_open = True
         except FileNotFoundError:
-            raise RuntimeError(
-                "ffmpeg not found. Please install ffmpeg to use the RTSP output."
-            )
+            raise RuntimeError("ffmpeg not found. Please install ffmpeg to use the RTSP output.")
         except Exception as e:
             raise RuntimeError(f"Error starting RTSP output: {e}")
 

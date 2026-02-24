@@ -34,8 +34,7 @@ class TestVideoRecorderSink(unittest.TestCase):
         self.assertFalse(sink.is_open())
 
         with patch(
-            "ascii_stream_engine.adapters.outputs.recorder.video_recorder_sink"
-            ".subprocess.Popen",
+            "ascii_stream_engine.adapters.outputs.recorder.video_recorder_sink" ".subprocess.Popen",
             return_value=DummyProc(),
         ):
             sink.open(config, (640, 480))
@@ -54,8 +53,7 @@ class TestVideoRecorderSink(unittest.TestCase):
         sink = VideoRecorderSink()
 
         with patch(
-            "ascii_stream_engine.adapters.outputs.recorder.video_recorder_sink"
-            ".subprocess.Popen",
+            "ascii_stream_engine.adapters.outputs.recorder.video_recorder_sink" ".subprocess.Popen",
             return_value=DummyProc(),
         ):
             sink.open(config, (640, 480))
@@ -102,8 +100,7 @@ class TestVideoRecorderSink(unittest.TestCase):
         )
 
         with patch(
-            "ascii_stream_engine.adapters.outputs.recorder.video_recorder_sink"
-            ".subprocess.Popen",
+            "ascii_stream_engine.adapters.outputs.recorder.video_recorder_sink" ".subprocess.Popen",
             return_value=DummyProc(),
         ) as popen:
             sink.open(config, (1920, 1080))
@@ -127,8 +124,7 @@ class TestVideoRecorderSink(unittest.TestCase):
         sink = VideoRecorderSink(output_path="video.mp4")
 
         with patch(
-            "ascii_stream_engine.adapters.outputs.recorder.video_recorder_sink"
-            ".subprocess.Popen",
+            "ascii_stream_engine.adapters.outputs.recorder.video_recorder_sink" ".subprocess.Popen",
             return_value=DummyProc(),
         ) as popen:
             sink.open(config, (640, 480))
@@ -148,8 +144,7 @@ class TestVideoRecorderSink(unittest.TestCase):
         sink = VideoRecorderSink(output_path="video.avi")
 
         with patch(
-            "ascii_stream_engine.adapters.outputs.recorder.video_recorder_sink"
-            ".subprocess.Popen",
+            "ascii_stream_engine.adapters.outputs.recorder.video_recorder_sink" ".subprocess.Popen",
             return_value=DummyProc(),
         ) as popen:
             sink.open(config, (640, 480))
@@ -167,8 +162,7 @@ class TestVideoRecorderSink(unittest.TestCase):
         sink = VideoRecorderSink(output_path="video.mkv")
 
         with patch(
-            "ascii_stream_engine.adapters.outputs.recorder.video_recorder_sink"
-            ".subprocess.Popen",
+            "ascii_stream_engine.adapters.outputs.recorder.video_recorder_sink" ".subprocess.Popen",
             return_value=DummyProc(),
         ) as popen:
             sink.open(config, (640, 480))
@@ -186,8 +180,7 @@ class TestVideoRecorderSink(unittest.TestCase):
         sink = VideoRecorderSink(codec="libx265")
 
         with patch(
-            "ascii_stream_engine.adapters.outputs.recorder.video_recorder_sink"
-            ".subprocess.Popen",
+            "ascii_stream_engine.adapters.outputs.recorder.video_recorder_sink" ".subprocess.Popen",
             return_value=DummyProc(),
         ) as popen:
             sink.open(config, (640, 480))
@@ -204,8 +197,7 @@ class TestVideoRecorderSink(unittest.TestCase):
         sink = VideoRecorderSink()
 
         with patch(
-            "ascii_stream_engine.adapters.outputs.recorder.video_recorder_sink"
-            ".subprocess.Popen",
+            "ascii_stream_engine.adapters.outputs.recorder.video_recorder_sink" ".subprocess.Popen",
             return_value=DummyProc(),
         ):
             sink.open(config, (640, 480))
@@ -226,8 +218,7 @@ class TestVideoRecorderSink(unittest.TestCase):
         frame = RenderFrame(image=image, text="")
 
         with patch(
-            "ascii_stream_engine.adapters.outputs.recorder.video_recorder_sink"
-            ".subprocess.Popen",
+            "ascii_stream_engine.adapters.outputs.recorder.video_recorder_sink" ".subprocess.Popen",
             return_value=DummyProc(),
         ):
             sink.open(config, (640, 480))
@@ -253,8 +244,7 @@ class TestVideoRecorderSink(unittest.TestCase):
         frame = self._make_frame()
 
         with patch(
-            "ascii_stream_engine.adapters.outputs.recorder.video_recorder_sink"
-            ".subprocess.Popen",
+            "ascii_stream_engine.adapters.outputs.recorder.video_recorder_sink" ".subprocess.Popen",
             return_value=DummyProc(),
         ):
             with VideoRecorderSink() as sink:
@@ -268,8 +258,7 @@ class TestVideoRecorderSink(unittest.TestCase):
         sink = VideoRecorderSink(output_path="video.webm")
 
         with patch(
-            "ascii_stream_engine.adapters.outputs.recorder.video_recorder_sink"
-            ".subprocess.Popen",
+            "ascii_stream_engine.adapters.outputs.recorder.video_recorder_sink" ".subprocess.Popen",
             return_value=DummyProc(),
         ) as popen:
             sink.open(config, (640, 480))

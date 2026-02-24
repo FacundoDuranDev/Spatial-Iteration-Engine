@@ -125,9 +125,7 @@ class TestOscOutputSink(unittest.TestCase):
             },
             "pose": {"joints": np.array([[0.1, 0.2, 0.3]])},
         }
-        frame = RenderFrame(
-            image=self.test_image, metadata={"analysis": analysis}
-        )
+        frame = RenderFrame(image=self.test_image, metadata={"analysis": analysis})
         sink.write(frame)
 
         calls = mock_client.send_message.call_args_list
@@ -163,9 +161,7 @@ class TestOscOutputSink(unittest.TestCase):
         sink.write(frame2)  # Must not raise
 
         # Metadata with empty analysis
-        frame3 = RenderFrame(
-            image=self.test_image, metadata={"analysis": {}}
-        )
+        frame3 = RenderFrame(image=self.test_image, metadata={"analysis": {}})
         sink.write(frame3)  # Must not raise
 
         sink.close()

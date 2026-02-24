@@ -31,8 +31,7 @@ except ImportError:
     NDI_AVAILABLE = False
     ndi = None  # type: ignore
     logger.warning(
-        "NDI SDK is not available. Install 'ndi-python' and the NDI SDK "
-        "to use the NDI output."
+        "NDI SDK is not available. Install 'ndi-python' and the NDI SDK " "to use the NDI output."
     )
 
 
@@ -58,9 +57,7 @@ class NdiOutputSink:
         clock_audio: bool = False,
     ) -> None:
         if not NDI_AVAILABLE:
-            raise ImportError(
-                "NDI SDK is not available. Install 'ndi-python' and the NDI SDK."
-            )
+            raise ImportError("NDI SDK is not available. Install 'ndi-python' and the NDI SDK.")
 
         self._source_name = source_name or "Spatial Iteration Engine"
         self._groups = groups
@@ -123,8 +120,7 @@ class NdiOutputSink:
 
             self._is_open = True
             logger.info(
-                f"NDI output opened: {self._source_name} "
-                f"({out_w}x{out_h} @ {config.fps} fps)"
+                f"NDI output opened: {self._source_name} " f"({out_w}x{out_h} @ {config.fps} fps)"
             )
 
     def write(self, frame: RenderFrame) -> None:
@@ -154,9 +150,7 @@ class NdiOutputSink:
                 if self._output_size:
                     out_w, out_h = self._output_size
                     if image.size != (out_w, out_h):
-                        image = image.resize(
-                            (out_w, out_h), Image.Resampling.LANCZOS
-                        )
+                        image = image.resize((out_w, out_h), Image.Resampling.LANCZOS)
 
                 # Convert RGB to BGRA (required by NDI)
                 rgb_array = np.array(image, dtype=np.uint8)

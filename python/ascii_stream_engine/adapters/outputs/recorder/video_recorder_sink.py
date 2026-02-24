@@ -149,9 +149,7 @@ class VideoRecorderSink:
             )
             self._is_open = True
         except FileNotFoundError:
-            raise RuntimeError(
-                "ffmpeg not found. Please install ffmpeg to use the video recorder."
-            )
+            raise RuntimeError("ffmpeg not found. Please install ffmpeg to use the video recorder.")
         except Exception as e:
             raise RuntimeError(f"Error starting video recorder: {e}")
 

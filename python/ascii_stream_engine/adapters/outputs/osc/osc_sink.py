@@ -52,9 +52,7 @@ class OscOutputSink:
         send_metadata: bool = True,
     ) -> None:
         if SimpleUDPClient is None:
-            raise ImportError(
-                "python-osc is not installed. Install with: pip install python-osc"
-            )
+            raise ImportError("python-osc is not installed. Install with: pip install python-osc")
 
         self._host = host
         self._port = port
@@ -108,9 +106,7 @@ class OscOutputSink:
                         f"{prefix}/frame/size",
                         [self._output_size[0], self._output_size[1]],
                     )
-                self._client.send_message(
-                    f"{prefix}/frame/index", self._frame_counter
-                )
+                self._client.send_message(f"{prefix}/frame/index", self._frame_counter)
 
             # Send analysis data
             if self._send_analysis and frame.metadata:
@@ -141,9 +137,7 @@ class OscOutputSink:
             if points is not None:
                 flat_list = self._to_flat_float_list(points)
                 if flat_list:
-                    self._client.send_message(
-                        f"{prefix}/analysis/face/points", flat_list
-                    )
+                    self._client.send_message(f"{prefix}/analysis/face/points", flat_list)
 
         # Hand landmarks
         hands_data = analysis.get("hands")
@@ -152,17 +146,13 @@ class OscOutputSink:
             if left is not None:
                 flat_list = self._to_flat_float_list(left)
                 if flat_list:
-                    self._client.send_message(
-                        f"{prefix}/analysis/hands/left", flat_list
-                    )
+                    self._client.send_message(f"{prefix}/analysis/hands/left", flat_list)
 
             right = hands_data.get("right")
             if right is not None:
                 flat_list = self._to_flat_float_list(right)
                 if flat_list:
-                    self._client.send_message(
-                        f"{prefix}/analysis/hands/right", flat_list
-                    )
+                    self._client.send_message(f"{prefix}/analysis/hands/right", flat_list)
 
         # Pose joints
         pose_data = analysis.get("pose")
@@ -171,9 +161,7 @@ class OscOutputSink:
             if joints is not None:
                 flat_list = self._to_flat_float_list(joints)
                 if flat_list:
-                    self._client.send_message(
-                        f"{prefix}/analysis/pose/joints", flat_list
-                    )
+                    self._client.send_message(f"{prefix}/analysis/pose/joints", flat_list)
 
     def _send_metadata_values(self, metadata: Dict[str, Any], prefix: str) -> None:
         """Send individual metadata key/value pairs as OSC messages.
@@ -189,9 +177,7 @@ class OscOutputSink:
             try:
                 osc_value = self._to_osc_value(value)
                 if osc_value is not None:
-                    self._client.send_message(
-                        f"{prefix}/metadata/{key}", osc_value
-                    )
+                    self._client.send_message(f"{prefix}/metadata/{key}", osc_value)
             except Exception as e:
                 logger.debug(f"Could not send metadata key '{key}': {e}")
 

@@ -46,9 +46,7 @@ class FrameVideoTrack(VideoStreamTrack):
             loop: Asyncio event loop (optional).
         """
         if VideoStreamTrack is None:
-            raise ImportError(
-                "aiortc is not installed. Install with: pip install aiortc"
-            )
+            raise ImportError("aiortc is not installed. Install with: pip install aiortc")
         super().__init__()
         self._loop = loop
         # Do not pass loop parameter to Queue (removed in Python 3.10)
@@ -154,9 +152,7 @@ class WebRTCOutput:
             enable_signaling: If True, start the signaling server automatically.
         """
         if RTCPeerConnection is None:
-            raise ImportError(
-                "aiortc is not installed. Install with: pip install aiortc"
-            )
+            raise ImportError("aiortc is not installed. Install with: pip install aiortc")
 
         self.signaling_host = signaling_host
         self.signaling_port = signaling_port
@@ -219,9 +215,7 @@ class WebRTCOutput:
 
             @self._peer_connection.on("iceconnectionstatechange")
             async def on_iceconnectionstatechange():
-                logger.info(
-                    f"ICE connection state: {self._peer_connection.iceConnectionState}"
-                )
+                logger.info(f"ICE connection state: {self._peer_connection.iceConnectionState}")
                 if self._peer_connection.iceConnectionState == "failed":
                     await self._peer_connection.close()
 
@@ -241,9 +235,7 @@ class WebRTCOutput:
             try:
                 offer_data = self._signaling_server.get_pending_offer()
                 if offer_data:
-                    offer = RTCSessionDescription(
-                        sdp=offer_data["sdp"], type=offer_data["type"]
-                    )
+                    offer = RTCSessionDescription(sdp=offer_data["sdp"], type=offer_data["type"])
                     await self._peer_connection.setRemoteDescription(offer)
                     answer = await self._peer_connection.createAnswer()
                     await self._peer_connection.setLocalDescription(answer)
@@ -289,9 +281,7 @@ class WebRTCOutput:
         # Close peer connection
         if self._peer_connection and self._loop:
             try:
-                future = asyncio.run_coroutine_threadsafe(
-                    self._peer_connection.close(), self._loop
-                )
+                future = asyncio.run_coroutine_threadsafe(self._peer_connection.close(), self._loop)
                 future.result(timeout=2.0)
             except Exception as e:
                 logger.debug(f"Error closing peer connection: {e}")
