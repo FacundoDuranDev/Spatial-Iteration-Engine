@@ -214,31 +214,48 @@ std::vector<float> OnnxRunner::run(const std::uint8_t* image, int width, int hei
 
     if (output_tensors.empty()) return {};
 
-    const auto& out = output_tensors[0];
+    // Pick the output tensor with the most elements (handles multi-output models
+    // where small tensors are scores/flags and the largest is landmark data).
+    size_t best_idx = 0;
+    size_t best_count = 0;
+    for (size_t i = 0; i < output_tensors.size(); ++i) {
+      size_t n = output_tensors[i].GetTensorTypeAndShapeInfo().GetElementCount();
+      if (n > best_count) { best_count = n; best_idx = i; }
+    }
+
+    const auto& out = output_tensors[best_idx];
     auto info = out.GetTensorTypeAndShapeInfo();
     size_t count = info.GetElementCount();
     const float* data = out.GetTensorData<float>();
     if (!data) return {};
 
-    // Check output shape to determine if it's YOLOv8 format
-    auto shape = info.GetShape();
-    if (shape.size() >= 2 && shape[1] > 50) {
-      // Likely YOLOv8 format: (1, num_detections, detection_size)
-      // Try post-processing for YOLOv8 pose (17 keypoints)
-      // Scale coordinates from model space (input_size x input_size) to original image space
+    // YOLOv8 detection models produce very large outputs (>10k elements)
+    // with many anchors. Landmark models produce much smaller outputs.
+    if (count > 10000) {
       auto yolov8_result = postprocess_yolov8_pose(data, count, 17, size, width, height);
       if (!yolov8_result.empty()) {
         return yolov8_result;
       }
-      // If post-processing didn't work, try with 33 keypoints (full body)
       yolov8_result = postprocess_yolov8_pose(data, count, 33, size, width, height);
       if (!yolov8_result.empty()) {
         return yolov8_result;
       }
     }
 
-    // Default: use original output_to_xy
-    return output_to_xy(data, count);
+    // Standard landmark output: extract (x,y) from (x,y,z) triplets
+    auto result = output_to_xy(data, count);
+
+    // Normalize to [0,1] if coords are in model input space (values > 1).
+    // Some models (e.g. MediaPipe face) already output [0,1]; others
+    // (e.g. hand_landmark) output in model-pixel space (0..input_size).
+    if (!result.empty()) {
+      float max_val = *std::max_element(result.begin(), result.end());
+      if (max_val > 1.5f) {
+        float inv = 1.0f / static_cast<float>(size);
+        for (auto& v : result) v *= inv;
+      }
+    }
+    return result;
   } catch (const std::exception&) {
     return {};
   }

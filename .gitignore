@@ -131,14 +131,12 @@ htmlcov/
 .hypothesis/
 
 # Archivos de modelos grandes (si no se deben versionar)
-*.onnx
 *.pb
 *.h5
 *.pth
 *.pt
 *.ckpt
 *.weights
-!onnx_models/**/*.onnx  # Permitir modelos en onnx_models/ si están versionados
 
 # Archivos de datos grandes (ajustar según necesidad)
 data/raw/
