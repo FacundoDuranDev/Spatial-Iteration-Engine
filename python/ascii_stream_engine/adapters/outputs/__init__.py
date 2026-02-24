@@ -15,6 +15,21 @@ try:
 except ImportError:
     WebRTCOutput = None  # type: ignore
 
+try:
+    from .osc import OscOutputSink
+except ImportError:
+    OscOutputSink = None  # type: ignore
+
+try:
+    from .recorder import VideoRecorderSink
+except ImportError:
+    VideoRecorderSink = None  # type: ignore
+
+try:
+    from .ndi import NdiOutputSink
+except ImportError:
+    NdiOutputSink = None  # type: ignore
+
 __all__ = [
     "AsciiFrameRecorder",
     "CompositeOutputSink",
@@ -23,7 +38,12 @@ __all__ = [
     "OutputSink",
     "PreviewSink",
 ]
-if FfmpegRtspSink is not None:
-    __all__.append("FfmpegRtspSink")
-if WebRTCOutput is not None:
-    __all__.append("WebRTCOutput")
+for _cls_name, _cls in [
+    ("FfmpegRtspSink", FfmpegRtspSink),
+    ("WebRTCOutput", WebRTCOutput),
+    ("OscOutputSink", OscOutputSink),
+    ("VideoRecorderSink", VideoRecorderSink),
+    ("NdiOutputSink", NdiOutputSink),
+]:
+    if _cls is not None:
+        __all__.append(_cls_name)
