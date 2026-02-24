@@ -247,6 +247,3 @@ def log_with_context(
         **kwargs: Campos adicionales para incluir en el log estructurado.
     """
     StructuredLogger.log_with_context(logger, level, message, **kwargs)
-
-
-

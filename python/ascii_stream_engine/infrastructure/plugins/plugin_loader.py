@@ -5,7 +5,7 @@ import logging
 import os
 import time
 from pathlib import Path
-from typing import List, Optional, Type, Tuple
+from typing import List, Optional, Tuple, Type
 
 from .plugin_interface import Plugin
 from .plugin_metadata import PluginMetadata, extract_metadata_from_plugin
@@ -20,7 +20,9 @@ class PluginLoader:
         """Inicializa el cargador."""
         self._loaded_modules: dict = {}
 
-    def load_from_file(self, file_path: str, plugin_class_name: Optional[str] = None) -> Optional[Plugin]:
+    def load_from_file(
+        self, file_path: str, plugin_class_name: Optional[str] = None
+    ) -> Optional[Plugin]:
         """
         Carga un plugin desde un archivo Python.
 
@@ -102,7 +104,9 @@ class PluginLoader:
             logger.error(f"Error cargando plugin desde {file_path}: {e}", exc_info=True)
             return None
 
-    def load_from_file_with_metadata(self, file_path: str, plugin_class_name: Optional[str] = None) -> Optional[Tuple[Plugin, PluginMetadata]]:
+    def load_from_file_with_metadata(
+        self, file_path: str, plugin_class_name: Optional[str] = None
+    ) -> Optional[Tuple[Plugin, PluginMetadata]]:
         """
         Carga un plugin y sus metadatos desde un archivo.
 
@@ -116,16 +120,14 @@ class PluginLoader:
         plugin = self.load_from_file(file_path, plugin_class_name)
         if plugin is None:
             return None
-        
+
         metadata = extract_metadata_from_plugin(plugin)
         metadata.loaded_from = str(file_path)
         metadata.load_time = time.time()
-        
+
         return (plugin, metadata)
 
-    def load_from_directory(
-        self, directory: str, recursive: bool = False
-    ) -> List[Plugin]:
+    def load_from_directory(self, directory: str, recursive: bool = False) -> List[Plugin]:
         """
         Carga todos los plugins de un directorio.
 
@@ -178,7 +180,9 @@ class PluginLoader:
 
             plugin = plugin_class()
             if not isinstance(plugin, Plugin):
-                logger.error(f"La clase no es una instancia de Plugin: {module_name}.{plugin_class_name}")
+                logger.error(
+                    f"La clase no es una instancia de Plugin: {module_name}.{plugin_class_name}"
+                )
                 return None
 
             if not plugin.validate():
@@ -199,11 +203,6 @@ class PluginLoader:
 
         for name in dir(module):
             obj = getattr(module, name)
-            if (
-                isinstance(obj, type)
-                and issubclass(obj, Plugin)
-                and obj is not Plugin
-            ):
+            if isinstance(obj, type) and issubclass(obj, Plugin) and obj is not Plugin:
                 return obj
         return None
-

@@ -110,4 +110,3 @@ class FrameSkipper:
             "target_fps": self.target_fps,
             "frame_time": self.frame_time,
         }
-

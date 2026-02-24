@@ -4,7 +4,7 @@ import logging
 from typing import Dict, List, Optional, Type
 
 try:
-    from importlib.metadata import entry_points, EntryPoint
+    from importlib.metadata import EntryPoint, entry_points
 except ImportError:
     # Python < 3.8 fallback
     from importlib_metadata import entry_points, EntryPoint
@@ -21,7 +21,7 @@ class PluginRegistry:
     def __init__(self, enable_auto_discovery: bool = True) -> None:
         """
         Inicializa el registro.
-        
+
         Args:
             enable_auto_discovery: Si habilitar auto-descubrimiento de plugins
         """
@@ -35,12 +35,17 @@ class PluginRegistry:
         self._metadata: Dict[str, PluginMetadata] = {}
         self._entry_points: Dict[str, EntryPoint] = {}
         self._enable_auto_discovery = enable_auto_discovery
-        
+
         # Auto-descubrir plugins al inicializar
         if enable_auto_discovery:
             self.discover_plugins()
 
-    def register(self, plugin: Plugin, plugin_type: Optional[str] = None, metadata: Optional[PluginMetadata] = None) -> bool:
+    def register(
+        self,
+        plugin: Plugin,
+        plugin_type: Optional[str] = None,
+        metadata: Optional[PluginMetadata] = None,
+    ) -> bool:
         """
         Registra un plugin con metadatos.
 
@@ -81,7 +86,9 @@ class PluginRegistry:
         if plugin.name not in self._plugins_by_type[plugin_type]:
             self._plugins_by_type[plugin_type].append(plugin.name)
 
-        logger.info(f"Plugin '{plugin.name}' (tipo: {plugin_type}, versión: {metadata.version}) registrado")
+        logger.info(
+            f"Plugin '{plugin.name}' (tipo: {plugin_type}, versión: {metadata.version}) registrado"
+        )
         return True
 
     def unregister(self, plugin_name: str) -> bool:
@@ -189,27 +196,27 @@ class PluginRegistry:
     def discover_plugins(self, group: str = "ascii_stream_engine.plugins") -> int:
         """
         Descubre plugins automáticamente usando entry points de Python.
-        
+
         Args:
             group: Nombre del grupo de entry points a buscar
-            
+
         Returns:
             Número de plugins descubiertos
         """
         if not self._enable_auto_discovery:
             return 0
-        
+
         discovered_count = 0
         try:
             # Obtener entry points del grupo especificado
             eps = entry_points(group=group)
-            
+
             for ep in eps:
                 try:
                     # Cargar el plugin desde el entry point
                     plugin_class = ep.load()
                     plugin = plugin_class()
-                    
+
                     if isinstance(plugin, Plugin):
                         # Registrar el plugin
                         if self.register(plugin):
@@ -220,10 +227,10 @@ class PluginRegistry:
                     logger.warning(f"Error cargando plugin desde entry point '{ep.name}': {e}")
         except Exception as e:
             logger.debug(f"No se encontraron entry points en grupo '{group}': {e}")
-        
+
         if discovered_count > 0:
             logger.info(f"Descubiertos {discovered_count} plugins automáticamente")
-        
+
         return discovered_count
 
     def clear(self) -> None:
@@ -269,4 +276,3 @@ class PluginRegistry:
             return "tracker"
         else:
             return "unknown"
-

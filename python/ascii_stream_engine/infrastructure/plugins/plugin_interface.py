@@ -17,7 +17,7 @@ class Plugin(ABC):
     version: str = "1.0.0"
     description: str = ""
     author: str = ""
-    
+
     # Metadatos estructurados (opcional, puede ser un dict o PluginMetadata)
     metadata: Optional[Dict[str, Any]] = None
 
@@ -37,7 +37,7 @@ class Plugin(ABC):
     def get_metadata(self) -> PluginMetadata:
         """
         Obtiene los metadatos estructurados del plugin.
-        
+
         Returns:
             Metadatos del plugin
         """
@@ -52,16 +52,20 @@ class Plugin(ABC):
         """
         if not bool(self.name and self.version):
             return False
-        
+
         # Validar metadatos si existen
         if self.metadata:
             try:
-                metadata_obj = PluginMetadata.from_dict(self.metadata) if isinstance(self.metadata, dict) else self.metadata
+                metadata_obj = (
+                    PluginMetadata.from_dict(self.metadata)
+                    if isinstance(self.metadata, dict)
+                    else self.metadata
+                )
                 if not metadata_obj.validate():
                     return False
             except Exception:
                 return False
-        
+
         return True
 
 
@@ -145,9 +149,7 @@ class TrackerPlugin(Plugin):
     """Plugin para trackers de objetos."""
 
     @abstractmethod
-    def track(
-        self, frame: np.ndarray, detections: dict, config: EngineConfig
-    ) -> Dict[str, Any]:
+    def track(self, frame: np.ndarray, detections: dict, config: EngineConfig) -> Dict[str, Any]:
         """
         Trackea objetos en el frame.
 
@@ -165,4 +167,3 @@ class TrackerPlugin(Plugin):
     def reset(self) -> None:
         """Resetea el estado del tracker."""
         pass
-
