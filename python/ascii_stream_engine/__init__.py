@@ -40,6 +40,22 @@ from .presentation import (
     build_general_control_panel,
 )
 
+try:
+    from .presentation import (  # noqa: F401
+        build_advanced_diagnostics_panel,
+        build_filter_designer_panel,
+        build_full_dashboard,
+        build_output_manager_panel,
+        build_perception_control_panel,
+        build_performance_monitor_panel,
+        build_preset_manager_panel,
+    )
+
+    PRESENTATION_PANELS_AVAILABLE = True
+except ImportError:
+    PRESENTATION_PANELS_AVAILABLE = False
+
+
 # Exportar nuevos módulos si están disponibles
 try:
     from .adapters.trackers import (
@@ -106,7 +122,7 @@ __all__ = [
     "build_diagnostics_panel",
     "build_engine_for_notebook",
     "build_general_control_panel",
-    # Nuevos módulos
+    # Infrastructure
     "EventBus",
     "PluginManager",
     # Sistema de configuración
@@ -119,6 +135,19 @@ __all__ = [
     "merge_configs",
     "save_config_to_file",
 ]
+
+if PRESENTATION_PANELS_AVAILABLE:
+    __all__.extend(
+        [
+            "build_advanced_diagnostics_panel",
+            "build_filter_designer_panel",
+            "build_full_dashboard",
+            "build_output_manager_panel",
+            "build_perception_control_panel",
+            "build_performance_monitor_panel",
+            "build_preset_manager_panel",
+        ]
+    )
 
 if TRACKERS_AVAILABLE:
     __all__.extend(
