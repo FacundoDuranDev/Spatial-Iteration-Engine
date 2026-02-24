@@ -90,9 +90,7 @@ class CompositeOutputSink:
             try:
                 sink.close()
             except Exception as e:
-                logger.warning(
-                    f"Error al cerrar sink {i} ({type(sink).__name__}): {e}"
-                )
+                logger.warning(f"Error al cerrar sink {i} ({type(sink).__name__}): {e}")
         self._is_open = False
 
     def get_capabilities(self) -> OutputCapabilities:
@@ -231,4 +229,3 @@ class CompositeOutputSink:
         self._sinks.remove(sink)
         if not self._sinks:
             raise ValueError("No se puede remover el último sink")
-

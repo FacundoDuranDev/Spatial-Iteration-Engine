@@ -4,6 +4,7 @@ Servidor de signaling para WebRTC.
 Este módulo implementa un servidor HTTP simple que maneja el intercambio
 de ofertas y respuestas SDP entre el servidor y los clientes WebRTC.
 """
+
 import asyncio
 import json
 import logging
@@ -35,9 +36,7 @@ class WebRTCSignalingServer:
             port: Puerto donde escuchar (default: 8080)
         """
         if web is None:
-            raise ImportError(
-                "aiohttp no está instalado. Instala con: pip install aiohttp"
-            )
+            raise ImportError("aiohttp no está instalado. Instala con: pip install aiohttp")
 
         self.host = host
         self.port = port
@@ -73,9 +72,7 @@ class WebRTCSignalingServer:
             peer_id = data.get("peer_id", "default")
 
             if not offer:
-                return web.json_response(
-                    {"error": "Missing 'sdp' field"}, status=400
-                )
+                return web.json_response({"error": "Missing 'sdp' field"}, status=400)
 
             logger.info(f"Received offer from peer {peer_id}")
 
@@ -88,9 +85,7 @@ class WebRTCSignalingServer:
 
             # Retornar que la oferta fue recibida
             # El servidor WebRTC generará la respuesta
-            return web.json_response(
-                {"status": "offer_received", "peer_id": peer_id}
-            )
+            return web.json_response({"status": "offer_received", "peer_id": peer_id})
 
         except Exception as e:
             logger.error(f"Error handling offer: {e}", exc_info=True)
@@ -112,9 +107,7 @@ class WebRTCSignalingServer:
             peer_id = data.get("peer_id", "default")
 
             if not answer:
-                return web.json_response(
-                    {"error": "Missing 'sdp' field"}, status=400
-                )
+                return web.json_response({"error": "Missing 'sdp' field"}, status=400)
 
             logger.info(f"Received answer from peer {peer_id}")
 
@@ -235,4 +228,3 @@ class WebRTCSignalingServer:
         if self.runner:
             await self.runner.cleanup()
         logger.info("WebRTC signaling server stopped")
-

@@ -41,6 +41,7 @@ class NotebookPreviewSink:
             try:
                 import ipywidgets as widgets
                 from IPython.display import display
+
                 self._widget = widgets.Image(format=self._format)
                 display(self._widget)
             except ImportError:

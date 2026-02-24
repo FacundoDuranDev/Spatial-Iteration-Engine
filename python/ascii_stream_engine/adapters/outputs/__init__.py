@@ -1,9 +1,9 @@
+from ...ports.outputs import OutputSink
 from .ascii_recorder import AsciiFrameRecorder
 from .composite import CompositeOutputSink
 from .notebook_preview_sink import NotebookPreviewSink
 from .preview_sink import PreviewSink
 from .udp import FfmpegUdpOutput
-from ...ports.outputs import OutputSink
 
 try:
     from .rtsp import FfmpegRtspSink

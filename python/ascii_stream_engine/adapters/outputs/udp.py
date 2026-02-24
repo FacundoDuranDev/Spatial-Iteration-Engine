@@ -42,9 +42,7 @@ class FfmpegUdpOutput:
         port = self._port or config.port
         pkt_size = self._pkt_size or config.pkt_size
         bitrate = self._bitrate or config.bitrate
-        broadcast = (
-            self._broadcast if self._broadcast is not None else config.udp_broadcast
-        )
+        broadcast = self._broadcast if self._broadcast is not None else config.udp_broadcast
         out_w, out_h = output_size
         self._output_size = output_size
         url = f"udp://{host}:{port}?pkt_size={pkt_size}"

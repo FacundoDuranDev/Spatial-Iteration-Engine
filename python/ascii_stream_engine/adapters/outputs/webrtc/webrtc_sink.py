@@ -4,6 +4,7 @@ Backend de salida WebRTC para streaming en tiempo real.
 Este módulo implementa un OutputSink que transmite frames vía WebRTC,
 permitiendo visualización en navegadores web en tiempo real.
 """
+
 import asyncio
 import logging
 import threading
@@ -43,15 +44,11 @@ class FrameVideoTrack(VideoStreamTrack):
             loop: Loop de eventos asyncio (opcional, se obtiene del contexto si no se proporciona)
         """
         if VideoStreamTrack is None:
-            raise ImportError(
-                "aiortc no está instalado. Instala con: pip install aiortc"
-            )
+            raise ImportError("aiortc no está instalado. Instala con: pip install aiortc")
         super().__init__()
         self._loop = loop
         if loop is not None:
-            self._frame_queue: Optional[asyncio.Queue] = asyncio.Queue(
-                maxsize=2, loop=loop
-            )
+            self._frame_queue: Optional[asyncio.Queue] = asyncio.Queue(maxsize=2, loop=loop)
         else:
             self._frame_queue: Optional[asyncio.Queue] = None
         self._current_frame: Optional[VideoFrame] = None
@@ -188,9 +185,7 @@ class WebRTCOutput:
             enable_signaling: Si True, inicia el servidor de signaling automáticamente
         """
         if RTCPeerConnection is None:
-            raise ImportError(
-                "aiortc no está instalado. Instala con: pip install aiortc"
-            )
+            raise ImportError("aiortc no está instalado. Instala con: pip install aiortc")
 
         self.signaling_host = signaling_host
         self.signaling_port = signaling_port
@@ -260,9 +255,7 @@ class WebRTCOutput:
             # Configurar ICE candidates
             @self._peer_connection.on("iceconnectionstatechange")
             async def on_iceconnectionstatechange():
-                logger.info(
-                    f"ICE connection state: {self._peer_connection.iceConnectionState}"
-                )
+                logger.info(f"ICE connection state: {self._peer_connection.iceConnectionState}")
                 if self._peer_connection.iceConnectionState == "failed":
                     await self._peer_connection.close()
 
@@ -285,9 +278,7 @@ class WebRTCOutput:
                 # Revisar si hay ofertas pendientes
                 offer_data = self._signaling_server.get_pending_offer()
                 if offer_data:
-                    offer = RTCSessionDescription(
-                        sdp=offer_data["sdp"], type=offer_data["type"]
-                    )
+                    offer = RTCSessionDescription(sdp=offer_data["sdp"], type=offer_data["type"])
 
                     # Establecer la oferta remota
                     await self._peer_connection.setRemoteDescription(offer)
@@ -346,9 +337,7 @@ class WebRTCOutput:
         if self._peer_connection and self._loop:
             try:
                 # Cerrar la conexión de forma asíncrona
-                future = asyncio.run_coroutine_threadsafe(
-                    self._peer_connection.close(), self._loop
-                )
+                future = asyncio.run_coroutine_threadsafe(self._peer_connection.close(), self._loop)
                 # Esperar un poco para que se cierre
                 future.result(timeout=2.0)
             except Exception as e:
@@ -364,4 +353,3 @@ class WebRTCOutput:
         self._signaling_server = None
 
         logger.info("WebRTC output closed")
-
