@@ -52,6 +52,7 @@ class PipelineOrchestrator:
         transformations: Optional[TransformationPipeline] = None,
         event_bus: Optional[EventBus] = None,
         profiler: Optional[LoopProfiler] = None,
+        temporal_manager=None,
     ) -> None:
         """
         Inicializa el orquestador.
@@ -67,6 +68,7 @@ class PipelineOrchestrator:
             transformations: Pipeline de transformaciones
             event_bus: Bus de eventos (opcional)
             profiler: Profiler de performance (opcional)
+            temporal_manager: Temporal state manager (opcional)
         """
         self._source = source
         self._renderer = renderer
@@ -78,6 +80,8 @@ class PipelineOrchestrator:
         self._transformations = transformations
         self._event_bus = event_bus
         self._profiler = profiler
+        self._temporal = temporal_manager
+        self._temporal_configured = False
 
         # Ejecutor de etapas con configuración
         self._stage_executor = StageExecutor(
@@ -139,6 +143,10 @@ class PipelineOrchestrator:
             )
             self._event_bus.publish_async(event, "frame_captured")
 
+        # Temporal: begin new frame (invalidate per-frame caches)
+        if self._temporal:
+            self._temporal.begin_frame()
+
         # Fase 2: Análisis
         if self._profiler:
             self._profiler.start_phase(LoopProfiler.PHASE_ANALYSIS)
@@ -165,6 +173,10 @@ class PipelineOrchestrator:
                     analysis["tracking"] = tracking_result
             except Exception as e:
                 logger.warning(f"Error en tracking: {e}")
+
+        # Inject temporal manager into analysis dict for filter access
+        if self._temporal:
+            analysis["temporal"] = self._temporal
 
         self._last_analysis = analysis
 
@@ -202,6 +214,14 @@ class PipelineOrchestrator:
         if self._profiler:
             self._profiler.start_phase(LoopProfiler.PHASE_FILTERING)
 
+        # Temporal: configure on first pass, push input before filtering
+        if self._temporal and not self._temporal_configured:
+            if self._filters:
+                self._temporal.configure(self._filters.snapshot())
+            self._temporal_configured = True
+        if self._temporal:
+            self._temporal.push_input(frame)
+
         if self._filters and self._filters.has_any():
             filter_result = self._stage_executor.execute_filtering(
                 lambda: self._filters.apply(frame, self._config, analysis)
@@ -210,6 +230,10 @@ class PipelineOrchestrator:
                 logger.warning(f"Error en filtrado: {filter_result.error}")
             else:
                 frame = filter_result.data
+
+                # Temporal: push output after successful filtering
+                if self._temporal:
+                    self._temporal.push_output(frame)
 
                 # Publicar evento de filtro aplicado
                 if self._event_bus:

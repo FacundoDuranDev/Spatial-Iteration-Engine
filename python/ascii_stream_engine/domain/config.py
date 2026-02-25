@@ -53,6 +53,7 @@ class EngineConfig:
     sensor_config: Dict[str, Any] = field(default_factory=dict)
     plugin_paths: List[str] = field(default_factory=list)
     neural: Optional[NeuralConfig] = None
+    enable_temporal: bool = True
 
     def __post_init__(self) -> None:
         """Valida la configuración después de la inicialización."""

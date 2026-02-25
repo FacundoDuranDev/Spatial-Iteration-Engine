@@ -23,7 +23,7 @@ from .pipeline import (
     TrackingPipeline,
     TransformationPipeline,
 )
-from .services import ErrorHandler, FrameBuffer, RetryManager
+from .services import ErrorHandler, FrameBuffer, RetryManager, TemporalManager
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +95,7 @@ class StreamEngine:
         self._metrics = EngineMetrics()
         self._retry_manager = RetryManager()
         self._frame_buffer = FrameBuffer(max_size=self._config.frame_buffer_size)
+        self._temporal = TemporalManager() if self._config.enable_temporal else None
 
         # Sistema de eventos
         self._event_bus = EventBus() if self._config.enable_events else None
@@ -272,6 +273,7 @@ class StreamEngine:
             transformations=self._transformations,
             event_bus=self._event_bus,
             profiler=self._profiler,
+            temporal_manager=self._temporal,
         )
 
     def start(self, blocking: bool = False) -> None:
