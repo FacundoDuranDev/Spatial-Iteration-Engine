@@ -26,15 +26,15 @@ class PhysarumFilter(BaseFilter):
 
     def __init__(
         self,
-        num_agents: int = 2000,
+        num_agents: int = 4000,
         sensor_angle: float = 0.4,
         sensor_distance: float = 9.0,
         turn_speed: float = 0.4,
         move_speed: float = 1.0,
-        deposit_amount: float = 5.0,
-        decay_factor: float = 0.95,
-        diffusion_sigma: float = 0.7,
-        opacity: float = 0.5,
+        deposit_amount: float = 10.0,
+        decay_factor: float = 0.98,
+        diffusion_sigma: float = 0.5,
+        opacity: float = 0.7,
         colormap: int = cv2.COLORMAP_INFERNO,
         sim_scale: int = 4,
         enabled: bool = True,
@@ -79,8 +79,12 @@ class PhysarumFilter(BaseFilter):
         # Run one simulation step
         self._step()
 
-        # Convert trail map to BGR overlay
-        trail_normalized = np.clip(self._trail_map * 10, 0, 255).astype(np.uint8)
+        # Convert trail map to BGR overlay with adaptive normalization
+        trail_max = self._trail_map.max()
+        if trail_max > 1e-6:
+            trail_normalized = (self._trail_map / trail_max * 255).astype(np.uint8)
+        else:
+            trail_normalized = np.zeros_like(self._trail_map, dtype=np.uint8)
         overlay_small = cv2.applyColorMap(trail_normalized, self._colormap)
 
         # Upscale overlay to frame resolution
