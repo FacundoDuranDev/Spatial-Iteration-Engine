@@ -258,6 +258,47 @@ except ImportError as exc:
 
 **Always guard imports** at the top of each function that uses widgets.
 
+## Planned Features (from AI Architecture Review)
+
+### Config Persistence — Save/Load Buttons
+
+Add save/load buttons to the control panel for session persistence:
+
+```python
+# In build_general_control_panel():
+save_btn = widgets.Button(description="Save Config")
+load_btn = widgets.Button(description="Load Config")
+
+def _on_save(_=None):
+    from ...infrastructure.config_persistence import save_config
+    save_config(engine.get_config(), "engine_config.json")
+    status.value = _status_style("Config saved.", "ok")
+
+def _on_load(_=None):
+    from ...infrastructure.config_persistence import load_config
+    cfg = load_config("engine_config.json")
+    was_running = engine.is_running
+    if was_running:
+        engine.stop()
+    engine.update_config(**cfg.__dict__)
+    if was_running:
+        engine.start()
+    status.value = _status_style("Config loaded.", "ok")
+```
+
+Depends on `infrastructure/config_persistence.py` being implemented first.
+
+### Profiler Dashboard Tab
+
+Add a new tab to the control panel showing real-time per-stage latency breakdown:
+
+- Bar chart or HTML table showing capture/analysis/filters/render/output timing
+- Rolling FPS counter
+- Bottleneck highlighting (stages exceeding their latency budget in red)
+- Refresh button (not auto-polling, to save resources)
+
+Consumes `engine.get_profiling_report()` and `LoopProfiler.get_summary_dict()`.
+
 ## Contracts
 
 | Contract | Rule |

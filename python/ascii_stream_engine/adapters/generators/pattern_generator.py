@@ -76,4 +76,3 @@ class PatternGenerator(BaseContentGenerator):
         noise = (noise * 255).astype(np.uint8)
 
         return np.stack([noise, noise, noise], axis=2)
-

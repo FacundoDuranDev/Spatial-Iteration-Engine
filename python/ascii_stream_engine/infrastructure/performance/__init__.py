@@ -6,6 +6,7 @@ from .frame_skipper import FrameSkipper
 # Importar acelerador GPU con manejo de dependencias opcionales
 try:
     from .gpu_accelerator import GPUAccelerator
+
     GPU_AVAILABLE = True
 except ImportError:
     GPU_AVAILABLE = False
@@ -18,4 +19,3 @@ __all__ = [
 
 if GPU_AVAILABLE:
     __all__.append("GPUAccelerator")
-

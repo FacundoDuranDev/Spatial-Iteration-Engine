@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Tuple
+from typing import Tuple
 
 from ...domain.config import EngineConfig
 from ...domain.types import RenderFrame
@@ -70,7 +70,7 @@ class AsciiFrameRecorder:
         """
         return OutputCapabilities(
             capabilities=OutputCapability.RECORDING,
-            estimated_latency_ms=None,  # No aplica para grabación a archivo
+
             supported_qualities=[OutputQuality.LOW],  # Solo texto ASCII
             max_clients=1,  # Solo un archivo a la vez
             protocol_name="File (ASCII)",
@@ -83,10 +83,6 @@ class AsciiFrameRecorder:
     def is_open(self) -> bool:
         """Verifica si el backend está abierto y listo para escribir."""
         return self._is_open and self._file is not None
-
-    def get_estimated_latency_ms(self) -> Optional[float]:
-        """No aplica para grabación a archivo."""
-        return None
 
     def supports_multiple_clients(self) -> bool:
         """No soporta múltiples clientes (solo un archivo)."""

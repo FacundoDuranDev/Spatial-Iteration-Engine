@@ -88,9 +88,7 @@ class RetryManager:
                 self.safe_close_source(source)
                 time.sleep(self.camera_retry_delay * (attempt + 1))
                 source.open()
-                logger.info(
-                    f"Cámara reabierta exitosamente después de {attempt + 1} intento(s)"
-                )
+                logger.info(f"Cámara reabierta exitosamente después de {attempt + 1} intento(s)")
                 return True
             except Exception as e:
                 logger.warning(
@@ -136,12 +134,12 @@ class RetryManager:
                     # Intentar reconectar el sink
                     try:
                         self.safe_close_sink(sink)
-                        time.sleep(self.udp_retry_delay_base * (2 ** attempt))
+                        time.sleep(self.udp_retry_delay_base * (2**attempt))
                         sink.open(config, output_size)
                         logger.info("Sink UDP reconectado, reintentando escritura")
                     except Exception as reconnect_error:
                         logger.error(f"Error al reconectar sink UDP: {reconnect_error}")
-                        time.sleep(self.udp_retry_delay_base * (2 ** attempt))
+                        time.sleep(self.udp_retry_delay_base * (2**attempt))
             except Exception as e:
                 # Otros errores no relacionados con UDP, no reintentar
                 logger.error(f"Error inesperado al escribir al sink: {e}")
@@ -188,7 +186,8 @@ class RetryManager:
                     )
                     time.sleep(retry_delay * (attempt + 1))
                 else:
-                    logger.error(f"Error en {operation_name} después de {max_retries + 1} intentos: {e}")
+                    logger.error(
+                        f"Error en {operation_name} después de {max_retries + 1} intentos: {e}"
+                    )
 
         return False, None, last_exception
-

@@ -61,4 +61,3 @@ class WarpTransformer(BaseSpatialTransform):
                 return cv2.warpPerspective(frame, inv_matrix, (w, h))
         except Exception:
             return frame
-

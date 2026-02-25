@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 # Intentar importar librerías de audio
 try:
     import sounddevice as sd
+
     SOUNDDEVICE_AVAILABLE = True
 except ImportError:
     SOUNDDEVICE_AVAILABLE = False
@@ -19,6 +20,7 @@ except ImportError:
 
 try:
     import pyaudio
+
     PYAUDIO_AVAILABLE = True
 except ImportError:
     PYAUDIO_AVAILABLE = False
@@ -188,4 +190,3 @@ class AudioSensor(BaseSensor):
                 self._audio_stream.stop_stream()
                 self._audio_stream.close()
             self._audio_stream = None
-

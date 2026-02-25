@@ -165,9 +165,7 @@ class TestPluginMetadata(unittest.TestCase):
         self.assertFalse(metadata.validate())
 
         # Inválido: tipo incorrecto
-        metadata = PluginMetadata(
-            name="test", version="1.0.0", plugin_type="invalid"
-        )
+        metadata = PluginMetadata(name="test", version="1.0.0", plugin_type="invalid")
         self.assertFalse(metadata.validate())
 
     def test_metadata_merge(self):
@@ -339,6 +337,7 @@ class TestPluginLoader(unittest.TestCase):
     def tearDown(self):
         """Limpiar después de tests."""
         import shutil
+
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def test_load_from_file(self):
@@ -460,6 +459,7 @@ class TestPluginManager(unittest.TestCase):
         if self.manager.is_hot_reload_active():
             self.manager.stop_hot_reload()
         import shutil
+
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def test_load_from_file(self):
@@ -534,4 +534,3 @@ class Plugin{i}(FilterPlugin):
 
 if __name__ == "__main__":
     unittest.main()
-

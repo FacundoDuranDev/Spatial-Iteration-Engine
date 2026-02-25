@@ -20,8 +20,8 @@ from .parallel_pipeline import FrameProcessor
 from .pipeline import (
     AnalyzerPipeline,
     FilterPipeline,
-    TransformationPipeline,
     TrackingPipeline,
+    TransformationPipeline,
 )
 from .services import ErrorHandler, FrameBuffer, RetryManager
 
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 class StreamEngine:
     """Motor principal para streaming de frames en tiempo real.
-    
+
     Orquesta el pipeline completo: captura → análisis → transformación →
     filtrado → tracking → renderizado → salida.
     """
@@ -435,7 +435,9 @@ class StreamEngine:
                             logger.warning(
                                 f"{failures} fallos consecutivos, intentando reabrir cámara..."
                             )
-                            if not self._retry_manager.reopen_source(self._source, self._stop_event):
+                            if not self._retry_manager.reopen_source(
+                                self._source, self._stop_event
+                            ):
                                 logger.error("No se pudo recuperar la cámara, deteniendo engine")
                                 break
                         else:
@@ -451,7 +453,9 @@ class StreamEngine:
                             logger.warning(
                                 f"{failures} frames None consecutivos, intentando reabrir cámara..."
                             )
-                            if not self._retry_manager.reopen_source(self._source, self._stop_event):
+                            if not self._retry_manager.reopen_source(
+                                self._source, self._stop_event
+                            ):
                                 logger.error("No se pudo recuperar la cámara, deteniendo engine")
                                 break
                         else:

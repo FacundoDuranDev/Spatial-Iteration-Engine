@@ -9,16 +9,19 @@ Uso (desde la raíz del repo):
 Criterio de éxito: se abre una ventana, la cámara se ve en tiempo real;
 si se agrega un filtro (p. ej. InvertFilter), el efecto se ve.
 """
+
 import sys
+
 from ascii_stream_engine import (
     EngineConfig,
-    StreamEngine,
+    FilterPipeline,
+    InvertFilter,
     OpenCVCameraSource,
     PassthroughRenderer,
     PreviewSink,
-    FilterPipeline,
-    InvertFilter,
+    StreamEngine,
 )
+
 
 def main():
     camera_index = int(sys.argv[1]) if len(sys.argv) > 1 else 0
@@ -29,7 +32,9 @@ def main():
     if test_frame is None:
         print(f"No se pudo leer de la cámara (índice {camera_index}).")
         print("  - Prueba otro índice como argumento, p. ej. .../stream_camera_preview_only.py 1")
-        print("  - Diagnóstico: PYTHONPATH=python python python/ascii_stream_engine/examples/diagnose_camera.py")
+        print(
+            "  - Diagnóstico: PYTHONPATH=python python python/ascii_stream_engine/examples/diagnose_camera.py"
+        )
         print("  - Permisos: sudo usermod -aG video $USER   (luego cierra sesión)")
         sys.exit(1)
     config = EngineConfig(
@@ -50,6 +55,7 @@ def main():
     )
     print(f"MVP_01 Preview — Cámara {camera_index} → ventana. Ctrl+C para salir.")
     engine.start(blocking=True)
+
 
 if __name__ == "__main__":
     main()

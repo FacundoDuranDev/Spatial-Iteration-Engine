@@ -63,8 +63,11 @@ void letterbox_and_normalize_nchw(
       const std::uint8_t* p = src + (sy * src_w + sx) * c;
       int ox = dx_off + dx;
       int oy = dy_off + dy;
-      for (int ch = 0; ch < c; ++ch)
-        dst[ch * target_size * target_size + oy * target_size + ox] = p[ch] / 255.f;
+      for (int ch = 0; ch < c; ++ch) {
+        // BGR→RGB: swap channels 0↔2
+        int src_ch = (ch == 0) ? 2 : (ch == 2) ? 0 : ch;
+        dst[ch * target_size * target_size + oy * target_size + ox] = p[src_ch] / 255.f;
+      }
     }
   }
 }
@@ -118,7 +121,7 @@ std::vector<float> postprocess_yolov8_pose(
     const float* det = data + i * detection_size;
     float conf = det[4];
 
-    if (conf > 0.5f) {
+    if (conf > 0.25f) {
       const float* keypoints = det + 5;
       out.reserve(num_keypoints * 2);
       for (int k = 0; k < num_keypoints; ++k) {
@@ -134,6 +137,43 @@ std::vector<float> postprocess_yolov8_pose(
           out.push_back(0.0f);
           out.push_back(0.0f);
         }
+      }
+      return out;
+    }
+  }
+  return {};
+}
+
+/** Post-process YOLOv8 pose output preserving per-keypoint confidence.
+ * Returns (x, y, confidence) triplets in PIXEL coordinates of the original image. */
+std::vector<float> postprocess_yolov8_pose_with_conf(
+    const float* data,
+    size_t count,
+    int num_keypoints,
+    const LetterboxInfo& lb) {
+  std::vector<float> out;
+
+  const int detection_size = 4 + 1 + num_keypoints * 3;
+  if (count < static_cast<size_t>(detection_size))
+    return {};
+
+  size_t num_detections = count / detection_size;
+  for (size_t i = 0; i < num_detections; ++i) {
+    const float* det = data + i * detection_size;
+    float conf = det[4];
+
+    if (conf > 0.25f) {
+      const float* keypoints = det + 5;
+      out.reserve(num_keypoints * 3);
+      for (int k = 0; k < num_keypoints; ++k) {
+        float kp_x = keypoints[k * 3 + 0];
+        float kp_y = keypoints[k * 3 + 1];
+        float kp_conf = keypoints[k * 3 + 2];
+
+        // Undo letterbox: model pixels -> original pixels
+        out.push_back((kp_x - lb.pad_x) / lb.scale);
+        out.push_back((kp_y - lb.pad_y) / lb.scale);
+        out.push_back(kp_conf);
       }
       return out;
     }
@@ -241,9 +281,26 @@ std::vector<float> OnnxRunner::run(const std::uint8_t* image, int width, int hei
 
     // YOLOv8 detection models produce very large outputs (>10k elements).
     if (count > 10000) {
-      auto yolov8_result = postprocess_yolov8_pose(data, count, 17, lb);
+      auto shape = tinfo.GetShape();
+      const float* yolo_data = data;
+      std::vector<float> transposed;
+
+      // YOLOv8 outputs (1, 56, 8400) but postprocessing expects (1, 8400, 56).
+      // Detect and transpose if needed: shape[1] < shape[2] means features < detections.
+      if (shape.size() == 3 && shape[1] < shape[2]) {
+        int64_t rows = shape[1];  // e.g. 56
+        int64_t cols = shape[2];  // e.g. 8400
+        transposed.resize(static_cast<size_t>(rows * cols));
+        for (int64_t r = 0; r < rows; ++r)
+          for (int64_t c_idx = 0; c_idx < cols; ++c_idx)
+            transposed[static_cast<size_t>(c_idx * rows + r)] =
+                data[static_cast<size_t>(r * cols + c_idx)];
+        yolo_data = transposed.data();
+      }
+
+      auto yolov8_result = postprocess_yolov8_pose(yolo_data, count, 17, lb);
       if (!yolov8_result.empty()) return yolov8_result;
-      yolov8_result = postprocess_yolov8_pose(data, count, 33, lb);
+      yolov8_result = postprocess_yolov8_pose(yolo_data, count, 33, lb);
       if (!yolov8_result.empty()) return yolov8_result;
     }
 
@@ -272,6 +329,73 @@ std::vector<float> OnnxRunner::run(const std::uint8_t* image, int width, int hei
   }
 }
 
+std::vector<float> OnnxRunner::run_with_confidence(
+    const std::uint8_t* image, int width, int height) {
+  if (!loaded_ || !impl_ || !image || width <= 0 || height <= 0)
+    return {};
+
+  std::lock_guard<std::mutex> lock(run_mutex_);
+  try {
+    const int size = input_size_;
+    LetterboxInfo lb{};
+    letterbox_and_normalize_nchw(image, width, height, size, input_data_.data(), lb);
+
+    std::array<int64_t, 4> input_shape = {1, 3, size, size};
+    Ort::MemoryInfo mem_info = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
+    Ort::Value input_tensor = Ort::Value::CreateTensor<float>(
+        mem_info, input_data_.data(), input_data_.size(),
+        input_shape.data(), input_shape.size());
+
+    auto output_tensors = impl_->session->Run(
+        Ort::RunOptions{nullptr},
+        impl_->input_names.data(), &input_tensor, 1,
+        impl_->output_names.data(), impl_->output_names.size());
+
+    if (output_tensors.empty()) return {};
+
+    size_t best_idx = 0;
+    size_t best_count = 0;
+    for (size_t i = 0; i < output_tensors.size(); ++i) {
+      size_t n = output_tensors[i].GetTensorTypeAndShapeInfo().GetElementCount();
+      if (n > best_count) { best_count = n; best_idx = i; }
+    }
+
+    const auto& out_tensor = output_tensors[best_idx];
+    auto tinfo = out_tensor.GetTensorTypeAndShapeInfo();
+    size_t count = tinfo.GetElementCount();
+    const float* data = out_tensor.GetTensorData<float>();
+    if (!data) return {};
+
+    // YOLOv8 detection: use confidence-preserving post-processing
+    if (count > 10000) {
+      auto shape = tinfo.GetShape();
+      const float* yolo_data = data;
+      std::vector<float> transposed;
+
+      if (shape.size() == 3 && shape[1] < shape[2]) {
+        int64_t rows = shape[1];
+        int64_t cols = shape[2];
+        transposed.resize(static_cast<size_t>(rows * cols));
+        for (int64_t r = 0; r < rows; ++r)
+          for (int64_t c_idx = 0; c_idx < cols; ++c_idx)
+            transposed[static_cast<size_t>(c_idx * rows + r)] =
+                data[static_cast<size_t>(r * cols + c_idx)];
+        yolo_data = transposed.data();
+      }
+
+      auto result = postprocess_yolov8_pose_with_conf(yolo_data, count, 17, lb);
+      if (!result.empty()) return result;
+      result = postprocess_yolov8_pose_with_conf(yolo_data, count, 33, lb);
+      if (!result.empty()) return result;
+    }
+
+    // Fallback: return raw data as-is (non-YOLOv8 models)
+    return {};
+  } catch (const std::exception&) {
+    return {};
+  }
+}
+
 }  // namespace perception
 
 #else  // !USE_ONNXRUNTIME
@@ -286,6 +410,7 @@ OnnxRunner::~OnnxRunner() = default;
 
 bool OnnxRunner::load(const std::string&) { return false; }
 std::vector<float> OnnxRunner::run(const std::uint8_t*, int, int) { return {}; }
+std::vector<float> OnnxRunner::run_with_confidence(const std::uint8_t*, int, int) { return {}; }
 
 }  // namespace perception
 

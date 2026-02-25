@@ -47,4 +47,3 @@ class AnalysisResult:
             "success": self.success,
             "error_message": self.error_message,
         }
-

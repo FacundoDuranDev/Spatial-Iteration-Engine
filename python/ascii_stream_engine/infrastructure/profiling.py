@@ -215,26 +215,18 @@ class LoopProfiler:
                     if phase in self._stats:
                         phase_stats = self._stats[phase]
                         if phase_stats.count > 0 and total_stats.avg_time > 0:
-                            percentage = (
-                                phase_stats.avg_time / total_stats.avg_time * 100
-                            )
+                            percentage = phase_stats.avg_time / total_stats.avg_time * 100
                             phase_percentages[phase] = percentage
 
                 # Ordenar por porcentaje descendente
-                sorted_phases = sorted(
-                    phase_percentages.items(), key=lambda x: x[1], reverse=True
-                )
+                sorted_phases = sorted(phase_percentages.items(), key=lambda x: x[1], reverse=True)
 
                 for phase, percentage in sorted_phases:
                     phase_name = phase.replace("_", " ").title()
-                    lines.append(
-                        f"  {phase_name}: {percentage:.1f}% del tiempo total"
-                    )
+                    lines.append(f"  {phase_name}: {percentage:.1f}% del tiempo total")
 
                 lines.append("")
-                lines.append(
-                    f"FPS promedio: {1.0/total_stats.avg_time:.2f} (objetivo: variable)"
-                )
+                lines.append(f"FPS promedio: {1.0/total_stats.avg_time:.2f} (objetivo: variable)")
 
         lines.append("=" * 70)
 
@@ -273,4 +265,3 @@ class LoopProfiler:
         if phase in self._stats:
             return self._stats[phase].avg_time
         return 0.0
-

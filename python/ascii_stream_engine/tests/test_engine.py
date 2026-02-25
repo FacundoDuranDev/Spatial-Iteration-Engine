@@ -1,9 +1,9 @@
 import time
 import unittest
 
-from ascii_stream_engine.domain.config import ConfigValidationError, EngineConfig
 from ascii_stream_engine.application.engine import StreamEngine
 from ascii_stream_engine.application.pipeline import AnalyzerPipeline, FilterPipeline
+from ascii_stream_engine.domain.config import ConfigValidationError, EngineConfig
 from ascii_stream_engine.domain.types import RenderFrame
 
 
@@ -166,22 +166,23 @@ class TestStreamEngine(unittest.TestCase):
             config=config,
             enable_profiling=True,  # Habilitar profiling
         )
-        
+
         # Verificar que el profiler está habilitado
         self.assertTrue(engine.profiler.enabled)
-        
+
         engine.start()
         time.sleep(0.1)  # Procesar algunos frames
         engine.stop()
 
         # Obtener estadísticas
         stats = engine.get_profiling_stats()
-        
+
         # Verificar que se recopilaron datos
         self.assertGreater(len(stats), 0, "Debe haber estadísticas recopiladas")
-        
+
         # Verificar que hay datos de frame total
         from ascii_stream_engine.infrastructure.profiling import LoopProfiler
+
         if LoopProfiler.PHASE_TOTAL in stats:
             total_stats = stats[LoopProfiler.PHASE_TOTAL]
             self.assertGreater(total_stats["count"], 0, "Debe haber procesado al menos un frame")
@@ -201,10 +202,10 @@ class TestStreamEngine(unittest.TestCase):
             config=config,
             enable_profiling=False,  # Deshabilitar profiling
         )
-        
+
         # Verificar que el profiler está deshabilitado
         self.assertFalse(engine.profiler.enabled)
-        
+
         engine.start()
         time.sleep(0.05)
         engine.stop()

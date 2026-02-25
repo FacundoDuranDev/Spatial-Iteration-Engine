@@ -35,4 +35,3 @@ class FrameMetadata:
             "sensor_data": self.sensor_data,
             "custom_metadata": self.custom_metadata,
         }
-

@@ -10,7 +10,7 @@ from ..domain.tracking_data import TrackingData
 
 class ObjectTracker(Protocol):
     """Protocolo para trackers de objetos.
-    
+
     Los trackers mantienen el seguimiento de objetos a través de múltiples frames,
     asociando detecciones con identidades persistentes y calculando trayectorias.
     """
@@ -21,9 +21,7 @@ class ObjectTracker(Protocol):
     enabled: bool
     """Indica si el tracker está habilitado."""
 
-    def track(
-        self, frame: np.ndarray, detections: dict, config: EngineConfig
-    ) -> TrackingData:
+    def track(self, frame: np.ndarray, detections: dict, config: EngineConfig) -> TrackingData:
         """
         Trackea objetos en un frame basándose en detecciones.
 
@@ -67,4 +65,3 @@ class ObjectTracker(Protocol):
             Diccionario con la configuración actual
         """
         ...
-

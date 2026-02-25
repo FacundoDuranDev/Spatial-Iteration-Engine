@@ -9,6 +9,7 @@ from .base import BaseFilter
 
 try:
     import filters_cpp as _filters_cpp
+
     _CPP_AVAILABLE = True
 except ImportError:
     _filters_cpp = None

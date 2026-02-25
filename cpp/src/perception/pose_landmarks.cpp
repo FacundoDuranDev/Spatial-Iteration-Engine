@@ -35,4 +35,20 @@ std::vector<float> run_pose(std::uint8_t* image, int width, int height) {
 #endif
 }
 
+std::vector<float> run_pose_with_confidence(std::uint8_t* image, int width, int height) {
+#ifdef USE_ONNXRUNTIME
+  // Uses the same model as run_pose but preserves per-keypoint confidence.
+  // Note: shares the static runner with run_pose (same model path).
+  static OnnxRunner runner;
+  if (!runner.is_loaded() && !runner.load(get_pose_model_path()))
+    return {};
+  return runner.run_with_confidence(image, width, height);
+#else
+  (void)image;
+  (void)width;
+  (void)height;
+  return {};
+#endif
+}
+
 }  // namespace perception

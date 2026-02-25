@@ -120,3 +120,17 @@ All frame arrays passed between pipeline stages MUST be:
 - Default to `min(4, hardware_concurrency)` for intra-op threads.
 - Make it configurable via environment variable `ONNX_NUM_THREADS`.
 - When running multiple analyzers in parallel, reduce per-model threads to avoid oversubscription.
+
+---
+
+## 8. Metrics Integrity
+
+Every value reported as a measurement MUST come from an actual measurement. No hardcoded constants disguised as metrics.
+
+### Rules
+
+- **Return `None`, not a magic number.** If you cannot measure something, the method MUST return `None`. Never `return 80.0` or any hardcoded constant from a method named `get_*`, `measure_*`, or `estimate_*`.
+- **One source of truth: `LoopProfiler`.** All per-frame timing goes through `LoopProfiler` in `infrastructure/profiling.py`. It instruments the real pipeline stages (capture, analysis, transformation, filtering, rendering, writing). Do not create parallel timing mechanisms in adapters.
+- **No timing in the hot path outside LoopProfiler.** Adapters (filters, outputs, renderers) MUST NOT add `time.perf_counter()` calls in their `write()`, `apply()`, or `render()` methods. The orchestrator already wraps these calls with profiler phases.
+- **End-to-end latency is not measurable from one side.** Streaming latency (encoder → network → decoder → display) requires receiver-side measurement. Do not pretend to estimate it from the sender.
+- **If a metric field is not measurable, do not add it to the interface.** Prefer no field over an optional field that every implementation sets to `None` or a guess.

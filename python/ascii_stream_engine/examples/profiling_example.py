@@ -3,19 +3,20 @@
 import signal
 import sys
 import time
+
 from ascii_stream_engine import (
-    EngineConfig,
-    StreamEngine,
-    OpenCVCameraSource,
     AsciiRenderer,
+    EngineConfig,
     FfmpegUdpOutput,
+    OpenCVCameraSource,
+    StreamEngine,
 )
 
 
 def main() -> None:
     """Ejecuta el engine con profiling habilitado y muestra reportes periódicos."""
     config = EngineConfig(host="127.0.0.1", port=1234, fps=10)
-    
+
     # Crear engine con profiling habilitado
     engine = StreamEngine(
         source=OpenCVCameraSource(0),
@@ -39,7 +40,7 @@ def main() -> None:
 
     print("Iniciando engine con profiling habilitado...")
     print("Presiona Ctrl+C para detener y ver el reporte final\n")
-    
+
     # Iniciar engine en un hilo separado
     engine.start(blocking=False)
 
@@ -58,13 +59,13 @@ def main() -> None:
 
     # Detener el engine
     engine.stop()
-    
+
     # Mostrar reporte final
     print("\n" + "=" * 70)
     print("REPORTE FINAL DE PROFILING")
     print("=" * 70)
     print(engine.get_profiling_report())
-    
+
     # También mostrar estadísticas como diccionario
     print("\n" + "=" * 70)
     print("ESTADÍSTICAS COMO DICCIONARIO")
@@ -84,4 +85,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

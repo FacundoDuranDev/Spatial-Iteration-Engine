@@ -1,9 +1,9 @@
 """Sistema de metadatos estructurados para plugins."""
 
 import json
-from dataclasses import dataclass, field, asdict
-from typing import Any, Dict, List, Optional, Set
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Set
 
 
 @dataclass
@@ -15,30 +15,30 @@ class PluginMetadata:
     version: str
     description: str = ""
     author: str = ""
-    
+
     # Información técnica
     plugin_type: str = "unknown"  # filter, analyzer, renderer, tracker
     entry_point: Optional[str] = None  # Nombre de la clase del plugin
     module_path: Optional[str] = None  # Ruta al módulo
-    
+
     # Dependencias
     dependencies: List[str] = field(default_factory=list)
     optional_dependencies: List[str] = field(default_factory=list)
     python_version: Optional[str] = None  # Requisito de versión de Python
-    
+
     # Capacidades y características
     capabilities: Set[str] = field(default_factory=set)
     tags: List[str] = field(default_factory=list)
-    
+
     # Configuración
     default_config: Dict[str, Any] = field(default_factory=dict)
     config_schema: Optional[Dict[str, Any]] = None  # JSON Schema
-    
+
     # Información adicional
     homepage: Optional[str] = None
     license: Optional[str] = None
     keywords: List[str] = field(default_factory=list)
-    
+
     # Metadatos del sistema
     loaded_from: Optional[str] = None  # Ruta desde donde se cargó
     load_time: Optional[float] = None  # Timestamp de carga
@@ -104,35 +104,33 @@ class PluginMetadata:
         """Fusiona metadatos con otros, dando prioridad a 'other'."""
         merged = self.to_dict()
         other_dict = other.to_dict()
-        
+
         # Listas y sets que deben fusionarse (no sobrescribirse)
         merge_keys = ("dependencies", "optional_dependencies", "tags", "keywords", "capabilities")
-        
+
         # Actualizar otros campos con valores de 'other' si existen
         for key, value in other_dict.items():
             if key in merge_keys:
                 # Fusionar listas y sets
                 if key == "capabilities":
-                    merged[key] = list(
-                        set(merged.get(key, [])) | set(other_dict.get(key, []))
-                    )
+                    merged[key] = list(set(merged.get(key, [])) | set(other_dict.get(key, [])))
                 else:
                     merged[key] = list(set(merged.get(key, []) + other_dict.get(key, [])))
             elif value is not None and value != [] and value != {}:
                 # Sobrescribir otros campos
                 merged[key] = value
-        
+
         return self.from_dict(merged)
 
 
 def extract_metadata_from_plugin(plugin: Any, plugin_type: Optional[str] = None) -> PluginMetadata:
     """
     Extrae metadatos de una instancia de plugin.
-    
+
     Args:
         plugin: Instancia del plugin
         plugin_type: Tipo del plugin (se infiere si no se proporciona)
-    
+
     Returns:
         Metadatos extraídos
     """
@@ -144,7 +142,7 @@ def extract_metadata_from_plugin(plugin: Any, plugin_type: Optional[str] = None)
             RendererPlugin,
             TrackerPlugin,
         )
-        
+
         if isinstance(plugin, FilterPlugin):
             plugin_type = "filter"
         elif isinstance(plugin, AnalyzerPlugin):
@@ -155,13 +153,13 @@ def extract_metadata_from_plugin(plugin: Any, plugin_type: Optional[str] = None)
             plugin_type = "tracker"
         else:
             plugin_type = "unknown"
-    
+
     # Extraer información básica
     name = getattr(plugin, "name", plugin.__class__.__name__)
     version = getattr(plugin, "version", "1.0.0")
     description = getattr(plugin, "description", "")
     author = getattr(plugin, "author", "")
-    
+
     # Extraer metadatos adicionales si existen
     metadata_dict = getattr(plugin, "metadata", None)
     if isinstance(metadata_dict, dict):
@@ -177,9 +175,8 @@ def extract_metadata_from_plugin(plugin: Any, plugin_type: Optional[str] = None)
             entry_point=plugin.__class__.__name__,
             module_path=getattr(plugin, "__module__", None),
         )
-    
+
     # Asegurar que el tipo sea correcto
     base_metadata.plugin_type = plugin_type
-    
-    return base_metadata
 
+    return base_metadata
