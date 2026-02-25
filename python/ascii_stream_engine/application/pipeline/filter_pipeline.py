@@ -9,6 +9,7 @@ import numpy as np
 
 from ...domain.config import EngineConfig
 from ...ports.processors import Filter, ProcessorPipeline
+from .filter_context import FilterContext
 
 
 class FilterPipeline(ProcessorPipeline):
@@ -177,10 +178,17 @@ class FilterPipeline(ProcessorPipeline):
             # Si no existe el módulo de cache global, continuar sin él
             pass
 
+        # Extract temporal manager (injected by orchestrator)
+        temporal = None
+        if analysis and "temporal" in analysis:
+            temporal = analysis.pop("temporal")
+
+        context = FilterContext(analysis, temporal)
+
         # Aplicar filtros secuencialmente
         processed = frame
         for filter_obj in active_filters:
-            processed = filter_obj.apply(processed, config, analysis)
+            processed = filter_obj.apply(processed, config, context)
 
         return processed
 
