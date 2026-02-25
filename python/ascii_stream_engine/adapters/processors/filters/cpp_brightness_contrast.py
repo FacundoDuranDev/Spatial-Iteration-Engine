@@ -9,6 +9,7 @@ from .base import BaseFilter
 
 try:
     import filters_cpp as _filters_cpp
+
     _CPP_AVAILABLE = True
 except ImportError:
     _filters_cpp = None
@@ -43,8 +44,16 @@ class CppBrightnessContrastFilter(BaseFilter):
     ) -> np.ndarray:
         if not _CPP_AVAILABLE:
             return frame.copy()
-        delta = self._brightness_delta if self._brightness_delta is not None else getattr(config, "brightness", 0)
-        factor = self._contrast_factor if self._contrast_factor is not None else getattr(config, "contrast", 1.2)
+        delta = (
+            self._brightness_delta
+            if self._brightness_delta is not None
+            else getattr(config, "brightness", 0)
+        )
+        factor = (
+            self._contrast_factor
+            if self._contrast_factor is not None
+            else getattr(config, "contrast", 1.2)
+        )
         out = np.asarray(frame, dtype=np.uint8).copy(order="C")
         _filters_cpp.apply_brightness_contrast(out, int(delta), float(factor))
         return out

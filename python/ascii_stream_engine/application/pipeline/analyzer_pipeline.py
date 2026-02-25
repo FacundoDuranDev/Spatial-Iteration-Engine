@@ -1,6 +1,7 @@
 """Pipeline para analizadores de frames."""
 
 import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
 from typing import Dict, Iterable, Iterator, List, Optional
 
@@ -12,7 +13,7 @@ from ...ports.processors import Analyzer, ProcessorPipeline
 
 class AnalyzerPipeline(ProcessorPipeline):
     """Pipeline para ejecutar múltiples analizadores en secuencia.
-    
+
     Los analizadores extraen información/metadata de los frames sin modificar
     el frame original. Los resultados se combinan en un diccionario.
     """
@@ -106,6 +107,9 @@ class AnalyzerPipeline(ProcessorPipeline):
         """
         Ejecuta todos los analizadores activos en el pipeline.
 
+        Cuando hay más de un analizador activo, se ejecutan en paralelo usando
+        ThreadPoolExecutor (requiere GIL release en C++ — Step 1).
+
         Args:
             frame: Frame de video a analizar
             config: Configuración del engine
@@ -113,12 +117,29 @@ class AnalyzerPipeline(ProcessorPipeline):
         Returns:
             Diccionario con resultados de todos los analizadores
         """
+        active = [a for a in self.snapshot() if not hasattr(a, "enabled") or getattr(a, "enabled")]
+        if not active:
+            return {}
+
+        # Fast path: single analyzer, no threading overhead
+        if len(active) == 1:
+            a = active[0]
+            name = getattr(a, "name", a.__class__.__name__)
+            return {name: a.analyze(frame, config)}
+
+        # Parallel path: multiple analyzers
         results: Dict[str, object] = {}
-        for analyzer in self.snapshot():
-            if hasattr(analyzer, "enabled") and not getattr(analyzer, "enabled"):
-                continue
-            name = getattr(analyzer, "name", analyzer.__class__.__name__)
-            results[name] = analyzer.analyze(frame, config)
+        with ThreadPoolExecutor(max_workers=len(active)) as executor:
+            futures = {
+                executor.submit(a.analyze, frame, config): getattr(a, "name", a.__class__.__name__)
+                for a in active
+            }
+            for future in as_completed(futures):
+                name = futures[future]
+                try:
+                    results[name] = future.result()
+                except Exception:
+                    results[name] = {}
         return results
 
     def process(
@@ -145,4 +166,3 @@ class AnalyzerPipeline(ProcessorPipeline):
         """Context manager para acceso thread-safe a los analizadores."""
         with self._lock:
             yield self._analyzers
-

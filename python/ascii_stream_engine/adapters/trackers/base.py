@@ -24,9 +24,7 @@ class BaseTracker:
         self.enabled = enabled
         self._trajectories: Dict[str, Trajectory] = {}
 
-    def track(
-        self, frame: np.ndarray, detections: dict, config: EngineConfig
-    ) -> TrackingData:
+    def track(self, frame: np.ndarray, detections: dict, config: EngineConfig) -> TrackingData:
         """
         Trackea objetos en un frame basándose en detecciones.
 
@@ -61,7 +59,9 @@ class BaseTracker:
                                 label=det.get("label", analyzer_name),
                             )
 
-                        self._trajectories[obj_id].add_point(x, y, timestamp, det.get("confidence", 1.0))
+                        self._trajectories[obj_id].add_point(
+                            x, y, timestamp, det.get("confidence", 1.0)
+                        )
                         self._trajectories[obj_id].bbox = bbox
                         self._trajectories[obj_id].lost = False
 
@@ -90,4 +90,3 @@ class BaseTracker:
             Diccionario con trayectorias por object_id
         """
         return {obj_id: traj.to_dict() for obj_id, traj in self._trajectories.items()}
-

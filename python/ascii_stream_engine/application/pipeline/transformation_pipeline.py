@@ -9,7 +9,7 @@ from ...ports.transformations import SpatialTransform
 
 class TransformationPipeline:
     """Pipeline para aplicar múltiples transformaciones espaciales en secuencia.
-    
+
     Las transformaciones espaciales modifican la geometría del frame,
     como rotaciones, escalados, warping, corrección de perspectiva, etc.
     """
@@ -73,4 +73,3 @@ class TransformationPipeline:
         for transform in reversed(self._transforms):
             result = transform.inverse(result)
         return result
-

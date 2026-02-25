@@ -54,7 +54,9 @@ class CameraCalibrator:
 
             # Preparar puntos del objeto 3D
             objp = np.zeros((self.pattern_size[0] * self.pattern_size[1], 3), np.float32)
-            objp[:, :2] = np.mgrid[0 : self.pattern_size[0], 0 : self.pattern_size[1]].T.reshape(-1, 2)
+            objp[:, :2] = np.mgrid[0 : self.pattern_size[0], 0 : self.pattern_size[1]].T.reshape(
+                -1, 2
+            )
             objp *= self.square_size
 
             self._object_points.append(objp)
@@ -127,8 +129,11 @@ class CameraCalibrator:
         """Obtiene los datos de calibración."""
         return {
             "calibrated": self._calibrated,
-            "camera_matrix": self._camera_matrix.tolist() if self._camera_matrix is not None else None,
-            "distortion_coefficients": self._dist_coeffs.tolist() if self._dist_coeffs is not None else None,
+            "camera_matrix": (
+                self._camera_matrix.tolist() if self._camera_matrix is not None else None
+            ),
+            "distortion_coefficients": (
+                self._dist_coeffs.tolist() if self._dist_coeffs is not None else None
+            ),
             "num_images": len(self._image_points),
         }
-

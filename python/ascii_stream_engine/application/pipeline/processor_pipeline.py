@@ -14,7 +14,7 @@ T = TypeVar("T", bound=FrameProcessor)
 
 class ProcessorPipelineImpl(ProcessorPipeline):
     """Implementación genérica de pipeline para procesadores de frames.
-    
+
     Este pipeline puede usarse para cualquier tipo de procesador que implemente
     el protocolo FrameProcessor. Proporciona funcionalidad thread-safe para
     agregar, remover y ejecutar procesadores en secuencia.
@@ -124,9 +124,7 @@ class ProcessorPipelineImpl(ProcessorPipeline):
         """
         processors = self.snapshot()
         active_processors = [
-            p
-            for p in processors
-            if not (hasattr(p, "enabled") and not getattr(p, "enabled"))
+            p for p in processors if not (hasattr(p, "enabled") and not getattr(p, "enabled"))
         ]
 
         if not active_processors:
@@ -143,4 +141,3 @@ class ProcessorPipelineImpl(ProcessorPipeline):
         """Context manager para acceso thread-safe a los procesadores."""
         with self._lock:
             yield self._processors
-

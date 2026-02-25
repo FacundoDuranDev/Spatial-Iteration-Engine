@@ -42,4 +42,3 @@ class BaseContentGenerator:
     def get_time(self) -> float:
         """Obtiene el tiempo transcurrido desde el inicio."""
         return time.time() - self._start_time
-

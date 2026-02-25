@@ -16,7 +16,7 @@ std::string get_models_dir() {
 }
 
 std::string get_hand_model_path() {
-  return get_models_dir() + "/hand_landmark.onnx";
+  return get_models_dir() + "/hand_landmark_new.onnx";
 }
 
 }  // namespace

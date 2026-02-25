@@ -8,6 +8,22 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 ## [Unreleased]
 
 ### Added
+- `feat(filters)`: Optical Flow Particles filter -- motion-reactive particle system (stateful)
+- `feat(filters)`: Stippling / Pointillism filter -- LUT-cached dot placement effect
+- `feat(filters)`: UV Math Displacement filter -- parametric math-based remap distortion
+- `feat(filters)`: Edge-Aware Smoothing filter -- bilateral filter with blend control
+- `feat(filters)`: Radial Collapse / Singularity filter -- polar coordinate remap distortion
+- `feat(filters)`: Physarum Simulation Overlay filter -- slime mold simulation (C++ wrapper ready)
+- `feat(filters)`: Boids / Flocking Particles filter -- flocking particle system (stateful)
+- `feat(filters)`: C++ Physarum wrapper with Python fallback (`CppPhysarumFilter`)
+- `feat(presentation)`: Advanced diagnostics panel (`build_advanced_diagnostics_panel`) with profiler stats, memory, CPU, error breakdown, auto-refresh
+- `feat(presentation)`: Perception control panel (`build_perception_control_panel`) with per-analyzer toggles, confidence thresholds, model info, visualization mode
+- `feat(presentation)`: Filter designer panel (`build_filter_designer_panel`) with per-filter parameter sliders, enable/disable checkboxes, clear all
+- `feat(presentation)`: Output manager panel (`build_output_manager_panel`) with multi-sink configuration, add/remove sinks, status display
+- `feat(presentation)`: Performance monitor panel (`build_performance_monitor_panel`) with latency budget visualization, FPS gauge, degradation suggestions, bottleneck detection
+- `feat(presentation)`: Preset manager panel (`build_preset_manager_panel`) with save/load/delete named presets, JSON import/export
+- `feat(presentation)`: Full dashboard (`build_full_dashboard`) combining all 7 panels in a tabbed interface
+- `feat(presentation)`: Shared helpers: `_status_style` (module-level), `_periodic_refresh`, `_safe_engine_call`, `_make_labeled_section`
 - Estructura de proyecto reorganizada con separación clara entre `python/` y `cpp/`
 - Documentación de gitflow (`GITFLOW.md`) con reglas y buenas prácticas
 - Sistema de changelog para tracking de cambios
@@ -17,6 +33,10 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 - `chore`: Configuración de pre-commit hooks (`.pre-commit-config.yaml`)
 - `chore`: Configuración de editor (`.editorconfig`)
 - `chore`: Makefile para automatización de tareas comunes
+- `feat(cpp/perception)`: Integración completa de ONNX Runtime para inferencia real de IA
+  - Módulo `perception_cpp` compilado con soporte ONNX Runtime
+  - Detección de landmarks faciales, manos y pose usando modelos ONNX
+  - Adapters Python (`FaceLandmarkAnalyzer`, `HandLandmarkAnalyzer`, `PoseLandmarkAnalyzer`) funcionando
 
 ### Changed
 - Reorganización de código Python: `ascii_stream_engine` movido a `python/ascii_stream_engine/`
@@ -25,6 +45,8 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 - `docs`: Actualización de GITFLOW.md con flujo simplificado (main, develop, feature/*)
 - `refactor(python)`: Limpieza y optimización del notebook de ejemplo `notebook_full_control.ipynb`
 - `chore(python)`: Actualización de dependencias en `pyproject.toml`
+- `fix(cpp/perception)`: Corrección de detección de ONNX Runtime en CMakeLists.txt para entornos conda
+- `fix(cpp/perception)`: Corrección de include path para `onnxruntime_cxx_api.h` en onnx_runner.cpp
 
 ### Fixed
 - N/A

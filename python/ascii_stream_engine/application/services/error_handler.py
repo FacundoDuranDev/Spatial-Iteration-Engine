@@ -96,9 +96,7 @@ class ErrorHandler:
             error: Excepción que ocurrió
             context: Contexto adicional
         """
-        self.handle(
-            error, "transformation", "transformation_pipeline", context, logging.ERROR
-        )
+        self.handle(error, "transformation", "transformation_pipeline", context, logging.ERROR)
 
     def handle_filtering_error(
         self, error: Exception, context: Optional[Dict[str, Any]] = None
@@ -162,4 +160,3 @@ class ErrorHandler:
     def reset_error_counts(self) -> None:
         """Resetea todos los contadores de errores."""
         self._error_count.clear()
-

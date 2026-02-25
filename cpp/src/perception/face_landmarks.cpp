@@ -16,7 +16,7 @@ std::string get_models_dir() {
 }
 
 std::string get_face_model_path() {
-  return get_models_dir() + "/face_landmark.onnx";
+  return get_models_dir() + "/face_landmark_qualcomm.onnx";
 }
 
 }  // namespace

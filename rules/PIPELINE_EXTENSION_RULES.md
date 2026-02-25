@@ -1,0 +1,151 @@
+# Pipeline Extension Rules
+
+How to add new components without breaking the architecture.
+
+---
+
+## 1. Adding a New Filter
+
+**Location:** `python/ascii_stream_engine/adapters/processors/filters/<name>.py`
+
+Requirements:
+
+- Extend `BaseFilter` (from `.base import BaseFilter`)
+- Set class attributes: `name` (str), `enabled` (bool = True)
+- Implement `apply(self, frame, config, analysis=None) -> np.ndarray`
+- Input frame: `np.ndarray` uint8 `(H, W, 3)` C-contiguous BGR
+- Output frame: same shape and dtype as input
+- If the filter is a no-op (disabled, bad input), return `frame` (not `frame.copy()`)
+- If the filter modifies data, copy first: `out = frame.copy(order='C')`
+
+### Stateful filters
+
+Filters that maintain state across frames (feedback, slit scan, particles, reaction-diffusion) MUST:
+
+- Implement `reset(self)` to clear internal state
+- Handle shape changes (resolution change mid-stream) by reinitializing buffers
+- Never store references to previous frames beyond the declared buffer size
+- Document memory usage in the class docstring
+
+### LUT-cached filters
+
+Filters that precompute remap tables or lookup tables (chromatic aberration, kaleidoscope, barrel distortion) MUST:
+
+- Cache the precomputed tables as instance attributes
+- Only recompute when parameters change (use a `_params_dirty` flag)
+- Never recompute LUTs every frame
+
+### Registration
+
+1. Add to `adapters/processors/filters/__init__.py`
+2. Add to `adapters/processors/__init__.py`
+3. Add to top-level `__init__.py` `__all__`
+4. **Never** modify `FilterPipeline` itself (in `application/`)
+5. **Never** modify any port protocol
+
+### C++ filters
+
+- Implement in `cpp/src/filters/<name>.cpp`
+- Expose via pybind in `cpp/src/bridge/pybind_filters.cpp`
+- Create Python wrapper in `adapters/processors/filters/cpp_<name>.py`
+- Follow the ImportError fallback pattern exactly
+
+---
+
+## 2. Adding a New Analyzer
+
+**Location:** `python/ascii_stream_engine/adapters/perception/<name>.py`
+or: `python/ascii_stream_engine/adapters/processors/analyzers/<name>.py`
+
+Requirements:
+
+- Extend `BaseAnalyzer`
+- Set: `name` (str), `enabled` (bool = True)
+- Implement `analyze(self, frame, config) -> dict`
+- MUST NOT modify the frame
+- Return dict with documented keys (document in the class docstring and in the analysis dict schema)
+- On failure, return `{}` (not `None`, not raise)
+
+---
+
+## 3. Adding a New Output Sink
+
+**Location:** `python/ascii_stream_engine/adapters/outputs/<name>.py`
+
+Requirements:
+
+- Implement the `OutputSink` protocol (`ports/outputs.py`)
+- Methods: `open()`, `write()`, `close()`, `is_open()`
+- `open()` receives `EngineConfig` and `output_size` tuple
+- `write()` receives `RenderFrame` (which contains `PIL.Image.Image`)
+- `close()` MUST be idempotent (safe to call twice)
+- MUST handle its own threading if needed
+
+---
+
+## 4. Adding a New Source
+
+**Location:** `python/ascii_stream_engine/adapters/sources/<name>.py`
+
+Requirements:
+
+- Implement `FrameSource` protocol (`ports/sources.py`)
+- Methods: `open()`, `read()`, `close()`
+- `read()` returns `Optional[np.ndarray]` -- `None` means no frame available
+- Returned array: uint8, `(H, W, 3)`, C-contiguous, **BGR color order**
+- `close()` MUST be idempotent
+
+---
+
+## 5. Golden Rule: Never Touch Application Layer
+
+When adding new adapters:
+
+- **NEVER** modify files in `application/` (`engine.py`, `pipeline_orchestrator.py`, etc.)
+- **NEVER** modify files in `ports/` (protocol definitions)
+- **NEVER** modify files in `domain/` (unless adding a new domain type that does not change existing ones)
+- If your feature requires application changes, it is NOT a simple extension; it requires architecture review.
+
+---
+
+## 6. Pipeline Stage Order Is Immutable
+
+The order defined in `DESIGN_RULES.md` section 2:
+
+```
+Source -> Perception -> Tracking -> Transformation -> Filters -> Renderer -> Output
+```
+
+This order MUST NOT be changed. If you need a stage that does not fit this order, you are inventing a new concept; **stop and ask for architecture review**.
+
+---
+
+## 7. Analysis Dict Schema
+
+Every analyzer MUST document the keys it adds to the analysis dict. Current schema:
+
+```python
+analysis = {
+    "face": {
+        "points": np.ndarray,       # (N, 2) normalized 0-1, face landmarks
+    },
+    "hands": {
+        "left": np.ndarray,          # (21, 2) normalized 0-1, left hand landmarks
+        "right": np.ndarray,         # (21, 2) normalized 0-1, right hand landmarks
+    },
+    "pose": {
+        "joints": np.ndarray,        # (17, 2) or (17, 3) normalized 0-1, body keypoints
+    },
+    "tracking": {
+        "objects": list,             # tracked object dicts with id, bbox, class
+    },
+    # New analyzers add their own top-level key here.
+    # Key name MUST match the analyzer's `name` attribute.
+}
+```
+
+New analyzers MUST:
+
+- Use their `name` attribute as the top-level dict key
+- Return numpy arrays with normalized coordinates (0.0-1.0)
+- Document their dict structure in this file when adding

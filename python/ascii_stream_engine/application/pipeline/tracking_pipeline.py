@@ -13,7 +13,7 @@ from ...ports.trackers import ObjectTracker
 
 class TrackingPipeline:
     """Pipeline para ejecutar múltiples trackers en secuencia.
-    
+
     Los trackers mantienen el seguimiento de objetos a través de múltiples frames,
     asociando detecciones con identidades persistentes y calculando trayectorias.
     """
@@ -99,9 +99,7 @@ class TrackingPipeline:
         with self._lock:
             return bool(self._trackers)
 
-    def run(
-        self, frame: np.ndarray, detections: dict, config: EngineConfig
-    ) -> TrackingData:
+    def run(self, frame: np.ndarray, detections: dict, config: EngineConfig) -> TrackingData:
         """
         Ejecuta todos los trackers activos en el pipeline.
 
@@ -153,4 +151,3 @@ class TrackingPipeline:
         """Context manager para acceso thread-safe a los trackers."""
         with self._lock:
             yield self._trackers
-

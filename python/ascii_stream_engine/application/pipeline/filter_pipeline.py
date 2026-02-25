@@ -13,7 +13,7 @@ from ...ports.processors import Filter, ProcessorPipeline
 
 class FilterPipeline(ProcessorPipeline):
     """Pipeline para aplicar múltiples filtros en secuencia.
-    
+
     Los filtros modifican el frame, aplicando transformaciones como ajustes
     de brillo, contraste, detección de bordes, etc.
     """
@@ -209,4 +209,3 @@ class FilterPipeline(ProcessorPipeline):
         """Context manager para acceso thread-safe a los filtros."""
         with self._lock:
             yield self._filters
-

@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from .config import EngineConfig, ConfigValidationError
+from .config import ConfigValidationError, EngineConfig
 
 # Intentar importar YAML, pero no es obligatorio
 try:
@@ -26,7 +26,7 @@ class ConfigLoadError(Exception):
 PREDEFINED_PROFILES: Dict[str, Dict[str, Any]] = {
     "low_latency": {
         "fps": 30,
-        "grid_w": 80 ,
+        "grid_w": 80,
         "grid_h": 40,
         "frame_buffer_size": 1,
         "sleep_on_empty": 0.005,
@@ -179,9 +179,7 @@ def load_config_from_file(file_path: str) -> EngineConfig:
     is_json = ext == ".json"
 
     if not (is_yaml or is_json):
-        raise ConfigLoadError(
-            f"Formato de archivo no soportado: {ext}. Use .yaml, .yml o .json"
-        )
+        raise ConfigLoadError(f"Formato de archivo no soportado: {ext}. Use .yaml, .yml o .json")
 
     try:
         with open(path, "r", encoding="utf-8") as f:
@@ -234,9 +232,7 @@ def load_config_from_profile(
     return load_config_from_dict(profile_dict)
 
 
-def merge_configs(
-    base: EngineConfig, overrides: Dict[str, Any]
-) -> EngineConfig:
+def merge_configs(base: EngineConfig, overrides: Dict[str, Any]) -> EngineConfig:
     """Combina una configuración base con valores de sobrescritura.
 
     Args:
@@ -335,4 +331,3 @@ def save_config_to_file(config: EngineConfig, file_path: str, format: str = "yam
 
     except Exception as e:
         raise ConfigLoadError(f"Error al guardar el archivo: {e}") from e
-

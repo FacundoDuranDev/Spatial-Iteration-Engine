@@ -37,12 +37,20 @@ set(ONNXRUNTIME_ROOT "$ENV{CONDA_PREFIX}" CACHE PATH "Conda prefix or ONNXRUNTIM
 if(NOT ONNXRUNTIME_ROOT)
   set(ONNXRUNTIME_ROOT "$ENV{ONNXRUNTIME_ROOT}" CACHE PATH "ONNX Runtime root")
 endif()
-find_path(ONNXRUNTIME_INCLUDE_DIR onnxruntime_cxx_api.h
-  HINTS ${ONNXRUNTIME_ROOT}/include NO_DEFAULT_PATH)
+find_path(ONNXRUNTIME_INCLUDE_DIR onnxruntime/core/session/onnxruntime_cxx_api.h
+  HINTS ${ONNXRUNTIME_ROOT}/include ${ONNXRUNTIME_ROOT} PATHS ${ONNXRUNTIME_ROOT}/include)
 find_library(ONNXRUNTIME_LIB onnxruntime
-  HINTS ${ONNXRUNTIME_ROOT}/lib NO_DEFAULT_PATH)
+  HINTS ${ONNXRUNTIME_ROOT}/lib ${ONNXRUNTIME_ROOT} PATHS ${ONNXRUNTIME_ROOT}/lib)
 if(ONNXRUNTIME_INCLUDE_DIR AND ONNXRUNTIME_LIB)
   message(STATUS "ONNX Runtime found: ${ONNXRUNTIME_INCLUDE_DIR}, ${ONNXRUNTIME_LIB}")
+  # El include debe apuntar al directorio que contiene onnxruntime/ (include/)
+  # El archivo está en include/onnxruntime/core/session/onnxruntime_cxx_api.h
+  # pero el código incluye <onnxruntime_cxx_api.h>, así que necesitamos include/onnxruntime/core/session/
+  get_filename_component(ONNXRUNTIME_INCLUDE_BASE "${ONNXRUNTIME_INCLUDE_DIR}" DIRECTORY)
+  get_filename_component(ONNXRUNTIME_INCLUDE_BASE "${ONNXRUNTIME_INCLUDE_BASE}" DIRECTORY)
+  get_filename_component(ONNXRUNTIME_INCLUDE_BASE "${ONNXRUNTIME_INCLUDE_BASE}" DIRECTORY)
+  set(ONNXRUNTIME_INCLUDE_DIR "${ONNXRUNTIME_INCLUDE_BASE}")
+  message(STATUS "ONNX Runtime include base: ${ONNXRUNTIME_INCLUDE_DIR}")
   set(USE_ONNXRUNTIME 1)
 else()
   message(STATUS "ONNX Runtime not found; perception will use stubs (no real landmarks). Install: conda install -c conda-forge onnxruntime-cpp")
@@ -53,6 +61,9 @@ set(PERCEPTION_SOURCES
   src/perception/face_landmarks.cpp
   src/perception/hand_landmarks.cpp
   src/perception/pose_landmarks.cpp
+  src/perception/object_detection.cpp
+  src/perception/emotion_detection.cpp
+  src/perception/scene_segmentation.cpp
   src/perception/onnx_runner.cpp
 )
 pybind11_add_module(perception_cpp src/bridge/pybind_perception.cpp ${PERCEPTION_SOURCES})

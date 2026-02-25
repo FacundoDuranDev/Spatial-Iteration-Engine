@@ -9,7 +9,7 @@ from ..domain.config import EngineConfig
 
 class FrameProcessor(Protocol):
     """Protocolo base para procesadores de frames (filters y analyzers).
-    
+
     Este protocolo define la interfaz común que deben implementar todos los
     procesadores de frames, ya sean filters (que modifican el frame) o analyzers
     (que extraen información del frame).
@@ -44,7 +44,7 @@ class FrameProcessor(Protocol):
 
 class Filter(Protocol):
     """Protocolo específico para filters que modifican frames.
-    
+
     Los filters toman un frame y lo transforman, retornando un nuevo frame
     procesado.
     """
@@ -74,7 +74,7 @@ class Filter(Protocol):
 
 class Analyzer(Protocol):
     """Protocolo específico para analyzers que extraen información de frames.
-    
+
     Los analyzers analizan un frame y extraen información/metadata, retornando
     un diccionario con los resultados.
     """
@@ -103,7 +103,7 @@ class Analyzer(Protocol):
 @runtime_checkable
 class ProcessorPipeline(Protocol):
     """Protocolo para pipelines de procesadores.
-    
+
     Un pipeline agrupa múltiples procesadores y los ejecuta en secuencia.
     """
 
@@ -142,4 +142,3 @@ class ProcessorPipeline(Protocol):
             True si hay al menos un procesador, False en caso contrario
         """
         ...
-

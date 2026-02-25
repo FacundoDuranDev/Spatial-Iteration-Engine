@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -30,6 +31,12 @@ class OnnxRunner {
    */
   std::vector<float> run(const std::uint8_t* image, int width, int height);
 
+  /**
+   * Run inference and return (x, y, confidence) triplets for YOLOv8 pose models.
+   * Returns empty vector if model not loaded or inference fails.
+   */
+  std::vector<float> run_with_confidence(const std::uint8_t* image, int width, int height);
+
   int input_size() const { return input_size_; }
   bool is_loaded() const { return loaded_; }
 
@@ -37,6 +44,8 @@ class OnnxRunner {
   bool loaded_ = false;
   int input_size_ = 192;
   std::unique_ptr<OnnxRunnerImpl> impl_;
+  std::vector<float> input_data_;
+  std::mutex run_mutex_;
 };
 
 }  // namespace perception

@@ -13,6 +13,7 @@ try:
     from pythonosc import osc_server, udp_client
     from pythonosc.dispatcher import Dispatcher
     from pythonosc.osc_message_builder import OscMessageBuilder
+
     OSC_AVAILABLE = True
 except ImportError:
     OSC_AVAILABLE = False
@@ -103,7 +104,13 @@ class OscController(BaseController):
             self._server = None
             self._server_thread = None
 
-    def send_message(self, address: str, *args, target_host: Optional[str] = None, target_port: Optional[int] = None) -> None:
+    def send_message(
+        self,
+        address: str,
+        *args,
+        target_host: Optional[str] = None,
+        target_port: Optional[int] = None,
+    ) -> None:
         """
         Envía un mensaje OSC (opcional, para bidireccionalidad).
 
@@ -125,4 +132,3 @@ class OscController(BaseController):
             client.send_message(address, args)
         except Exception as e:
             logger.error(f"Error enviando mensaje OSC: {e}", exc_info=True)
-

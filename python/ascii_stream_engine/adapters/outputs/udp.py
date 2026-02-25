@@ -42,9 +42,7 @@ class FfmpegUdpOutput:
         port = self._port or config.port
         pkt_size = self._pkt_size or config.pkt_size
         bitrate = self._bitrate or config.bitrate
-        broadcast = (
-            self._broadcast if self._broadcast is not None else config.udp_broadcast
-        )
+        broadcast = self._broadcast if self._broadcast is not None else config.udp_broadcast
         out_w, out_h = output_size
         self._output_size = output_size
         url = f"udp://{host}:{port}?pkt_size={pkt_size}"
@@ -52,6 +50,14 @@ class FfmpegUdpOutput:
             url += "&broadcast=1"
         cmd = [
             "ffmpeg",
+            "-fflags",
+            "nobuffer",
+            "-flags",
+            "low_delay",
+            "-probesize",
+            "32",
+            "-analyzeduration",
+            "0",
             "-loglevel",
             "error",
             "-f",
@@ -66,9 +72,23 @@ class FfmpegUdpOutput:
             "-",
             "-an",
             "-c:v",
-            "mpeg1video",
+            "libx264",
+            "-preset",
+            "ultrafast",
+            "-tune",
+            "zerolatency",
+            "-g",
+            "1",  # keyframe every frame — instant decode at receiver
+            "-bf",
+            "0",  # no B-frames
             "-b:v",
             bitrate,
+            "-muxdelay",
+            "0",
+            "-muxpreload",
+            "0",
+            "-flush_packets",
+            "1",
             "-f",
             "mpegts",
             url,
@@ -123,18 +143,20 @@ class FfmpegUdpOutput:
 
         return OutputCapabilities(
             capabilities=capabilities,
-            estimated_latency_ms=80.0,  # Latencia típica de UDP con ffmpeg
+
             supported_qualities=[
                 OutputQuality.LOW,
                 OutputQuality.MEDIUM,
                 OutputQuality.HIGH,
             ],
-            max_clients=None,  # UDP puede tener múltiples clientes (limitado por red)
+            max_clients=None,
             min_bitrate="500k",
             max_bitrate="10m",
             protocol_name="UDP/MPEG-TS",
             metadata={
-                "codec": "mpeg1video",
+                "codec": "libx264",
+                "preset": "ultrafast",
+                "tune": "zerolatency",
                 "container": "mpegts",
                 "supports_broadcast": True,
             },
@@ -143,10 +165,6 @@ class FfmpegUdpOutput:
     def is_open(self) -> bool:
         """Verifica si el backend está abierto y listo para escribir."""
         return self._is_open and self._proc is not None and self._proc.stdin is not None
-
-    def get_estimated_latency_ms(self) -> Optional[float]:
-        """Obtiene la latencia estimada del backend UDP."""
-        return 80.0  # Latencia típica de UDP con ffmpeg
 
     def supports_multiple_clients(self) -> bool:
         """

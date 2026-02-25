@@ -27,7 +27,13 @@ class MessageQueue:
         self._handler: Optional[Callable[[BaseEvent], None]] = None
         self._running = False
 
-    def put(self, event: BaseEvent, event_type: Optional[str] = None, block: bool = True, timeout: Optional[float] = None) -> None:
+    def put(
+        self,
+        event: BaseEvent,
+        event_type: Optional[str] = None,
+        block: bool = True,
+        timeout: Optional[float] = None,
+    ) -> None:
         """
         Agrega un evento a la cola.
 
@@ -40,7 +46,9 @@ class MessageQueue:
         try:
             self._queue.put((event, event_type), block=block, timeout=timeout)
         except queue.Full:
-            logger.warning(f"Cola de mensajes llena, evento '{event.__class__.__name__}' descartado")
+            logger.warning(
+                f"Cola de mensajes llena, evento '{event.__class__.__name__}' descartado"
+            )
 
     def put_nowait(self, event: BaseEvent, event_type: Optional[str] = None) -> None:
         """
@@ -52,7 +60,9 @@ class MessageQueue:
         """
         self.put(event, event_type, block=False)
 
-    def get(self, block: bool = True, timeout: Optional[float] = None) -> Tuple[BaseEvent, Optional[str]]:
+    def get(
+        self, block: bool = True, timeout: Optional[float] = None
+    ) -> Tuple[BaseEvent, Optional[str]]:
         """
         Obtiene un evento de la cola.
 
@@ -158,4 +168,3 @@ class MessageQueue:
     def is_running(self) -> bool:
         """Verifica si el procesamiento está en ejecución."""
         return self._running
-

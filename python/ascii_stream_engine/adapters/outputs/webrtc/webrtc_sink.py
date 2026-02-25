@@ -1,9 +1,9 @@
-"""
-Backend de salida WebRTC para streaming en tiempo real.
+"""WebRTC output sink for real-time browser streaming.
 
-Este módulo implementa un OutputSink que transmite frames vía WebRTC,
-permitiendo visualización en navegadores web en tiempo real.
+This module implements an OutputSink that streams frames via WebRTC,
+enabling real-time visualization in web browsers.
 """
+
 import asyncio
 import logging
 import threading
@@ -22,99 +22,71 @@ from PIL import Image
 
 from ...domain.config import EngineConfig
 from ...domain.types import RenderFrame
+from ...ports.output_capabilities import (
+    OutputCapabilities,
+    OutputCapability,
+    OutputQuality,
+)
 from .signaling import WebRTCSignalingServer
 
 logger = logging.getLogger(__name__)
 
 
 class FrameVideoTrack(VideoStreamTrack):
-    """
-    Track de video WebRTC que transmite frames desde el engine.
+    """WebRTC video track that streams frames from the engine.
 
-    Esta clase convierte frames PIL Image a VideoFrame de av (que WebRTC puede usar)
-    y los transmite a los clientes conectados.
+    Converts PIL Image frames to av VideoFrame objects that WebRTC can
+    transmit to connected clients.
     """
 
     def __init__(self, loop: Optional[asyncio.AbstractEventLoop] = None):
-        """
-        Inicializa el track de video.
+        """Initialize the video track.
 
         Args:
-            loop: Loop de eventos asyncio (opcional, se obtiene del contexto si no se proporciona)
+            loop: Asyncio event loop (optional).
         """
         if VideoStreamTrack is None:
-            raise ImportError(
-                "aiortc no está instalado. Instala con: pip install aiortc"
-            )
+            raise ImportError("aiortc is not installed. Install with: pip install aiortc")
         super().__init__()
         self._loop = loop
-        if loop is not None:
-            self._frame_queue: Optional[asyncio.Queue] = asyncio.Queue(
-                maxsize=2, loop=loop
-            )
-        else:
-            self._frame_queue: Optional[asyncio.Queue] = None
+        # Do not pass loop parameter to Queue (removed in Python 3.10)
+        self._frame_queue: Optional[asyncio.Queue] = asyncio.Queue(maxsize=2)
         self._current_frame: Optional[VideoFrame] = None
         self._frame_lock = threading.Lock()
         self._frame_counter = 0
 
-    def _ensure_queue(self) -> asyncio.Queue:
-        """Asegura que la cola existe, creándola si es necesario."""
-        if self._frame_queue is None:
-            if self._loop:
-                self._frame_queue = asyncio.Queue(maxsize=2, loop=self._loop)
-            else:
-                # Si no hay loop, intentar obtenerlo del contexto
-                try:
-                    loop = asyncio.get_event_loop()
-                    self._loop = loop
-                    self._frame_queue = asyncio.Queue(maxsize=2, loop=loop)
-                except RuntimeError:
-                    # Si no hay loop en el contexto, crear uno nuevo
-                    self._loop = asyncio.new_event_loop()
-                    self._frame_queue = asyncio.Queue(maxsize=2, loop=self._loop)
-        return self._frame_queue
-
     def put_frame(self, image: Image.Image) -> None:
-        """
-        Coloca un frame en la cola para transmisión.
+        """Place a frame in the queue for transmission.
 
         Args:
-            image: Imagen PIL a transmitir
+            image: PIL Image to transmit.
         """
         if self._frame_queue is None:
-            # Si la cola no está inicializada, no hacer nada
             return
 
         try:
-            # Convertir PIL Image a VideoFrame
+            # Convert PIL Image to VideoFrame
             if image.mode != "RGB":
                 image = image.convert("RGB")
 
-            # Convertir a numpy array
             import numpy as np
 
             frame_array = np.array(image)
-
-            # Crear VideoFrame de av
             frame = VideoFrame.from_ndarray(frame_array, format="rgb24")
             frame.pts = self._frame_counter
             frame.time_base = None
             self._frame_counter += 1
 
-            # Obtener el loop de eventos
             loop = self._loop
             if loop is None:
                 return
 
-            # Poner el frame en la cola de forma thread-safe
             queue = self._frame_queue
 
             def put_frame_async():
                 try:
                     queue.put_nowait(frame)
                 except asyncio.QueueFull:
-                    # Si la cola está llena, descartar el frame más antiguo
                     try:
                         queue.get_nowait()
                         queue.put_nowait(frame)
@@ -124,53 +96,46 @@ class FrameVideoTrack(VideoStreamTrack):
             if loop.is_running():
                 loop.call_soon_threadsafe(put_frame_async)
             else:
-                # Si el loop no está corriendo, ejecutar directamente
                 put_frame_async()
 
         except Exception as e:
             logger.error(f"Error putting frame: {e}", exc_info=True)
 
     async def recv(self):
-        """
-        Recibe el siguiente frame para transmisión (async).
+        """Receive the next frame for transmission (async).
 
         Returns:
-            VideoFrame para WebRTC
+            VideoFrame for WebRTC.
         """
-        queue = self._ensure_queue()
+        if self._frame_queue is None:
+            self._frame_queue = asyncio.Queue(maxsize=2)
 
         if self._current_frame is None:
-            # Esperar el primer frame
-            self._current_frame = await queue.get()
+            self._current_frame = await self._frame_queue.get()
 
-        # Intentar obtener un frame nuevo (no bloquea)
         try:
-            self._current_frame = queue.get_nowait()
+            self._current_frame = self._frame_queue.get_nowait()
         except asyncio.QueueEmpty:
-            # Si no hay frame nuevo, usar el último frame
             pass
 
-        # Ajustar timestamp si es necesario
         if self._current_frame.pts is None:
             import time
 
-            self._current_frame.pts = int(time.time() * 90000)  # 90kHz clock
+            self._current_frame.pts = int(time.time() * 90000)
 
-        # Asegurar que el frame tiene time_base
         if self._current_frame.time_base is None:
             from fractions import Fraction
 
-            self._current_frame.time_base = Fraction(1, 90000)  # 90kHz
+            self._current_frame.time_base = Fraction(1, 90000)
 
         return self._current_frame
 
 
 class WebRTCOutput:
-    """
-    Output sink que transmite frames vía WebRTC.
+    """Output sink that streams frames via WebRTC.
 
-    Este sink implementa el protocolo OutputSink y transmite frames
-    a clientes WebRTC conectados a través de un navegador web.
+    Implements the OutputSink protocol to transmit frames to WebRTC
+    clients connected through a web browser.
     """
 
     def __init__(
@@ -179,18 +144,15 @@ class WebRTCOutput:
         signaling_port: int = 8080,
         enable_signaling: bool = True,
     ):
-        """
-        Inicializa el output WebRTC.
+        """Initialize the WebRTC output.
 
         Args:
-            signaling_host: Host donde escuchar el servidor de signaling
-            signaling_port: Puerto donde escuchar el servidor de signaling
-            enable_signaling: Si True, inicia el servidor de signaling automáticamente
+            signaling_host: Host for the signaling server.
+            signaling_port: Port for the signaling server.
+            enable_signaling: If True, start the signaling server automatically.
         """
         if RTCPeerConnection is None:
-            raise ImportError(
-                "aiortc no está instalado. Instala con: pip install aiortc"
-            )
+            raise ImportError("aiortc is not installed. Install with: pip install aiortc")
 
         self.signaling_host = signaling_host
         self.signaling_port = signaling_port
@@ -207,27 +169,25 @@ class WebRTCOutput:
         self._stop_offers = False
 
     def open(self, config: EngineConfig, output_size: Tuple[int, int]) -> None:
-        """
-        Abre el output WebRTC y prepara la conexión.
+        """Open the WebRTC output and prepare the connection.
 
         Args:
-            config: Configuración del engine
-            output_size: Tamaño de salida (width, height)
+            config: Engine configuration.
+            output_size: Output dimensions as (width, height).
         """
-        if self._is_open:
-            self.close()
+        self.close()
 
         self._config = config
         self._output_size = output_size
 
-        # Iniciar servidor de signaling si está habilitado
+        # Start signaling server if enabled
         if self.enable_signaling:
             self._signaling_server = WebRTCSignalingServer(
                 host=self.signaling_host, port=self.signaling_port
             )
             self._signaling_server.start()
 
-        # Iniciar loop de eventos asyncio en un hilo separado
+        # Start asyncio event loop in a separate thread
         def run_webrtc():
             self._loop = asyncio.new_event_loop()
             asyncio.set_event_loop(self._loop)
@@ -236,7 +196,6 @@ class WebRTCOutput:
         self._thread = threading.Thread(target=run_webrtc, daemon=True)
         self._thread.start()
 
-        # Esperar un poco para que se configure
         import time
 
         time.sleep(0.5)
@@ -248,55 +207,38 @@ class WebRTCOutput:
         )
 
     async def _setup_webrtc(self) -> None:
-        """Configura la conexión WebRTC (async)."""
+        """Set up the WebRTC connection (async)."""
         try:
-            # Crear peer connection
             self._peer_connection = RTCPeerConnection()
-
-            # Crear video track con referencia al loop
             self._video_track = FrameVideoTrack(loop=self._loop)
             self._peer_connection.addTrack(self._video_track)
 
-            # Configurar ICE candidates
             @self._peer_connection.on("iceconnectionstatechange")
             async def on_iceconnectionstatechange():
-                logger.info(
-                    f"ICE connection state: {self._peer_connection.iceConnectionState}"
-                )
+                logger.info(f"ICE connection state: {self._peer_connection.iceConnectionState}")
                 if self._peer_connection.iceConnectionState == "failed":
                     await self._peer_connection.close()
 
-            # Manejar ofertas del cliente
             if self._signaling_server:
-                # Esperar ofertas del cliente
                 await self._handle_offers()
 
         except Exception as e:
             logger.error(f"Error setting up WebRTC: {e}", exc_info=True)
 
     async def _handle_offers(self) -> None:
-        """Maneja ofertas SDP del cliente (async)."""
+        """Handle SDP offers from clients (async)."""
         if not self._signaling_server or not self._peer_connection:
             return
 
         self._stop_offers = False
         while not self._stop_offers:
             try:
-                # Revisar si hay ofertas pendientes
                 offer_data = self._signaling_server.get_pending_offer()
                 if offer_data:
-                    offer = RTCSessionDescription(
-                        sdp=offer_data["sdp"], type=offer_data["type"]
-                    )
-
-                    # Establecer la oferta remota
+                    offer = RTCSessionDescription(sdp=offer_data["sdp"], type=offer_data["type"])
                     await self._peer_connection.setRemoteDescription(offer)
-
-                    # Crear respuesta
                     answer = await self._peer_connection.createAnswer()
                     await self._peer_connection.setLocalDescription(answer)
-
-                    # Enviar respuesta al cliente
                     self._signaling_server.set_answer(
                         offer_data["peer_id"],
                         {
@@ -304,10 +246,9 @@ class WebRTCOutput:
                             "type": self._peer_connection.localDescription.type,
                         },
                     )
-
                     logger.info("WebRTC connection established")
 
-                await asyncio.sleep(0.1)  # Revisar cada 100ms
+                await asyncio.sleep(0.1)
 
             except asyncio.CancelledError:
                 logger.info("Offer handling cancelled")
@@ -317,11 +258,10 @@ class WebRTCOutput:
                 await asyncio.sleep(1.0)
 
     def write(self, frame: RenderFrame) -> None:
-        """
-        Escribe un frame al output WebRTC.
+        """Write a frame to the WebRTC output.
 
         Args:
-            frame: Frame renderizado a transmitir
+            frame: Rendered frame to transmit.
         """
         if not self._is_open or not self._video_track:
             return
@@ -329,39 +269,76 @@ class WebRTCOutput:
         try:
             image = frame.image if isinstance(frame, RenderFrame) else frame
             if isinstance(image, Image.Image):
-                # Colocar el frame en el track de video
                 self._video_track.put_frame(image)
         except Exception as e:
             logger.error(f"Error writing frame to WebRTC: {e}", exc_info=True)
 
     def close(self) -> None:
-        """Cierra el output WebRTC y limpia recursos."""
-        if not self._is_open:
-            return
-
+        """Close the WebRTC output and clean up resources."""
         self._is_open = False
         self._stop_offers = True
 
-        # Cerrar peer connection
+        # Close peer connection
         if self._peer_connection and self._loop:
             try:
-                # Cerrar la conexión de forma asíncrona
-                future = asyncio.run_coroutine_threadsafe(
-                    self._peer_connection.close(), self._loop
-                )
-                # Esperar un poco para que se cierre
+                future = asyncio.run_coroutine_threadsafe(self._peer_connection.close(), self._loop)
                 future.result(timeout=2.0)
             except Exception as e:
-                logger.error(f"Error closing peer connection: {e}")
+                logger.debug(f"Error closing peer connection: {e}")
 
-        # Detener servidor de signaling
+        # Stop signaling server
         if self._signaling_server:
-            self._signaling_server.stop()
+            try:
+                self._signaling_server.stop()
+            except Exception as e:
+                logger.debug(f"Error stopping signaling server: {e}")
 
-        # Limpiar referencias
+        # Stop event loop
+        if self._loop and self._loop.is_running():
+            self._loop.call_soon_threadsafe(self._loop.stop)
+
+        # Join thread
+        if self._thread and self._thread.is_alive():
+            self._thread.join(timeout=2.0)
+
+        # Clean up references
         self._peer_connection = None
         self._video_track = None
         self._signaling_server = None
+        self._loop = None
+        self._thread = None
+        self._output_size = None
 
         logger.info("WebRTC output closed")
 
+    def is_open(self) -> bool:
+        """Check if the sink is open and ready to write."""
+        return self._is_open
+
+    def get_capabilities(self) -> OutputCapabilities:
+        """Get the capabilities of this WebRTC sink."""
+        return OutputCapabilities(
+            capabilities=(
+                OutputCapability.STREAMING
+                | OutputCapability.WEBRTC
+                | OutputCapability.LOW_LATENCY
+                | OutputCapability.ADAPTIVE_QUALITY
+                | OutputCapability.MULTI_CLIENT
+            ),
+
+            supported_qualities=[
+                OutputQuality.LOW,
+                OutputQuality.MEDIUM,
+                OutputQuality.HIGH,
+            ],
+            max_clients=10,
+            protocol_name="WebRTC",
+            metadata={
+                "signaling_host": self.signaling_host,
+                "signaling_port": self.signaling_port,
+            },
+        )
+
+    def supports_multiple_clients(self) -> bool:
+        """WebRTC supports multiple peer connections."""
+        return True

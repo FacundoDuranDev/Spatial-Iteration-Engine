@@ -95,4 +95,3 @@ class TrackingData:
             "processing_time": self.processing_time,
             "metadata": self.metadata,
         }
-

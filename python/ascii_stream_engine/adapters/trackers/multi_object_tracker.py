@@ -7,7 +7,6 @@ import numpy as np
 
 from ...domain.config import EngineConfig
 from ...domain.tracking_data import TrackingData, Trajectory
-
 from .base import BaseTracker
 
 
@@ -56,9 +55,7 @@ class MultiObjectTracker(BaseTracker):
         used_trajectories = set()
 
         # Ordenar detecciones por confianza (mayor primero)
-        sorted_detections = sorted(
-            detections, key=lambda d: d.get("confidence", 0.0), reverse=True
-        )
+        sorted_detections = sorted(detections, key=lambda d: d.get("confidence", 0.0), reverse=True)
 
         for det in sorted_detections:
             if "bbox" not in det:
@@ -76,9 +73,7 @@ class MultiObjectTracker(BaseTracker):
 
                 latest_point = traj.get_latest_point()
                 if latest_point:
-                    distance = self._calculate_distance(
-                        center, (latest_point.x, latest_point.y)
-                    )
+                    distance = self._calculate_distance(center, (latest_point.x, latest_point.y))
                     if distance < best_distance:
                         best_distance = distance
                         best_match_id = obj_id
@@ -94,9 +89,7 @@ class MultiObjectTracker(BaseTracker):
 
         return matches
 
-    def track(
-        self, frame: np.ndarray, detections: dict, config: EngineConfig
-    ) -> TrackingData:
+    def track(self, frame: np.ndarray, detections: dict, config: EngineConfig) -> TrackingData:
         """
         Trackea múltiples objetos simultáneamente.
 
@@ -135,9 +128,7 @@ class MultiObjectTracker(BaseTracker):
 
             if obj_id in self._trajectories:
                 # Actualizar trayectoria existente
-                self._trajectories[obj_id].add_point(
-                    x, y, timestamp, det.get("confidence", 1.0)
-                )
+                self._trajectories[obj_id].add_point(x, y, timestamp, det.get("confidence", 1.0))
                 self._trajectories[obj_id].bbox = bbox
                 self._trajectories[obj_id].lost = False
             else:
@@ -182,4 +173,3 @@ class MultiObjectTracker(BaseTracker):
         """Resetea el estado del tracker."""
         super().reset()
         self._next_id = 0
-

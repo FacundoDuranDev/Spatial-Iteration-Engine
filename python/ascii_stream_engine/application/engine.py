@@ -20,8 +20,8 @@ from .parallel_pipeline import FrameProcessor
 from .pipeline import (
     AnalyzerPipeline,
     FilterPipeline,
-    TransformationPipeline,
     TrackingPipeline,
+    TransformationPipeline,
 )
 from .services import ErrorHandler, FrameBuffer, RetryManager
 
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 class StreamEngine:
     """Motor principal para streaming de frames en tiempo real.
-    
+
     Orquesta el pipeline completo: captura → análisis → transformación →
     filtrado → tracking → renderizado → salida.
     """
@@ -70,6 +70,9 @@ class StreamEngine:
         """
         self._config = config or EngineConfig()
         self._config_lock = threading.Lock()
+        self._config_version = 0
+        self._cached_config: Optional[EngineConfig] = None
+        self._cached_config_version = -1
         self._source = source
         self._renderer = renderer
         self._sink = sink
@@ -129,6 +132,14 @@ class StreamEngine:
         with self._config_lock:
             return EngineConfig(**vars(self._config))
 
+    def _get_config_snapshot(self) -> EngineConfig:
+        """Fast config access for hot path — only copies when config changes."""
+        with self._config_lock:
+            if self._config_version != self._cached_config_version:
+                self._cached_config = EngineConfig(**vars(self._config))
+                self._cached_config_version = self._config_version
+            return self._cached_config
+
     def update_config(self, **kwargs) -> None:
         """Actualiza la configuración del engine."""
         with self._config_lock:
@@ -138,6 +149,7 @@ class StreamEngine:
                     raise ValueError(f"Parametro desconocido: {key}")
                 old_values[key] = getattr(self._config, key)
                 setattr(self._config, key, value)
+            self._config_version += 1
             try:
                 EngineConfig(**vars(self._config))
             except ValueError as e:
@@ -366,7 +378,7 @@ class StreamEngine:
 
     def _run(self) -> None:
         """Loop principal del engine."""
-        cfg = self.get_config()
+        cfg = self._get_config_snapshot()
         try:
             self._source.open()
             logger.info("Fuente (cámara) abierta exitosamente")
@@ -423,7 +435,9 @@ class StreamEngine:
                             logger.warning(
                                 f"{failures} fallos consecutivos, intentando reabrir cámara..."
                             )
-                            if not self._retry_manager.reopen_source(self._source, self._stop_event):
+                            if not self._retry_manager.reopen_source(
+                                self._source, self._stop_event
+                            ):
                                 logger.error("No se pudo recuperar la cámara, deteniendo engine")
                                 break
                         else:
@@ -439,7 +453,9 @@ class StreamEngine:
                             logger.warning(
                                 f"{failures} frames None consecutivos, intentando reabrir cámara..."
                             )
-                            if not self._retry_manager.reopen_source(self._source, self._stop_event):
+                            if not self._retry_manager.reopen_source(
+                                self._source, self._stop_event
+                            ):
                                 logger.error("No se pudo recuperar la cámara, deteniendo engine")
                                 break
                         else:
@@ -453,7 +469,7 @@ class StreamEngine:
                             self._consecutive_camera_failures = 0
 
                 # Verificar si la configuración del sink cambió
-                cfg = self.get_config()
+                cfg = self._get_config_snapshot()
                 desired_output_size = self._renderer.output_size(cfg)
                 desired_signature = (
                     desired_output_size,

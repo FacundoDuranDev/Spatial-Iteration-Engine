@@ -103,4 +103,3 @@ class ErrorEvent(BaseEvent):
     error_message: str
     module_name: str
     exception: Optional[Exception] = None
-

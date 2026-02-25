@@ -18,9 +18,7 @@ class FaceHaarAnalyzer(BaseAnalyzer):
     ) -> None:
         super().__init__(enabled=enabled)
         if cascade_path is None:
-            cascade_path = (
-                cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-            )
+            cascade_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
         self._classifier = cv2.CascadeClassifier(cascade_path)
         if self._classifier.empty():
             raise ValueError(f"No se pudo cargar cascade: {cascade_path}")
@@ -41,7 +39,4 @@ class FaceHaarAnalyzer(BaseAnalyzer):
             minNeighbors=self._min_neighbors,
             minSize=self._min_size,
         )
-        return [
-            {"x": int(x), "y": int(y), "w": int(w), "h": int(h)}
-            for (x, y, w, h) in faces
-        ]
+        return [{"x": int(x), "y": int(y), "w": int(w), "h": int(h)} for (x, y, w, h) in faces]

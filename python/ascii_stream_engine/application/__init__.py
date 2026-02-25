@@ -2,8 +2,8 @@ from .engine import StreamEngine
 from .pipeline import (
     AnalyzerPipeline,
     FilterPipeline,
-    TransformationPipeline,
     TrackingPipeline,
+    TransformationPipeline,
 )
 
 __all__ = [
