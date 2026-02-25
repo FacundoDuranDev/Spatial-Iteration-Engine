@@ -7,9 +7,11 @@ from .cpp_grayscale import CppGrayscaleFilter
 from .cpp_invert import CppInvertFilter
 from .cpp_modifier import CppImageModifierFilter
 from .cpp_physarum import CppPhysarumFilter
+from .crt_glitch import CRTGlitchFilter
 from .detail import DetailBoostFilter
 from .edge_smooth import EdgeSmoothFilter
 from .edges import EdgeFilter
+from .geometric_patterns import GeometricPatternFilter
 from .invert import InvertFilter
 from .optical_flow_particles import OpticalFlowParticlesFilter
 from .physarum import PhysarumFilter
@@ -27,9 +29,11 @@ __all__ = [
     "CppImageModifierFilter",
     "CppInvertFilter",
     "CppPhysarumFilter",
+    "CRTGlitchFilter",
     "DetailBoostFilter",
     "EdgeFilter",
     "EdgeSmoothFilter",
+    "GeometricPatternFilter",
     "InvertFilter",
     "OpticalFlowParticlesFilter",
     "PhysarumFilter",
