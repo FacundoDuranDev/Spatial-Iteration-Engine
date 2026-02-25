@@ -61,6 +61,9 @@ set(PERCEPTION_SOURCES
   src/perception/face_landmarks.cpp
   src/perception/hand_landmarks.cpp
   src/perception/pose_landmarks.cpp
+  src/perception/object_detection.cpp
+  src/perception/emotion_detection.cpp
+  src/perception/scene_segmentation.cpp
   src/perception/onnx_runner.cpp
 )
 pybind11_add_module(perception_cpp src/bridge/pybind_perception.cpp ${PERCEPTION_SOURCES})
