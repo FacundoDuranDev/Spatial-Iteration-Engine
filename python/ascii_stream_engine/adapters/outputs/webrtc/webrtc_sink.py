@@ -325,7 +325,7 @@ class WebRTCOutput:
                 | OutputCapability.ADAPTIVE_QUALITY
                 | OutputCapability.MULTI_CLIENT
             ),
-            estimated_latency_ms=50.0,
+
             supported_qualities=[
                 OutputQuality.LOW,
                 OutputQuality.MEDIUM,
@@ -338,10 +338,6 @@ class WebRTCOutput:
                 "signaling_port": self.signaling_port,
             },
         )
-
-    def get_estimated_latency_ms(self) -> Optional[float]:
-        """Get the estimated latency in milliseconds."""
-        return 50.0
 
     def supports_multiple_clients(self) -> bool:
         """WebRTC supports multiple peer connections."""

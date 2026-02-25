@@ -198,7 +198,7 @@ class VideoRecorderSink:
                 | OutputCapability.HIGH_QUALITY
                 | OutputCapability.CUSTOM_BITRATE
             ),
-            estimated_latency_ms=2.0,
+
             supported_qualities=[
                 OutputQuality.LOW,
                 OutputQuality.MEDIUM,
@@ -215,10 +215,6 @@ class VideoRecorderSink:
                 "container_format": self._detect_format(),
             },
         )
-
-    def get_estimated_latency_ms(self) -> Optional[float]:
-        """Get the estimated latency in milliseconds."""
-        return 2.0
 
     def supports_multiple_clients(self) -> bool:
         """Video files do not support multiple clients."""

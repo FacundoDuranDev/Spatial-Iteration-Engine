@@ -3,7 +3,6 @@
 Verifies that all output sinks correctly implement the OutputSink protocol:
 - is_open() returns False before open()
 - get_capabilities() returns a valid OutputCapabilities instance
-- get_estimated_latency_ms() returns None or a positive float
 - supports_multiple_clients() returns a bool
 - close() can be called twice without raising
 - write() on a closed sink does not raise
@@ -43,14 +42,6 @@ class SinkTestMixin:
         caps = sink.get_capabilities()
         self.assertIsInstance(caps, OutputCapabilities)
         self.assertIsNotNone(caps.protocol_name)
-
-    def test_estimated_latency_is_valid(self) -> None:
-        """get_estimated_latency_ms() returns None or positive float."""
-        sink = self.get_sink()
-        latency = sink.get_estimated_latency_ms()
-        if latency is not None:
-            self.assertIsInstance(latency, float)
-            self.assertGreater(latency, 0)
 
     def test_supports_multiple_clients_is_bool(self) -> None:
         """supports_multiple_clients() returns a bool."""

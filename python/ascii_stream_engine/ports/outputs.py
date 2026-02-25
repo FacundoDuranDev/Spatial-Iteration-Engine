@@ -1,4 +1,4 @@
-from typing import Optional, Protocol, Tuple
+from typing import Protocol, Tuple
 
 from ..domain.config import EngineConfig
 from ..domain.types import RenderFrame
@@ -55,15 +55,6 @@ class OutputSink(Protocol):
 
         Returns:
             bool: True si está abierto, False en caso contrario
-        """
-        ...
-
-    def get_estimated_latency_ms(self) -> Optional[float]:
-        """
-        Obtiene la latencia estimada del backend en milisegundos.
-
-        Returns:
-            Latencia estimada en ms, o None si no se puede determinar
         """
         ...
 

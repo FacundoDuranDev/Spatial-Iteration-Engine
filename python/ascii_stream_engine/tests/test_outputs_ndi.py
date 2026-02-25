@@ -204,24 +204,6 @@ class TestNdiOutputSink(unittest.TestCase):
         self.assertTrue(caps.has_capability(OutputCapability.LOW_LATENCY))
         self.assertTrue(caps.has_capability(OutputCapability.HIGH_QUALITY))
         self.assertEqual(caps.protocol_name, "NDI")
-        self.assertEqual(caps.estimated_latency_ms, 10.0)
-
-    @patch("ascii_stream_engine.adapters.outputs.ndi.ndi_sink.NDI_AVAILABLE", True)
-    @patch("ascii_stream_engine.adapters.outputs.ndi.ndi_sink.ndi", create=True)
-    def test_ndi_output_estimated_latency(self, mock_ndi: MagicMock) -> None:
-        """Returns 10.0."""
-        from ascii_stream_engine.adapters.outputs.ndi.ndi_sink import NdiOutputSink
-
-        mock_ndi.initialize.return_value = True
-        mock_ndi.send_create.return_value = MagicMock()
-        mock_ndi.LibNDISendCreate = MagicMock
-        mock_ndi.VideoFrameV2 = MagicMock
-        mock_ndi.FOURCC_VIDEO_TYPE_BGRA = 0
-        mock_ndi.send_destroy = MagicMock()
-        mock_ndi.destroy = MagicMock()
-
-        output = NdiOutputSink()
-        self.assertEqual(output.get_estimated_latency_ms(), 10.0)
 
     @patch("ascii_stream_engine.adapters.outputs.ndi.ndi_sink.NDI_AVAILABLE", True)
     @patch("ascii_stream_engine.adapters.outputs.ndi.ndi_sink.ndi", create=True)

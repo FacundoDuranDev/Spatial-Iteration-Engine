@@ -117,7 +117,6 @@ class TestFfmpegRtspSink(unittest.TestCase):
         self.assertTrue(caps.has_capability(OutputCapability.CUSTOM_BITRATE))
         self.assertTrue(caps.has_capability(OutputCapability.MULTI_CLIENT))
         self.assertEqual(caps.protocol_name, "RTSP/H.264")
-        self.assertEqual(caps.estimated_latency_ms, 100.0)
 
     def test_rtsp_sink_close_idempotent(self) -> None:
         """close() can be called multiple times safely."""
@@ -162,14 +161,6 @@ class TestFfmpegRtspSink(unittest.TestCase):
             self.assertTrue(output.is_open())
 
         output.close()
-
-    def test_rtsp_sink_estimated_latency(self) -> None:
-        """Verify get_estimated_latency_ms() returns a float."""
-        FfmpegRtspSink = self._get_sink_class()
-        output = FfmpegRtspSink()
-        latency = output.get_estimated_latency_ms()
-        self.assertIsInstance(latency, float)
-        self.assertEqual(latency, 100.0)
 
     def test_rtsp_sink_supports_multiple_clients(self) -> None:
         """Verify supports_multiple_clients() returns True."""

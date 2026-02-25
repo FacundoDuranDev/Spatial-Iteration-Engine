@@ -5,7 +5,7 @@ Composite OutputSink que permite escribir a múltiples backends simultáneamente
 """
 
 import logging
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
 from ...domain.config import EngineConfig
 from ...domain.types import RenderFrame
@@ -102,7 +102,6 @@ class CompositeOutputSink:
         todos los backends.
         """
         combined_capabilities = OutputCapability(0)
-        max_latency = 0.0
         all_qualities = set()
         max_clients = None
         min_bitrate = None
@@ -114,8 +113,6 @@ class CompositeOutputSink:
                 try:
                     caps = sink.get_capabilities()
                     combined_capabilities |= caps.capabilities
-                    if caps.estimated_latency_ms:
-                        max_latency = max(max_latency, caps.estimated_latency_ms)
                     all_qualities.update(caps.supported_qualities)
                     if caps.max_clients is not None:
                         if max_clients is None:
@@ -131,7 +128,6 @@ class CompositeOutputSink:
 
         return OutputCapabilities(
             capabilities=combined_capabilities,
-            estimated_latency_ms=max_latency if max_latency > 0 else None,
             supported_qualities=list(all_qualities) if all_qualities else None,
             max_clients=max_clients,
             min_bitrate=min_bitrate,
@@ -157,24 +153,6 @@ class CompositeOutputSink:
                 # el composite está marcado como abierto
                 return True
         return False
-
-    def get_estimated_latency_ms(self) -> Optional[float]:
-        """
-        Obtiene la latencia estimada máxima de todos los backends.
-
-        La latencia del composite es la máxima de todos los backends, ya que
-        el frame debe escribirse a todos antes de continuar.
-        """
-        max_latency = 0.0
-        for sink in self._sinks:
-            if hasattr(sink, "get_estimated_latency_ms"):
-                try:
-                    latency = sink.get_estimated_latency_ms()
-                    if latency is not None:
-                        max_latency = max(max_latency, latency)
-                except Exception:
-                    pass
-        return max_latency if max_latency > 0 else None
 
     def supports_multiple_clients(self) -> bool:
         """

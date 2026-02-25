@@ -218,7 +218,7 @@ class NdiOutputSink:
                 | OutputCapability.HIGH_QUALITY
                 | OutputCapability.ADAPTIVE_QUALITY
             ),
-            estimated_latency_ms=10.0,
+
             supported_qualities=[
                 OutputQuality.LOW,
                 OutputQuality.MEDIUM,
@@ -232,10 +232,6 @@ class NdiOutputSink:
                 "groups": self._groups,
             },
         )
-
-    def get_estimated_latency_ms(self) -> Optional[float]:
-        """Get the estimated latency in milliseconds."""
-        return 10.0
 
     def supports_multiple_clients(self) -> bool:
         """NDI supports unlimited receivers on the network."""

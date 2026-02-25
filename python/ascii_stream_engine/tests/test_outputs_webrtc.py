@@ -124,14 +124,6 @@ class TestWebRTCOutput(unittest.TestCase):
         self.assertTrue(caps.has_capability(OutputCapability.ADAPTIVE_QUALITY))
         self.assertTrue(caps.has_capability(OutputCapability.MULTI_CLIENT))
         self.assertEqual(caps.protocol_name, "WebRTC")
-        self.assertEqual(caps.estimated_latency_ms, 50.0)
-
-    def test_webrtc_output_estimated_latency(self) -> None:
-        """Verify get_estimated_latency_ms() returns 50.0."""
-        from ascii_stream_engine.adapters.outputs.webrtc import WebRTCOutput
-
-        output = WebRTCOutput(signaling_port=8088, enable_signaling=False)
-        self.assertEqual(output.get_estimated_latency_ms(), 50.0)
 
     def test_webrtc_output_supports_multiple_clients(self) -> None:
         """Verify supports_multiple_clients() returns True."""

@@ -180,7 +180,7 @@ class FfmpegRtspSink:
                 | OutputCapability.CUSTOM_BITRATE
                 | OutputCapability.MULTI_CLIENT
             ),
-            estimated_latency_ms=100.0,
+
             supported_qualities=[
                 OutputQuality.LOW,
                 OutputQuality.MEDIUM,
@@ -195,10 +195,6 @@ class FfmpegRtspSink:
                 "transport": self._rtsp_transport,
             },
         )
-
-    def get_estimated_latency_ms(self) -> Optional[float]:
-        """Get the estimated latency in milliseconds."""
-        return 100.0
 
     def supports_multiple_clients(self) -> bool:
         """RTSP inherently supports multiple consumers via an RTSP server."""

@@ -76,7 +76,6 @@ class TestOscOutputSink(unittest.TestCase):
         self.assertTrue(caps.has_capability(OutputCapability.LOW_LATENCY))
         self.assertTrue(caps.has_capability(OutputCapability.ULTRA_LOW_LATENCY))
         self.assertEqual(caps.protocol_name, "OSC/UDP")
-        self.assertEqual(caps.estimated_latency_ms, 1.0)
 
     def test_osc_sink_sends_frame_info(self) -> None:
         """Verify frame size and index are sent."""
@@ -178,12 +177,6 @@ class TestOscOutputSink(unittest.TestCase):
         self.assertTrue(sink.is_open())
 
         sink.close()
-
-    def test_osc_sink_estimated_latency(self) -> None:
-        """Returns 1.0."""
-        OscOutputSink = self._get_sink_class()
-        sink = OscOutputSink()
-        self.assertEqual(sink.get_estimated_latency_ms(), 1.0)
 
     def test_osc_sink_supports_multiple_clients(self) -> None:
         """Returns True."""

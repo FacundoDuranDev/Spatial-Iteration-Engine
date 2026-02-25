@@ -77,7 +77,6 @@ class TestFfmpegUdpOutput(unittest.TestCase):
         self.assertTrue(caps.has_capability(OutputCapability.STREAMING))
         self.assertTrue(caps.has_capability(OutputCapability.UDP))
         self.assertTrue(caps.has_capability(OutputCapability.LOW_LATENCY))
-        self.assertIsNotNone(caps.estimated_latency_ms)
         self.assertEqual(caps.protocol_name, "UDP/MPEG-TS")
         self.assertTrue(output.is_open() is False)  # No abierto aún
 

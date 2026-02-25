@@ -247,7 +247,7 @@ class OscOutputSink:
                 | OutputCapability.LOW_LATENCY
                 | OutputCapability.ULTRA_LOW_LATENCY
             ),
-            estimated_latency_ms=1.0,
+
             supported_qualities=[OutputQuality.LOW, OutputQuality.MEDIUM],
             max_clients=None,  # UDP can broadcast
             protocol_name="OSC/UDP",
@@ -257,10 +257,6 @@ class OscOutputSink:
                 "address_prefix": self._address_prefix,
             },
         )
-
-    def get_estimated_latency_ms(self) -> Optional[float]:
-        """Get the estimated latency in milliseconds."""
-        return 1.0
 
     def supports_multiple_clients(self) -> bool:
         """UDP can broadcast to multiple receivers."""

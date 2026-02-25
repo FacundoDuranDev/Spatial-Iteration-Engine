@@ -85,7 +85,6 @@ class TestVideoRecorderSink(unittest.TestCase):
         self.assertTrue(caps.has_capability(OutputCapability.CUSTOM_BITRATE))
         self.assertFalse(caps.has_capability(OutputCapability.STREAMING))
         self.assertEqual(caps.protocol_name, "File (Video)")
-        self.assertEqual(caps.estimated_latency_ms, 2.0)
         self.assertEqual(caps.max_clients, 1)
 
     def test_recorder_sink_spawns_ffmpeg_with_correct_args(self) -> None:
@@ -224,12 +223,6 @@ class TestVideoRecorderSink(unittest.TestCase):
             sink.open(config, (640, 480))
             sink.write(frame)  # Must not raise
             sink.close()
-
-    def test_recorder_sink_estimated_latency(self) -> None:
-        """Returns 2.0."""
-        VideoRecorderSink = self._get_sink_class()
-        sink = VideoRecorderSink()
-        self.assertEqual(sink.get_estimated_latency_ms(), 2.0)
 
     def test_recorder_sink_supports_multiple_clients(self) -> None:
         """Returns False for file-based recording."""
