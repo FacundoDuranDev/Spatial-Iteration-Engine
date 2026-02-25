@@ -18,6 +18,29 @@ Requirements:
 - If the filter is a no-op (disabled, bad input), return `frame` (not `frame.copy()`)
 - If the filter modifies data, copy first: `out = frame.copy(order='C')`
 
+### Temporal declarations
+
+Filters can declare temporal needs via class attributes (default: no needs):
+
+```python
+class MyFilter(BaseFilter):
+    name = "my_filter"
+    required_input_history: int = 0      # previous input frames needed (0 = none)
+    needs_previous_output: bool = False  # feedback loop (previous processed frame)
+    needs_optical_flow: bool = False     # shared optical flow (auto-derives input_depth >= 1)
+    needs_delta_frame: bool = False      # input frame diff (auto-derives input_depth >= 1)
+```
+
+Access temporal data via `FilterContext` (passed as `analysis` parameter):
+```python
+def apply(self, frame, config, analysis=None):
+    flow = getattr(analysis, "optical_flow", None)  # shared flow or None
+    delta = getattr(analysis, "delta_frame", None)   # frame diff or None
+    prev_out = getattr(analysis, "previous_output", None)  # feedback or None
+```
+
+The `TemporalManager` service (in `application/services/`) allocates nothing until filters declare needs. Buffer sizes are `max()` of all active filter declarations — no global config knob.
+
 ### Stateful filters
 
 Filters that maintain state across frames (feedback, slit scan, particles, reaction-diffusion) MUST:

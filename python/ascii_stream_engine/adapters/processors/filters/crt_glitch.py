@@ -19,6 +19,10 @@ class CRTGlitchFilter(BaseFilter):
 
     name = "crt_glitch"
 
+    # Temporal declarations: use optical flow for motion-reactive glitch
+    needs_optical_flow = True
+    needs_previous_output = True
+
     def __init__(
         self,
         scanline_intensity: float = 0.3,
@@ -61,26 +65,58 @@ class CRTGlitchFilter(BaseFilter):
             self._scanline_mask = None
             self._last_shape = (h, w)
 
+        # Compute motion-reactive modulation from optical flow
+        motion_mod = self._compute_motion_modulation(analysis)
+
+        # Modulate parameters by motion (base + motion-driven boost)
+        aberration = self._aberration_strength * (1.0 + motion_mod * 2.0)
+        tear_prob = min(1.0, self._tear_probability * (1.0 + motion_mod * 3.0))
+        noise = self._noise_amount * (1.0 + motion_mod * 1.5)
+        vhs = self._vhs_tracking * (1.0 + motion_mod * 2.0)
+
         # Apply sub-effects in order
         if self._enable_barrel and self._barrel_strength > 0:
             out = self._barrel_distortion(out, self._barrel_strength)
 
-        if self._enable_aberration and self._aberration_strength > 0:
-            out = self._chromatic_aberration(out, self._aberration_strength)
+        if self._enable_aberration and aberration > 0:
+            out = self._chromatic_aberration(out, aberration)
 
-        if self._enable_vhs and self._vhs_tracking > 0:
-            out = self._vhs_tracking_effect(out, self._vhs_tracking)
+        if self._enable_vhs and vhs > 0:
+            out = self._vhs_tracking_effect(out, vhs)
 
-        if self._enable_tear and np.random.random() < self._tear_probability:
+        if self._enable_tear and np.random.random() < tear_prob:
             out = self._screen_tear(out)
 
         if self._enable_scanlines and self._scanline_intensity > 0:
             out = self._scanlines(out, self._scanline_intensity)
 
-        if self._enable_noise and self._noise_amount > 0:
-            out = self._noise_static(out, self._noise_amount)
+        if self._enable_noise and noise > 0:
+            out = self._noise_static(out, noise)
 
         return out
+
+    def _compute_motion_modulation(self, analysis):
+        """Compute 0-1 motion modulation from optical flow and hand speed."""
+        if analysis is None:
+            return 0.0
+
+        motion = 0.0
+
+        # Use optical flow magnitude if available (via FilterContext)
+        flow = getattr(analysis, "optical_flow", None)
+        if flow is not None:
+            mag = np.sqrt(flow[:, :, 0] ** 2 + flow[:, :, 1] ** 2)
+            # Normalize: typical motion range 0-20 pixels/frame
+            motion = float(np.mean(mag)) / 10.0
+
+        # Boost from hand speed if hands detected
+        hands = analysis.get("hands") if hasattr(analysis, "get") else None
+        if hands and isinstance(hands, dict):
+            speed = hands.get("speed", 0.0)
+            if isinstance(speed, (int, float)):
+                motion += float(speed) * 0.5
+
+        return min(1.0, max(0.0, motion))
 
     def _scanlines(self, frame, intensity):
         """Apply horizontal scanline darkening effect."""

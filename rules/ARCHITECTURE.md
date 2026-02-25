@@ -60,6 +60,25 @@ Renderers / Outputs (ASCII, RTSP, NDI, notebooks)
 # 6. Núcleo del sistema
 
 El núcleo es el motor de pipeline en python/ascii_stream_engine/application que orquesta flujos de frames entre módulos desacoplados mediante puertos, eventos y adaptadores.
-                                                                                  
 
+## 7. Temporal Infrastructure
 
+### TemporalManager (`application/services/temporal_manager.py`)
+Demand-driven temporal state service. Allocates nothing until filters declare needs via class attributes. Buffer sizes derived from `max()` of all active filter declarations.
+
+Three temporal patterns:
+- **Input ring buffer**: Previous input frames (for optical flow, delta frame). Depth = max(required_input_history) + 1 across active filters.
+- **Output buffer**: Single previous processed frame (for feedback/accumulation effects).
+- **Own state**: Filters like Physarum maintain their own internal state (trail_map) — not managed by TemporalManager.
+
+Lazy computation: optical flow and delta frame computed on first access per frame, cached.
+
+### FilterContext (`application/pipeline/filter_context.py`)
+Dict-compatible wrapper providing lazy access to temporal + analysis data. Backwards compatible with existing `analysis.get("key")` patterns. Adds temporal properties: `previous_input`, `previous_output`, `optical_flow`, `delta_frame`.
+
+### Temporal Declarations (`adapters/processors/filters/base.py`)
+Class attributes on BaseFilter:
+- `required_input_history: int = 0` — how many previous input frames needed
+- `needs_previous_output: bool = False` — needs feedback loop
+- `needs_optical_flow: bool = False` — needs shared optical flow
+- `needs_delta_frame: bool = False` — needs input frame diff

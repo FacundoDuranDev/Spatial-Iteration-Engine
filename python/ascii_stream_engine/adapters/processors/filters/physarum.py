@@ -24,6 +24,9 @@ class PhysarumFilter(BaseFilter):
 
     name = "physarum"
 
+    # Temporal declaration: use delta frame as motion attractant
+    needs_delta_frame = True
+
     def __init__(
         self,
         num_agents: int = 4000,
@@ -75,6 +78,21 @@ class PhysarumFilter(BaseFilter):
         if (h, w) != self._last_shape:
             self._init_simulation(h, w)
             self._last_shape = (h, w)
+
+        # Use delta frame as motion attractant if available
+        delta = getattr(analysis, "delta_frame", None) if analysis else None
+        if delta is not None:
+            # Convert delta to grayscale magnitude, downscale to sim resolution
+            if len(delta.shape) == 3:
+                delta_gray = cv2.cvtColor(delta, cv2.COLOR_BGR2GRAY)
+            else:
+                delta_gray = delta
+            delta_small = cv2.resize(
+                delta_gray, (self._sim_w, self._sim_h), interpolation=cv2.INTER_AREA
+            ).astype(np.float32)
+            # Add motion as attractant to trail map (normalized to deposit range)
+            motion_strength = delta_small / 255.0 * self._deposit_amount * 0.5
+            self._trail_map += motion_strength
 
         # Run one simulation step
         self._step()

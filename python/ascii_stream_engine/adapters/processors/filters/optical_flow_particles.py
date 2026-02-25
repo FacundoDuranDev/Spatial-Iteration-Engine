@@ -24,6 +24,9 @@ class OpticalFlowParticlesFilter(BaseFilter):
 
     name = "optical_flow_particles"
 
+    # Temporal declaration: use shared optical flow (auto-derives input_depth >= 1)
+    needs_optical_flow = True
+
     def __init__(
         self,
         max_particles: int = 2000,
@@ -62,16 +65,18 @@ class OpticalFlowParticlesFilter(BaseFilter):
             self._particles = None
             self._last_shape = (h, w)
 
-        # Convert to grayscale
-        gray = get_cached_conversion(frame, cv2.COLOR_BGR2GRAY)
+        # Try shared optical flow from TemporalManager (via FilterContext)
+        flow = getattr(analysis, "optical_flow", None) if analysis else None
 
-        # First frame: store and return unchanged
-        if self._prev_gray is None:
-            self._prev_gray = gray.copy()
-            return frame
-
-        # Compute optical flow (Farneback)
-        flow = cv2.calcOpticalFlowFarneback(self._prev_gray, gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+        if flow is None:
+            # Fallback: compute privately (no TemporalManager available)
+            gray = get_cached_conversion(frame, cv2.COLOR_BGR2GRAY)
+            if self._prev_gray is None:
+                self._prev_gray = gray.copy()
+                return frame
+            flow = cv2.calcOpticalFlowFarneback(
+                self._prev_gray, gray, None, 0.5, 3, 15, 3, 5, 1.2, 0
+            )
 
         # Compute flow magnitude
         mag = np.sqrt(flow[:, :, 0] ** 2 + flow[:, :, 1] ** 2)
@@ -125,9 +130,13 @@ class OpticalFlowParticlesFilter(BaseFilter):
         if len(self._particles) > self._max_particles:
             self._particles = self._particles[-self._max_particles :]
 
+        # Update fallback state (only needed when not using shared flow)
+        if getattr(analysis, "optical_flow", None) is None:
+            gray = get_cached_conversion(frame, cv2.COLOR_BGR2GRAY)
+            self._prev_gray = gray.copy()
+
         # Render particles
         if len(self._particles) == 0:
-            self._prev_gray = gray.copy()
             return frame
 
         out = frame.copy(order="C")
@@ -142,7 +151,6 @@ class OpticalFlowParticlesFilter(BaseFilter):
             )
             cv2.circle(out, (int(px[i]), int(py[i])), self._particle_size, color, -1)
 
-        self._prev_gray = gray.copy()
         return out
 
     def _spawn_particles(self, mag, flow, frame, h, w, analysis):

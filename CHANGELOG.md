@@ -8,6 +8,15 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 ## [Unreleased]
 
 ### Added
+- `feat(temporal)`: TemporalManager service — demand-driven temporal state with lazy buffer allocation
+- `feat(pipeline)`: FilterContext — dict-compatible wrapper with temporal access for filters
+- `feat(filters)`: CRT Glitch filter — scanlines, chromatic aberration, VHS tracking, screen tear, noise, barrel distortion (perception-reactive via optical flow)
+- `feat(filters)`: Geometric Patterns filter — sacred geometry, Voronoi, Delaunay, Lissajous, strange attractors (landmark-reactive, trail accumulation)
+- `feat(filters)`: Temporal declarations on BaseFilter (required_input_history, needs_optical_flow, needs_delta_frame, needs_previous_output)
+
+### Changed
+- `refactor(filters)`: Physarum — better defaults (4000 agents, 0.98 decay, adaptive normalization), delta frame as motion attractant
+- `refactor(filters)`: OpticalFlowParticles — uses shared optical flow from TemporalManager (with private fallback)
 - `feat(filters)`: Optical Flow Particles filter -- motion-reactive particle system (stateful)
 - `feat(filters)`: Stippling / Pointillism filter -- LUT-cached dot placement effect
 - `feat(filters)`: UV Math Displacement filter -- parametric math-based remap distortion

@@ -21,6 +21,9 @@ class GeometricPatternFilter(BaseFilter):
 
     name = "geometric_patterns"
 
+    # Temporal declaration: use previous output for trail accumulation
+    needs_previous_output = True
+
     def __init__(
         self,
         pattern_mode: str = "sacred_geometry",
@@ -63,6 +66,21 @@ class GeometricPatternFilter(BaseFilter):
             self._draw_strange_attractor(overlay, w, h)
         else:
             self._draw_sacred_geometry(overlay, w, h)
+
+        # Accumulate trails from previous output if available
+        prev_output = getattr(analysis, "previous_output", None)
+        if prev_output is not None and prev_output.shape == frame.shape:
+            # Blend previous output patterns (faded) into current overlay for trail effect
+            prev_gray = cv2.cvtColor(prev_output, cv2.COLOR_BGR2GRAY)
+            prev_mask = prev_gray > 30  # Only accumulate visible pixels
+            if prev_mask.any():
+                fade = 0.3  # Trail fade factor
+                overlay[prev_mask] = np.clip(
+                    overlay[prev_mask].astype(np.float32)
+                    + prev_output[prev_mask].astype(np.float32) * fade,
+                    0,
+                    255,
+                ).astype(np.uint8)
 
         # Blend overlay with frame
         out = frame.copy(order="C")
