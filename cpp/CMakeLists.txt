@@ -61,10 +61,11 @@ set(PERCEPTION_SOURCES
   src/perception/face_landmarks.cpp
   src/perception/hand_landmarks.cpp
   src/perception/pose_landmarks.cpp
-  src/perception/object_detection.cpp
-  src/perception/emotion_detection.cpp
-  src/perception/scene_segmentation.cpp
   src/perception/onnx_runner.cpp
+  # TODO: perception team must implement these before adding back:
+  # src/perception/object_detection.cpp
+  # src/perception/emotion_detection.cpp
+  # src/perception/scene_segmentation.cpp
 )
 pybind11_add_module(perception_cpp src/bridge/pybind_perception.cpp ${PERCEPTION_SOURCES})
 target_include_directories(perception_cpp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
