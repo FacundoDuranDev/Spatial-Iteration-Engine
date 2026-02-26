@@ -120,60 +120,6 @@ PYBIND11_MODULE(perception_cpp, m) {
       py::arg("frame"),
       "Detect pose with confidence. Returns 1D float32 (N*3): x, y, conf per joint.");
 
-  m.def(
-      "detect_objects",
-      [](py::array_t<std::uint8_t> frame) {
-        require_3d_uint8(frame);
-        py::buffer_info buf = frame.request();
-        int h = static_cast<int>(buf.shape[0]);
-        int w = static_cast<int>(buf.shape[1]);
-        std::uint8_t* ptr = static_cast<std::uint8_t*>(buf.ptr);
-        std::vector<float> data;
-        {
-          py::gil_scoped_release release;
-          data = perception::run_object_detection(ptr, w, h);
-        }
-        // Return as 1D float array; Python does NMS and reshape
-        return flat_to_numpy(data);
-      },
-      py::arg("frame"),
-      "Detect objects (YOLOv8-nano). Returns flat float32 array.");
-
-  m.def(
-      "detect_emotion",
-      [](py::array_t<std::uint8_t> frame) {
-        require_3d_uint8(frame);
-        py::buffer_info buf = frame.request();
-        int h = static_cast<int>(buf.shape[0]);
-        int w = static_cast<int>(buf.shape[1]);
-        std::uint8_t* ptr = static_cast<std::uint8_t*>(buf.ptr);
-        std::vector<float> data;
-        {
-          py::gil_scoped_release release;
-          data = perception::run_emotion(ptr, w, h);
-        }
-        // Return raw logits as 1D float array; Python applies softmax
-        return flat_to_numpy(data);
-      },
-      py::arg("frame"),
-      "Detect emotion. Returns 1D float32 logits (7 values).");
-
-  m.def(
-      "detect_segmentation",
-      [](py::array_t<std::uint8_t> frame) {
-        require_3d_uint8(frame);
-        py::buffer_info buf = frame.request();
-        int h = static_cast<int>(buf.shape[0]);
-        int w = static_cast<int>(buf.shape[1]);
-        std::uint8_t* ptr = static_cast<std::uint8_t*>(buf.ptr);
-        std::vector<float> data;
-        {
-          py::gil_scoped_release release;
-          data = perception::run_segmentation(ptr, w, h);
-        }
-        // Return raw logits as flat float array; Python reshapes and argmax
-        return flat_to_numpy(data);
-      },
-      py::arg("frame"),
-      "Detect scene segmentation. Returns flat float32 logits.");
+  // TODO: perception team must implement detect_objects, detect_emotion,
+  // detect_segmentation once the corresponding .cpp files are created.
 }
