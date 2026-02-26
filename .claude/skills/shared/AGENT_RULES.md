@@ -254,16 +254,21 @@ Know what already exists before building:
 
 | Domain | Count | Components |
 |--------|-------|-----------|
-| Filters (Python) | 5 | brightness, edges, detail, invert, conversion_cache |
-| Filters (C++) | 4 | brightness_contrast, channel_swap, grayscale, invert |
+| Filters (Python) | 13 | brightness, edges, detail, invert, conversion_cache, edge_smooth, optical_flow_particles, physarum, radial_collapse, stippling, uv_displacement, boids, crt_glitch, geometric_patterns |
+| Filters (C++ wrappers) | 6 | cpp_brightness_contrast, cpp_channel_swap, cpp_grayscale, cpp_invert, cpp_modifier, cpp_physarum |
+| Filters (C++ core) | 9 | brightness_contrast, channel_swap, grayscale, invert, blur, edge, posterize, sharpen, threshold |
 | Analyzers | 3 | face (cv2 — temporary), hands (mediapipe — temporary), pose (OnnxRunner — target) |
-| Renderers | 4 | ascii, passthrough, landmarks_overlay, cpp_deformed |
-| Outputs | 5 | udp, preview, notebook_preview, ascii_recorder, composite |
-| Infrastructure | 5 | event_bus, logging, metrics, profiling, message_queue |
-| Presentation | 1 | notebook_api (4 builder functions) |
+| Renderers | 4 | ascii, passthrough, landmarks_overlay, cpp_renderer (deformed) |
+| Outputs | 8 | udp, preview, notebook_preview, ascii_recorder, composite, osc, video_recorder, rtsp, ndi |
+| Infrastructure | 7 | event_bus, event_filter, logging, metrics, profiling, message_queue, config_persistence |
+| Plugins | 6 | plugin_manager, plugin_loader, plugin_registry, plugin_interface, plugin_metadata, plugin_dependency |
+| App Services | 4 | error_handler, frame_buffer, retry_manager, temporal_manager |
+| Presentation | 1 | notebook_api (11 builder functions) |
 | Sources | 2 | camera, video_file |
 
-**Total: 29 existing components.** Your new work extends this, never replaces it.
+**Total: 63 existing components.** Your new work extends this, never replaces it.
+
+**Note:** Perception team attempted 5 new analyzers (emotion, hand_gesture, object_detection, pose_skeleton, segmentation) — files exist but are broken/incomplete. Branch was NOT merged. Do not depend on these modules.
 
 **Perception hybrid state:** Face uses cv2.FaceDetectorYN, hands uses mediapipe, pose uses our C++ OnnxRunner. All are C++ under the hood but through different APIs. Migration to unified OnnxRunner for all 3 is planned — see `perception-development/SKILL.md` for details. New analyzers MUST use the OnnxRunner pattern (copy `pose.py`).
 
