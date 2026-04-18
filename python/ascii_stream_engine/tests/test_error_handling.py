@@ -395,6 +395,7 @@ class TestEngineErrorHandling(unittest.TestCase):
             sink=sink,
             config=config,
             analyzers=AnalyzerPipeline([analyzer]),
+            use_graph=False,
         )
 
         engine.start()
@@ -422,6 +423,7 @@ class TestEngineErrorHandling(unittest.TestCase):
             sink=sink,
             config=config,
             filters=FilterPipeline([filter_obj]),
+            use_graph=False,
         )
 
         engine.start()
@@ -446,6 +448,7 @@ class TestEngineErrorHandling(unittest.TestCase):
             renderer=renderer,
             sink=sink,
             config=config,
+            use_graph=False,
         )
 
         engine.start()
@@ -562,6 +565,7 @@ class TestEngineErrorHandling(unittest.TestCase):
             renderer=renderer,
             sink=sink,
             config=config,
+            use_graph=False,
         )
 
         engine.start()

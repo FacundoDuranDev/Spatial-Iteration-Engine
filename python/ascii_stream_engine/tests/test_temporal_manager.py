@@ -5,7 +5,6 @@ import pytest
 
 from ascii_stream_engine.application.services.temporal_manager import TemporalManager
 
-
 # ---------------------------------------------------------------------------
 # Dummy filter classes with declaration attributes
 # ---------------------------------------------------------------------------
