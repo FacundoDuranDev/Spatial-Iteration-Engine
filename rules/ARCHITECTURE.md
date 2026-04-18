@@ -21,6 +21,12 @@ Este proyecto es un motor de procesamiento audiovisual en tiempo real que permit
 - python/ascii_stream_engine
   - domain (tipos, eventos, config)
   - application (engine, pipeline, orquestación)
+    - application/graph (graph-based execution model, opt-in via `use_graph=True`)
+      - graph/core (BaseNode, Graph, Connection, PortType, InputPort, OutputPort)
+      - graph/nodes (ProcessorNode, AnalyzerNode, RendererNode, SourceNode, OutputNode, TrackerNode, TransformNode)
+      - graph/adapter_nodes (factory-generated node wrappers for existing adapters)
+      - graph/scheduler (GraphScheduler — topological execution, same API as PipelineOrchestrator)
+      - graph/bridge (GraphBuilder — converts pipeline objects to Graph; adapter_registry)
   - infrastructure (event bus, logging, plugins)
   - ports (interfaces de sensores, filtros, outputs)
   - adapters (implementaciones concretas)
@@ -56,12 +62,51 @@ Renderers / Outputs (ASCII, RTSP, NDI, notebooks)
 - Un editor gráfico de pipelines
 - Persistencia de proyectos
 - UI de control fuera de notebooks
+- Parallel/batch execution in GraphScheduler (future phase)
+- Audio/control signal port types in graph (future phase)
 
 # 6. Núcleo del sistema
 
 El núcleo es el motor de pipeline en python/ascii_stream_engine/application que orquesta flujos de frames entre módulos desacoplados mediante puertos, eventos y adaptadores.
 
-## 7. Temporal Infrastructure
+## 7. Graph Execution Model (`application/graph/`)
+
+Opt-in alternative execution model: `StreamEngine(use_graph=True)`. The default `PipelineOrchestrator` remains unchanged.
+
+### Core (`graph/core/`)
+- **PortType** enum: `VIDEO_FRAME`, `ANALYSIS_DATA`, `RENDER_FRAME`, `TRACKING_DATA`, `CONTROL_SIGNAL`, `MASK`, `CONFIG`
+- **InputPort / OutputPort**: frozen dataclasses with type-safe `accepts()` validation
+- **BaseNode** ABC: abstract `process(inputs) -> outputs`, with temporal declarations (`needs_optical_flow`, `required_input_history`, etc.) and lifecycle hooks (`setup`, `teardown`, `reset`)
+- **Connection**: frozen dataclass linking source_node.output_port → target_node.input_port with type validation
+- **Graph**: DAG container with `add_node()`, `connect()`, `validate()`, `get_execution_order()` (Kahn's algorithm), DFS cycle detection
+
+### Node Types (`graph/nodes/`)
+| Class | Inputs | Outputs |
+|-------|--------|---------|
+| SourceNode | (none) | video_out |
+| AnalyzerNode | video_in | video_out (passthrough), analysis_out |
+| TrackerNode | video_in, analysis_in | video_out (passthrough), tracking_out |
+| TransformNode | video_in | video_out |
+| ProcessorNode | video_in, analysis_in (opt) | video_out |
+| RendererNode | video_in, analysis_in (opt) | render_out |
+| OutputNode | render_in | (none) |
+
+### Adapter Nodes (`graph/adapter_nodes/`)
+Factory-generated `ProcessorNode`/`AnalyzerNode`/etc. subclasses that wrap existing adapters. Each copies temporal declarations from the adapter class and delegates `process()` to the adapter's native method (`apply`, `analyze`, etc.).
+
+### Scheduler (`graph/scheduler/`)
+**GraphScheduler** executes nodes in topological order. Same `process_frame(frame, timestamp) -> (bool, error_msg)` API as `PipelineOrchestrator`. Features:
+- FilterContext injection for ProcessorNodes (temporal access)
+- TemporalManager integration (configured from node declarations)
+- Error isolation: processor/analyzer failures are non-fatal (passthrough), renderer/output failures are fatal
+- Disabled node passthrough by matching port types
+
+### Bridge (`graph/bridge/`)
+- **GraphBuilder.build()**: converts StreamEngine's pipeline objects (FilterPipeline, AnalyzerPipeline, etc.) into a Graph
+- **AnalysisMergeNode**: merges parallel analyzer outputs into a single analysis dict
+- **AdapterRegistry**: maps adapter class names to node classes with MRO-based lookup
+
+## 8. Temporal Infrastructure
 
 ### TemporalManager (`application/services/temporal_manager.py`)
 Demand-driven temporal state service. Allocates nothing until filters declare needs via class attributes. Buffer sizes derived from `max()` of all active filter declarations.

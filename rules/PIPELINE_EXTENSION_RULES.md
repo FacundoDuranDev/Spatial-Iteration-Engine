@@ -172,3 +172,48 @@ New analyzers MUST:
 - Use their `name` attribute as the top-level dict key
 - Return numpy arrays with normalized coordinates (0.0-1.0)
 - Document their dict structure in this file when adding
+
+---
+
+## 8. Writing Native Graph Nodes
+
+New components can be written as **native graph nodes** instead of adapters. Native nodes work only with `use_graph=True` but offer typed ports, explicit data flow, and lifecycle hooks.
+
+**Location:** `python/ascii_stream_engine/application/graph/nodes/` (base classes) or a custom module
+
+### Choosing a base class
+
+| Base Class | Use Case | Abstract Method |
+|------------|----------|-----------------|
+| `ProcessorNode` | Frame-modifying filter | `apply_filter(frame, config, analysis)` |
+| `AnalyzerNode` | Frame analysis (no modification) | `analyze(frame) -> dict` |
+| `RendererNode` | Frame → rendered output | `render(frame, config, analysis)` |
+| `TransformNode` | Spatial transformation | `transform(frame) -> frame` |
+| `SourceNode` | Frame production | `read_frame()` |
+| `OutputNode` | Write rendered output | `write(rendered)` |
+| `TrackerNode` | Object tracking | `track(frame, detections, config)` |
+
+### Example: native ProcessorNode
+
+```python
+from ascii_stream_engine.application.graph.nodes import ProcessorNode
+
+class MyCustomFilter(ProcessorNode):
+    name = "my_custom_filter"
+    needs_optical_flow = True       # temporal declarations (optional)
+    required_input_history = 2
+
+    def apply_filter(self, frame, config, analysis):
+        flow = getattr(analysis, "optical_flow", None)
+        # ... process frame ...
+        return modified_frame
+```
+
+### Rules for native nodes
+
+- **Set `name`** — must be unique within the graph
+- **Temporal declarations** — same class attributes as BaseFilter (`required_input_history`, `needs_optical_flow`, `needs_delta_frame`, `needs_previous_output`)
+- **AnalyzerNode** — MUST NOT modify the input frame (passthrough enforced)
+- **Lifecycle** — override `setup()`, `teardown()`, `reset()` if needed (default: no-op)
+- **Port types** — use `PortType` enum values. Custom nodes can override `get_input_ports()` / `get_output_ports()` for non-standard port configurations
+- **Registration** — to use with `GraphBuilder.build()`, add to the appropriate `adapter_nodes/` factory module. For standalone graph construction, add directly to a `Graph` instance
