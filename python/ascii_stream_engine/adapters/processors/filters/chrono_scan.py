@@ -62,17 +62,25 @@ class ChronoScanFilter(BaseFilter):
         h, w = frame.shape[:2]
         slices = h if self._axis == "rows" else w
         # Map each slice to a buffer index: 0 → newest, slices-1 → oldest.
-        idxs = (
-            np.linspace(0, n_frames - 1, slices).astype(np.int32)
-        )  # 0 ... n_frames-1
+        idxs = np.linspace(0, n_frames - 1, slices).astype(np.int32)
 
         out = np.empty_like(frame)
+        buf_list = list(self._buffer)  # deque → list view; frames not copied
+        # Instead of looping one slice at a time (≤1920 iterations), loop once
+        # per unique buffer slot (≤max_delay+1 iterations) and batch-copy the
+        # slices that read from it via a boolean mask.
         if self._axis == "rows":
-            for y in range(slices):
-                src = self._buffer[-1 - idxs[y]]
-                out[y] = src[y]
+            for buf_id in range(n_frames):
+                selector = idxs == buf_id
+                if not selector.any():
+                    continue
+                src = buf_list[-1 - buf_id]
+                out[selector] = src[selector]
         else:  # cols
-            for x in range(slices):
-                src = self._buffer[-1 - idxs[x]]
-                out[:, x] = src[:, x]
+            for buf_id in range(n_frames):
+                selector = idxs == buf_id
+                if not selector.any():
+                    continue
+                src = buf_list[-1 - buf_id]
+                out[:, selector] = src[:, selector]
         return out

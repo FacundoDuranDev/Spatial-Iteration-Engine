@@ -143,7 +143,9 @@ class HandLandmarkAnalyzer(BaseAnalyzer):
 
             import cv2
 
-            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            from ..processors.filters.conversion_cache import get_cached_conversion
+
+            rgb_frame = get_cached_conversion(frame, cv2.COLOR_BGR2RGB)
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
             results = self._hands.detect(mp_image)
 

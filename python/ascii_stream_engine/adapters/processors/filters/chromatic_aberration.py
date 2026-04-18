@@ -111,10 +111,12 @@ class ChromaticAberrationFilter(BaseFilter):
             self._last_center = current_center
             self._params_dirty = False
 
-        # Split into B, G, R channels (BGR order)
-        b, g, r = cv2.split(frame)
+        # Slice channels (views, no copies) instead of cv2.split (3 allocs).
+        b = frame[:, :, 0]
+        g = frame[:, :, 1]
+        r = frame[:, :, 2]
 
-        # Remap R channel outward, B channel inward; G stays untouched
+        # Remap R channel outward, B channel inward; G stays untouched.
         r_shifted = cv2.remap(
             r,
             self._map_x_r,
@@ -130,9 +132,12 @@ class ChromaticAberrationFilter(BaseFilter):
             borderMode=cv2.BORDER_REFLECT,
         )
 
-        # Merge back to BGR
-        out = cv2.merge([b_shifted, g, r_shifted])
-        return np.ascontiguousarray(out, dtype=np.uint8)
+        # Compose back into a single BGR buffer in one allocation.
+        out = np.empty_like(frame)
+        out[:, :, 0] = b_shifted
+        out[:, :, 1] = g
+        out[:, :, 2] = r_shifted
+        return out
 
     def _build_maps(self, h, w, cx, cy):
         """Build per-channel remap tables for chromatic aberration."""

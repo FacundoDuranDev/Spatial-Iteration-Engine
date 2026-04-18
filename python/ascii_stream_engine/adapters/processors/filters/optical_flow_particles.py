@@ -143,13 +143,29 @@ class OpticalFlowParticlesFilter(BaseFilter):
         px = np.clip(self._particles["x"].astype(np.int32), 0, w - 1)
         py = np.clip(self._particles["y"].astype(np.int32), 0, h - 1)
 
-        for i in range(len(self._particles)):
-            color = (
-                int(self._particles["b"][i]),
-                int(self._particles["g"][i]),
-                int(self._particles["r"][i]),
-            )
-            cv2.circle(out, (int(px[i]), int(py[i])), self._particle_size, color, -1)
+        # Batched disk-splat instead of one cv2.circle call per particle.
+        # Build a small disk kernel once (same for every particle) and
+        # scatter all pixels in a single numpy fancy-indexing write.
+        r = max(0, int(self._particle_size))
+        if r == 0:
+            dy_disk = np.array([0], dtype=np.int32)
+            dx_disk = np.array([0], dtype=np.int32)
+        else:
+            yy, xx = np.ogrid[-r:r + 1, -r:r + 1]
+            disk = (yy * yy + xx * xx) <= r * r
+            dy_disk, dx_disk = np.where(disk)
+            dy_disk = dy_disk.astype(np.int32) - r
+            dx_disk = dx_disk.astype(np.int32) - r
+
+        py_all = np.clip(py[:, None] + dy_disk[None, :], 0, h - 1).ravel()
+        px_all = np.clip(px[:, None] + dx_disk[None, :], 0, w - 1).ravel()
+        k = dy_disk.size
+        b_flat = np.repeat(self._particles["b"], k)
+        g_flat = np.repeat(self._particles["g"], k)
+        r_flat = np.repeat(self._particles["r"], k)
+        out[py_all, px_all, 0] = b_flat
+        out[py_all, px_all, 1] = g_flat
+        out[py_all, px_all, 2] = r_flat
 
         return out
 
