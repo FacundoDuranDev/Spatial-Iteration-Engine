@@ -32,12 +32,40 @@ class PreviewSink:
     def open(self, config: EngineConfig, output_size: Tuple[int, int]) -> None:
         self.close()
         self._output_size = output_size
-        cv2.namedWindow(self._window_name, cv2.WINDOW_NORMAL)
+        self._is_fullscreen = False
         self._is_open = True
+        self._ensure_window()
+
+    def _ensure_window(self) -> None:
+        """Create or revive the preview window (idempotent, self-healing)."""
+        cv2.namedWindow(self._window_name, cv2.WINDOW_NORMAL)
+        w, h = self._output_size if self._output_size else (960, 720)
+        cv2.resizeWindow(self._window_name, int(w * 1.5), int(h * 1.5))
+        cv2.moveWindow(self._window_name, 40, 40)
+        if self._is_fullscreen:
+            cv2.setWindowProperty(
+                self._window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN
+            )
+
+    def _toggle_fullscreen(self) -> None:
+        self._is_fullscreen = not self._is_fullscreen
+        cv2.setWindowProperty(
+            self._window_name,
+            cv2.WND_PROP_FULLSCREEN,
+            cv2.WINDOW_FULLSCREEN if self._is_fullscreen else cv2.WINDOW_NORMAL,
+        )
 
     def write(self, frame: RenderFrame) -> None:
         if not self._is_open:
             return
+        # Self-heal: if user closed the window (X button) it stays hidden
+        # until we recreate it. getWindowProperty returns -1 if missing, 0 if hidden.
+        try:
+            visible = cv2.getWindowProperty(self._window_name, cv2.WND_PROP_VISIBLE)
+        except cv2.error:
+            visible = -1.0
+        if visible < 1:
+            self._ensure_window()
         image = frame.image if hasattr(frame, "image") else frame
         if isinstance(image, Image.Image):
             if image.mode != "RGB":
@@ -51,7 +79,12 @@ class PreviewSink:
             elif arr.shape[2] == 3:
                 arr = cv2.cvtColor(arr, cv2.COLOR_RGB2BGR)
         cv2.imshow(self._window_name, arr)
-        cv2.waitKey(1)
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord("f"):
+            self._toggle_fullscreen()
+        elif key == 27:  # ESC → exit fullscreen
+            if getattr(self, "_is_fullscreen", False):
+                self._toggle_fullscreen()
 
     def close(self) -> None:
         if self._is_open:
@@ -66,7 +99,6 @@ class PreviewSink:
     def get_capabilities(self) -> OutputCapabilities:
         return OutputCapabilities(
             capabilities=OutputCapability.STREAMING | OutputCapability.LOW_LATENCY,
-
             supported_qualities=[OutputQuality.LOW, OutputQuality.MEDIUM, OutputQuality.HIGH],
             max_clients=1,
             min_bitrate=None,
