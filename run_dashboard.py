@@ -182,11 +182,6 @@ def ensure_filter(name, cls, **kw):
     return f
 
 
-def get_preview():
-    frame = buffer_sink.get_latest_rgb()
-    return frame if frame is not None else np.zeros((480, 640, 3), dtype=np.uint8)
-
-
 def get_stats():
     fps = buffer_sink.get_fps()
     n_filters = len([f for f in fp.filters if f.enabled])
@@ -659,11 +654,6 @@ with gr.Blocks(title="Spatial-Iteration-Engine FX") as demo:
             wire(make_toggle("cpp_physarum", CppPhysarumFilter,
                              ["num_agents", "opacity"]), c, status)
 
-    # ===== MAIN: video preview =====
-    gr.Markdown("# Spatial-Iteration-Engine FX")
-    preview = gr.Image(label="Engine Output", type="numpy", height=600)
-    timer = gr.Timer(value=0.1)
-    timer.tick(get_preview, outputs=preview)
 
 print(f"Total filters available: {len(ALL_FILTERS)}", flush=True)
 print("Launching on http://localhost:7860 ...", flush=True)
