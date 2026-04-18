@@ -89,6 +89,7 @@ desktop.ini
 
 # Claude Code
 CLAUDE.md
+.claude/*.lock
 
 # Research (internal notes, not versioned)
 research/
