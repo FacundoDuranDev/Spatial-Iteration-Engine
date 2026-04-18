@@ -1,3 +1,9 @@
+try:
+    from .gradio_app import build_gradio_dashboard, build_gradio_dashboard_basic
+except ImportError:
+    build_gradio_dashboard = None
+    build_gradio_dashboard_basic = None
+
 from .notebook_api import (
     build_advanced_diagnostics_panel,
     build_control_panel,
@@ -13,6 +19,8 @@ from .notebook_api import (
 )
 
 __all__ = [
+    "build_gradio_dashboard",
+    "build_gradio_dashboard_basic",
     "build_advanced_diagnostics_panel",
     "build_control_panel",
     "build_diagnostics_panel",

@@ -442,7 +442,6 @@ def build_general_control_panel(
             frame_buffer_size=frame_buffer_slider.value,
             bitrate=bitrate_text.value,
         )
-        _sync_renderer()
         if was_running:
             engine.start()
         status.value = _status_style("View settings applied.", "ok")
@@ -541,7 +540,7 @@ def build_general_control_panel(
     pose_cb = widgets.Checkbox(value=_analyzer_enabled("pose"), description="Pose detection")
     ai_viz_dd = widgets.Dropdown(
         options=["Normal (ASCII/RAW)", "Overlay landmarks"],
-        value=("Overlay landmarks" if LandmarksOverlayRenderer else "Normal (ASCII/RAW)"),
+        value="Normal (ASCII/RAW)",
         description="Visualization",
     )
     apply_ai_btn = widgets.Button(description="Apply AI")
@@ -666,14 +665,12 @@ def build_general_control_panel(
         layout=Layout(padding="0 0 10px 0") if Layout else None,
     )
 
-    tabs = widgets.Tab(children=[network_box, engine_box, filters_box, settings_box, ai_box])
+    tabs = widgets.Tab(children=[network_box, engine_box, filters_box, settings_box])
     tabs.set_title(0, "Red")
     tabs.set_title(1, "Motor")
     tabs.set_title(2, "Filtros")
     tabs.set_title(3, "Vista")
-    tabs.set_title(4, "IA")
 
-    _apply_filters()
     display(widgets.HTML("<b>Status</b>"))
     display(status)
     display(widgets.HTML("<b>Controls</b>"))
@@ -708,15 +705,6 @@ def build_general_control_panel(
             "frame_buffer_size": frame_buffer_slider,
             "bitrate": bitrate_text,
             "apply": apply_settings_btn,
-        },
-        "ia": {
-            "face": face_cb,
-            "hands": hands_cb,
-            "pose": pose_cb,
-            "viz": ai_viz_dd,
-            "apply": apply_ai_btn,
-            "detector_status": detector_status_html,
-            "refresh_detector": refresh_detector_btn,
         },
         "status": status,
     }
@@ -1043,7 +1031,7 @@ def build_advanced_diagnostics_panel(
     errors_html = widgets.HTML(value="<i>No error data.</i>")
     status = widgets.HTML(value=_status_style("Advanced diagnostics ready.", "info"))
 
-    auto_refresh_cb = widgets.Checkbox(value=False, description="Auto-refresh (2s)")
+    auto_refresh_cb = widgets.Checkbox(value=True, description="Auto-refresh (2s)")
     profiler_enable_cb = widgets.Checkbox(value=False, description="Enable profiler")
     refresh_btn = widgets.Button(description="Refresh")
 
@@ -1125,7 +1113,9 @@ def build_advanced_diagnostics_panel(
             prev_wall = _cpu_state.get("wall", wall)
             delta_wall = wall - prev_wall
             if delta_wall > 0.01:
-                cpu_pct = ((user - prev_user) + (sys_t - prev_sys)) / delta_wall * 100
+                raw_pct = ((user - prev_user) + (sys_t - prev_sys)) / delta_wall * 100
+                num_cpus = os.cpu_count() or 1
+                cpu_pct = raw_pct / num_cpus
             else:
                 cpu_pct = 0.0
             _cpu_state["user"] = user
@@ -1198,6 +1188,9 @@ def build_advanced_diagnostics_panel(
             _auto_refresh_state["handle"] = None
 
     auto_refresh_cb.observe(_on_auto_refresh_toggle, names="value")
+
+    # Start auto-refresh immediately since default is True
+    _auto_refresh_state["handle"] = _periodic_refresh(_refresh, 2000)
 
     # Profiler enable toggle
     def _on_profiler_toggle(change) -> None:
@@ -1384,7 +1377,7 @@ def build_perception_control_panel(
     viz_options = ["Normal (ASCII/RAW)", "Overlay landmarks"]
     viz_mode = widgets.Dropdown(
         options=viz_options,
-        value=("Overlay landmarks" if LandmarksOverlayRenderer else "Normal (ASCII/RAW)"),
+        value="Normal (ASCII/RAW)",
         description="Viz mode",
     )
     apply_viz_btn = widgets.Button(description="Apply viz")
@@ -1396,9 +1389,9 @@ def build_perception_control_panel(
         was_running = engine.is_running
         if was_running:
             engine.stop()
-        cfg = _safe_engine_call(engine, "get_config")
-        rm = getattr(cfg, "render_mode", "ascii") if cfg else "ascii"
-        base = AsciiRenderer() if rm == "ascii" else PassthroughRenderer()
+        current_renderer = _safe_engine_call(engine, "get_renderer")
+        is_ascii = type(current_renderer).__name__ == "AsciiRenderer"
+        base = AsciiRenderer() if is_ascii else PassthroughRenderer()
         if LandmarksOverlayRenderer and viz_mode.value == "Overlay landmarks":
             engine.set_renderer(LandmarksOverlayRenderer(inner=base))
         else:
@@ -1651,6 +1644,65 @@ def build_filter_designer_panel(
                     "max": 5.0,
                     "step": 0.1,
                     "description": "Strength",
+                },
+            },
+        ],
+        "hand_spatial_warp": [
+            {
+                "attr": "strength",
+                "widget": "FloatSlider",
+                "kwargs": {
+                    "min": 0.0,
+                    "max": 800.0,
+                    "step": 10.0,
+                    "description": "Strength",
+                },
+            },
+            {
+                "attr": "falloff",
+                "widget": "FloatSlider",
+                "kwargs": {
+                    "min": 0.05,
+                    "max": 0.8,
+                    "step": 0.01,
+                    "description": "Falloff",
+                },
+            },
+            {
+                "attr": "mode",
+                "widget": "Dropdown",
+                "kwargs": {
+                    "options": ["stretch", "compress", "twist"],
+                    "description": "Mode",
+                },
+            },
+        ],
+        "hand_frame": [
+            {
+                "attr": "effect",
+                "widget": "Dropdown",
+                "kwargs": {
+                    "options": ["ascii", "invert", "blur", "pixelate", "edge", "tint"],
+                    "description": "Effect",
+                },
+            },
+            {
+                "attr": "effect_strength",
+                "widget": "FloatSlider",
+                "kwargs": {
+                    "min": 0.0,
+                    "max": 2.0,
+                    "step": 0.1,
+                    "description": "Strength",
+                },
+            },
+            {
+                "attr": "border_thickness",
+                "widget": "IntSlider",
+                "kwargs": {
+                    "min": 0,
+                    "max": 10,
+                    "description": "Border",
                 },
             },
         ],
@@ -1989,9 +2041,10 @@ def build_performance_monitor_panel(
     degradation_html = widgets.HTML(value="")
     histogram_output = widgets.Output()
     bottleneck_html = widgets.HTML(value="")
+    node_timings_html = widgets.HTML(value="<i>Graph mode per-node timings.</i>")
     status = widgets.HTML(value=_status_style("Performance monitor ready.", "info"))
 
-    auto_refresh_cb = widgets.Checkbox(value=False, description="Auto-refresh (1.5s)")
+    auto_refresh_cb = widgets.Checkbox(value=True, description="Auto-refresh (1.5s)")
     refresh_btn = widgets.Button(description="Refresh")
 
     def _build_budget_chart() -> str:
@@ -2186,6 +2239,47 @@ def build_performance_monitor_panel(
             )
         return ""
 
+    def _build_node_timings() -> str:
+        timings = _safe_engine_call(engine, "get_node_timings", default={})
+        if not timings:
+            return "<i>No node timings (start engine in graph mode).</i>"
+        rows = []
+        sorted_nodes = sorted(timings.items(), key=lambda x: x[1], reverse=True)
+        total = sum(t for _, t in sorted_nodes) or 1e-9
+        for name, secs in sorted_nodes:
+            ms = secs * 1000
+            pct = secs / total * 100
+            if ms < 1.0:
+                color = "#28a745"
+            elif ms < 5.0:
+                color = "#ffc107"
+            else:
+                color = "#dc3545"
+            bar_w = min(100, max(1, int(pct)))
+            rows.append(
+                f'<tr><td style="padding:2px 6px; font-size:12px;">{name}</td>'
+                f'<td style="padding:2px 6px; font-size:12px;">{ms:.2f} ms</td>'
+                f'<td style="padding:2px 6px; font-size:12px;">{pct:.0f}%</td>'
+                f'<td style="padding:2px 6px;">'
+                f'<div style="background:#eee; width:120px; height:14px; '
+                f'border-radius:3px; display:inline-block;">'
+                f'<div style="background:{color}; width:{bar_w}%; '
+                f'height:14px; border-radius:3px;"></div></div></td></tr>'
+            )
+        header = (
+            '<tr style="border-bottom:1px solid #ccc;">'
+            '<th style="padding:2px 6px; font-size:11px; text-align:left;">Node</th>'
+            '<th style="padding:2px 6px; font-size:11px; text-align:left;">Time</th>'
+            '<th style="padding:2px 6px; font-size:11px; text-align:left;">%</th>'
+            '<th style="padding:2px 6px; font-size:11px; text-align:left;">Bar</th></tr>'
+        )
+        return (
+            "<table style='border-collapse:collapse;'>"
+            + header
+            + "".join(rows)
+            + "</table>"
+        )
+
     def _refresh(_=None) -> None:
         budget_chart_html.value = _build_budget_chart()
         fps_gauge_html.value = _build_fps_gauge()
@@ -2194,6 +2288,7 @@ def build_performance_monitor_panel(
             histogram_output.clear_output()
             print(_build_histogram())
         bottleneck_html.value = _build_bottleneck()
+        node_timings_html.value = _build_node_timings()
 
     _refresh()
     refresh_btn.on_click(_refresh)
@@ -2213,6 +2308,9 @@ def build_performance_monitor_panel(
 
     auto_refresh_cb.observe(_on_auto_toggle, names="value")
 
+    # Start auto-refresh immediately since default is True
+    _auto_state["handle"] = _periodic_refresh(_refresh, 1500)
+
     def _stop_refresh() -> None:
         auto_refresh_cb.value = False
         handle = _auto_state.get("handle")
@@ -2224,6 +2322,7 @@ def build_performance_monitor_panel(
             widgets.HTML("<h3>Performance Monitor</h3>"),
             _make_labeled_section("Latency Budget", [budget_chart_html]),
             _make_labeled_section("FPS", [fps_gauge_html]),
+            _make_labeled_section("Node Timings (Graph)", [node_timings_html]),
             _make_labeled_section("Degradation Suggestions", [degradation_html]),
             _make_labeled_section("Frame Time Stats", [histogram_output]),
             _make_labeled_section("Bottleneck", [bottleneck_html]),
@@ -2237,6 +2336,7 @@ def build_performance_monitor_panel(
         "panel": panel,
         "budget_chart_html": budget_chart_html,
         "fps_gauge_html": fps_gauge_html,
+        "node_timings_html": node_timings_html,
         "degradation_html": degradation_html,
         "histogram_output": histogram_output,
         "bottleneck_html": bottleneck_html,
@@ -2603,6 +2703,29 @@ def build_full_dashboard(
         outputs = build_output_manager_panel(engine)
         performance = build_performance_monitor_panel(engine)
         presets = build_preset_manager_panel(engine)
+
+    # Sync filter checkboxes between Control and Filter Designer panels
+    # to prevent one panel from wiping the other's filter state.
+    _syncing_filters = [False]
+    ctrl_filters = control.get("filters", {})
+    designer_cards = filter_designer.get("filter_cards", {})
+    for fname in ctrl_filters:
+        if fname not in designer_cards:
+            continue
+        ctrl_cb = ctrl_filters[fname]
+        des_cb = designer_cards[fname]["enabled_cb"]
+
+        def _make_sync(src, dst):
+            def _sync(change):
+                if not _syncing_filters[0]:
+                    _syncing_filters[0] = True
+                    dst.value = change["new"]
+                    _syncing_filters[0] = False
+
+            return _sync
+
+        ctrl_cb.observe(_make_sync(ctrl_cb, des_cb), names="value")
+        des_cb.observe(_make_sync(des_cb, ctrl_cb), names="value")
 
     # Extract the main panel widget from each sub-panel
     control_widget = control.get("tabs", widgets.HTML(""))
