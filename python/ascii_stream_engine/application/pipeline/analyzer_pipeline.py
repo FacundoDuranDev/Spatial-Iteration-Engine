@@ -27,6 +27,12 @@ class AnalyzerPipeline(ProcessorPipeline):
         """
         self._analyzers: List[Analyzer] = list(analyzers) if analyzers else []
         self._lock = threading.Lock()
+        self._version: int = 0
+
+    @property
+    def version(self) -> int:
+        """Structural version counter, incremented on add/remove/replace mutations."""
+        return self._version
 
     @property
     def analyzers(self) -> List[Analyzer]:
@@ -42,11 +48,13 @@ class AnalyzerPipeline(ProcessorPipeline):
         """Agrega un analizador al pipeline."""
         with self._lock:
             self._analyzers.append(processor)
+            self._version += 1
 
     def remove(self, processor: Analyzer) -> None:
         """Remueve un analizador del pipeline."""
         with self._lock:
             self._analyzers.remove(processor)
+            self._version += 1
 
     def append(self, analyzer: Analyzer) -> None:
         """Agrega un analizador al pipeline."""
@@ -56,26 +64,32 @@ class AnalyzerPipeline(ProcessorPipeline):
         """Extiende el pipeline con múltiples analizadores."""
         with self._lock:
             self._analyzers.extend(analyzers)
+            self._version += 1
 
     def insert(self, index: int, analyzer: Analyzer) -> None:
         """Inserta un analizador en una posición específica."""
         with self._lock:
             self._analyzers.insert(index, analyzer)
+            self._version += 1
 
     def pop(self, index: int = -1) -> Analyzer:
         """Remueve y retorna un analizador del pipeline."""
         with self._lock:
-            return self._analyzers.pop(index)
+            result = self._analyzers.pop(index)
+            self._version += 1
+            return result
 
     def clear(self) -> None:
         """Limpia todos los analizadores del pipeline."""
         with self._lock:
             self._analyzers.clear()
+            self._version += 1
 
     def replace(self, analyzers: Iterable[Analyzer]) -> None:
         """Reemplaza todos los analizadores."""
         with self._lock:
             self._analyzers = list(analyzers)
+            self._version += 1
 
     def set_enabled(self, name: str, enabled: bool) -> bool:
         """

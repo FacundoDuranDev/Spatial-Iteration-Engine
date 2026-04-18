@@ -53,6 +53,7 @@ class PipelineOrchestrator:
         event_bus: Optional[EventBus] = None,
         profiler: Optional[LoopProfiler] = None,
         temporal_manager=None,
+        metrics=None,
     ) -> None:
         """
         Inicializa el orquestador.
@@ -81,6 +82,7 @@ class PipelineOrchestrator:
         self._event_bus = event_bus
         self._profiler = profiler
         self._temporal = temporal_manager
+        self._metrics = metrics
         self._temporal_configured = False
 
         # Ejecutor de etapas con configuración
@@ -158,6 +160,8 @@ class PipelineOrchestrator:
             )
             if not analysis_result.success:
                 logger.warning(f"Error en análisis: {analysis_result.error}")
+                if self._metrics:
+                    self._metrics.record_error("analysis")
                 analysis = {}
             else:
                 analysis = analysis_result.data
@@ -228,6 +232,8 @@ class PipelineOrchestrator:
             )
             if not filter_result.success:
                 logger.warning(f"Error en filtrado: {filter_result.error}")
+                if self._metrics:
+                    self._metrics.record_error("filtering")
             else:
                 frame = filter_result.data
 
@@ -255,6 +261,8 @@ class PipelineOrchestrator:
             lambda: self._renderer.render(frame, self._config, analysis)
         )
         if not render_result.success:
+            if self._metrics:
+                self._metrics.record_error("rendering")
             if self._profiler:
                 self._profiler.end_phase(LoopProfiler.PHASE_RENDERING)
                 self._profiler.end_frame()
@@ -286,6 +294,8 @@ class PipelineOrchestrator:
         write_start = time.perf_counter()
         output_result = self._stage_executor.execute_output(lambda: self._sink.write(rendered))
         if not output_result.success:
+            if self._metrics:
+                self._metrics.record_error("output")
             if self._profiler:
                 self._profiler.end_phase(LoopProfiler.PHASE_WRITING)
                 self._profiler.end_frame()

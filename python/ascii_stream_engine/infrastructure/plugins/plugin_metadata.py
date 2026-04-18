@@ -164,7 +164,10 @@ def extract_metadata_from_plugin(plugin: Any, plugin_type: Optional[str] = None)
     metadata_dict = getattr(plugin, "metadata", None)
     if isinstance(metadata_dict, dict):
         # Si el plugin tiene un atributo metadata, usarlo
-        base_metadata = PluginMetadata.from_dict(metadata_dict)
+        enriched = dict(metadata_dict)
+        enriched.setdefault("name", name)
+        enriched.setdefault("version", version)
+        base_metadata = PluginMetadata.from_dict(enriched)
     else:
         base_metadata = PluginMetadata(
             name=name,

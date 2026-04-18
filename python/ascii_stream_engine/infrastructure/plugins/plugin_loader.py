@@ -1,6 +1,7 @@
 """Cargador seguro de plugins desde archivos externos."""
 
 import importlib.util
+import inspect
 import logging
 import os
 import time
@@ -203,6 +204,11 @@ class PluginLoader:
 
         for name in dir(module):
             obj = getattr(module, name)
-            if isinstance(obj, type) and issubclass(obj, Plugin) and obj is not Plugin:
+            if (
+                isinstance(obj, type)
+                and issubclass(obj, Plugin)
+                and obj is not Plugin
+                and not inspect.isabstract(obj)
+            ):
                 return obj
         return None

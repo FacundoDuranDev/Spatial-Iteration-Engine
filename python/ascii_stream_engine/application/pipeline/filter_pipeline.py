@@ -28,11 +28,17 @@ class FilterPipeline(ProcessorPipeline):
         """
         self._filters: List[Filter] = list(filters) if filters else []
         self._lock = threading.Lock()
+        self._version: int = 0
         # Cache de conversiones comunes para evitar conversiones redundantes
         # Estructura: {(conversion_code, frame_shape, frame_dtype): converted_frame}
         self._conversion_cache: dict = {}
         # ID del frame actual para invalidar cache cuando cambia el frame
         self._current_frame_id: Optional[int] = None
+
+    @property
+    def version(self) -> int:
+        """Structural version counter, incremented on add/remove/replace mutations."""
+        return self._version
 
     @property
     def filters(self) -> List[Filter]:
@@ -48,11 +54,13 @@ class FilterPipeline(ProcessorPipeline):
         """Agrega un filtro al pipeline."""
         with self._lock:
             self._filters.append(processor)
+            self._version += 1
 
     def remove(self, processor: Filter) -> None:
         """Remueve un filtro del pipeline."""
         with self._lock:
             self._filters.remove(processor)
+            self._version += 1
 
     def append(self, filter_obj: Filter) -> None:
         """Agrega un filtro al pipeline."""
@@ -62,26 +70,32 @@ class FilterPipeline(ProcessorPipeline):
         """Extiende el pipeline con múltiples filtros."""
         with self._lock:
             self._filters.extend(filters)
+            self._version += 1
 
     def insert(self, index: int, filter_obj: Filter) -> None:
         """Inserta un filtro en una posición específica."""
         with self._lock:
             self._filters.insert(index, filter_obj)
+            self._version += 1
 
     def pop(self, index: int = -1) -> Filter:
         """Remueve y retorna un filtro del pipeline."""
         with self._lock:
-            return self._filters.pop(index)
+            result = self._filters.pop(index)
+            self._version += 1
+            return result
 
     def clear(self) -> None:
         """Limpia todos los filtros del pipeline."""
         with self._lock:
             self._filters.clear()
+            self._version += 1
 
     def replace(self, filters: Iterable[Filter]) -> None:
         """Reemplaza todos los filtros."""
         with self._lock:
             self._filters = list(filters)
+            self._version += 1
 
     def set_enabled(self, name: str, enabled: bool) -> bool:
         """
@@ -167,16 +181,6 @@ class FilterPipeline(ProcessorPipeline):
 
         if not active_filters:
             return frame
-
-        # Limpiar cache de conversiones al inicio de cada frame
-        # El cache global se maneja automáticamente por frame_id
-        try:
-            from ...adapters.processors.filters.conversion_cache import clear_conversion_cache
-
-            clear_conversion_cache()
-        except ImportError:
-            # Si no existe el módulo de cache global, continuar sin él
-            pass
 
         # Extract temporal manager (injected by orchestrator)
         temporal = None

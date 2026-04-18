@@ -112,9 +112,7 @@ class TemporalManager:
             self._input_index = 0
             self._input_count = 0
             self._resolution = resolution
-            logger.debug(
-                "TemporalManager: allocated input ring %s", self._input_ring.shape
-            )
+            logger.debug("TemporalManager: allocated input ring %s", self._input_ring.shape)
 
         # Store frame in ring buffer
         np.copyto(self._input_ring[self._input_index], frame)
@@ -137,9 +135,7 @@ class TemporalManager:
         if self._output_buf is None or self._resolution != resolution:
             self._output_buf = np.empty((h, w, 3), dtype=np.uint8)
             self._resolution = resolution
-            logger.debug(
-                "TemporalManager: allocated output buffer (%d, %d, 3)", h, w
-            )
+            logger.debug("TemporalManager: allocated output buffer (%d, %d, 3)", h, w)
 
         np.copyto(self._output_buf, frame)
         self._has_output = True

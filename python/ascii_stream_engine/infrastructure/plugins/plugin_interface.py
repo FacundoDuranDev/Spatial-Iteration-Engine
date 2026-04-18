@@ -56,11 +56,13 @@ class Plugin(ABC):
         # Validar metadatos si existen
         if self.metadata:
             try:
-                metadata_obj = (
-                    PluginMetadata.from_dict(self.metadata)
-                    if isinstance(self.metadata, dict)
-                    else self.metadata
-                )
+                if isinstance(self.metadata, dict):
+                    enriched = dict(self.metadata)
+                    enriched.setdefault("name", self.name)
+                    enriched.setdefault("version", self.version)
+                    metadata_obj = PluginMetadata.from_dict(enriched)
+                else:
+                    metadata_obj = self.metadata
                 if not metadata_obj.validate():
                     return False
             except Exception:

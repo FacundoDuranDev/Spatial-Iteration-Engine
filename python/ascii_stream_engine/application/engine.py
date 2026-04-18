@@ -51,6 +51,7 @@ class StreamEngine:
         controllers: Optional[any] = None,  # ControllerManager
         sensors: Optional[list] = None,  # Lista de sensores
         enable_profiling: bool = False,
+        use_graph: bool = True,
     ) -> None:
         """
         Inicializa el engine.
@@ -67,6 +68,7 @@ class StreamEngine:
             controllers: Gestor de controladores
             sensors: Lista de sensores
             enable_profiling: Habilitar profiling de performance
+            use_graph: Use graph-based execution model instead of PipelineOrchestrator
         """
         self._config = config or EngineConfig()
         self._config_lock = threading.Lock()
@@ -82,6 +84,7 @@ class StreamEngine:
         self._transformations = transformations
         self._controllers = controllers
         self._sensors = sensors or []
+        self._use_graph = use_graph
         self._analysis_lock = threading.Lock()
         self._last_analysis: Dict[str, object] = {}
         self._stop_event = threading.Event()
@@ -115,6 +118,7 @@ class StreamEngine:
 
         # Orquestador del pipeline
         self._orchestrator: Optional[PipelineOrchestrator] = None
+        self._pipeline_version_snapshot: int = 0
 
         # Configurar controladores y sensores con event bus
         if self._controllers and self._event_bus:
@@ -260,21 +264,87 @@ class StreamEngine:
         """Obtiene las estadísticas de profiling como diccionario."""
         return self._profiler.get_summary_dict()
 
-    def _create_orchestrator(self) -> None:
-        """Crea o recrea el orquestador del pipeline."""
-        self._orchestrator = PipelineOrchestrator(
+    def _combined_pipeline_version(self) -> int:
+        """Sum of all pipeline version counters for change detection."""
+        v = getattr(self._filters, "version", 0)
+        v += getattr(self._analyzers, "version", 0)
+        if self._trackers:
+            v += getattr(self._trackers, "version", 0)
+        if self._transformations:
+            v += getattr(self._transformations, "version", 0)
+        return v
+
+    def get_node_timings(self) -> Dict[str, float]:
+        """Get per-node timing data from the graph scheduler.
+
+        Returns:
+            Dict mapping node names to their last execution time in seconds.
+            Empty dict if not using graph mode or no timings available.
+        """
+        if self._orchestrator and hasattr(self._orchestrator, "get_node_timings"):
+            return self._orchestrator.get_node_timings()
+        return {}
+
+    def build_graph(self):
+        """Build and return a Graph pre-populated with the engine's current adapters.
+
+        The returned graph mirrors the standard pipeline order and can be extended
+        with add_branch() / add_composite() / fan_out() before passing to a
+        GraphScheduler manually.
+
+        Returns:
+            A Graph instance ready for extension or direct execution.
+        """
+        from .graph.bridge.graph_builder import GraphBuilder
+
+        return GraphBuilder.build(
             source=self._source,
             renderer=self._renderer,
             sink=self._sink,
-            config=self._config,
-            analyzers=self._analyzers,
             filters=self._filters,
+            analyzers=self._analyzers,
             trackers=self._trackers,
-            transformations=self._transformations,
-            event_bus=self._event_bus,
-            profiler=self._profiler,
-            temporal_manager=self._temporal,
+            transforms=self._transformations,
         )
+
+    def _create_orchestrator(self) -> None:
+        """Crea o recrea el orquestador del pipeline."""
+        if self._use_graph:
+            from .graph.bridge.graph_builder import GraphBuilder
+            from .graph.scheduler.graph_scheduler import GraphScheduler
+
+            graph = GraphBuilder.build(
+                source=self._source,
+                renderer=self._renderer,
+                sink=self._sink,
+                filters=self._filters,
+                analyzers=self._analyzers,
+                trackers=self._trackers,
+                transforms=self._transformations,
+            )
+            self._orchestrator = GraphScheduler(
+                graph=graph,
+                config=self._config,
+                temporal_manager=self._temporal,
+                event_bus=self._event_bus,
+                profiler=self._profiler,
+                metrics=self._metrics,
+            )
+        else:
+            self._orchestrator = PipelineOrchestrator(
+                source=self._source,
+                renderer=self._renderer,
+                sink=self._sink,
+                config=self._config,
+                analyzers=self._analyzers,
+                filters=self._filters,
+                trackers=self._trackers,
+                transformations=self._transformations,
+                event_bus=self._event_bus,
+                profiler=self._profiler,
+                temporal_manager=self._temporal,
+                metrics=self._metrics,
+            )
 
     def start(self, blocking: bool = False) -> None:
         """Inicia el engine."""
@@ -492,6 +562,13 @@ class StreamEngine:
                     except Exception as e:
                         logger.error(f"Error al reconectar sink: {e}")
                         break
+
+                # Auto-rebuild graph when pipelines are mutated at runtime
+                if self._use_graph:
+                    current_v = self._combined_pipeline_version()
+                    if current_v != self._pipeline_version_snapshot:
+                        self._create_orchestrator()
+                        self._pipeline_version_snapshot = current_v
 
                 # Procesar frame usando el orquestador
                 if self._orchestrator:

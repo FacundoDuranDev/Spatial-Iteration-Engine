@@ -22,6 +22,12 @@ class TransformationPipeline:
             transforms: Lista de transformaciones
         """
         self._transforms: List[SpatialTransform] = list(transforms) if transforms else []
+        self._version: int = 0
+
+    @property
+    def version(self) -> int:
+        """Structural version counter, incremented on add/remove/clear mutations."""
+        return self._version
 
     @property
     def transforms(self) -> List[SpatialTransform]:
@@ -31,6 +37,7 @@ class TransformationPipeline:
     def add_transform(self, transform: SpatialTransform) -> None:
         """Agrega una transformación al pipeline."""
         self._transforms.append(transform)
+        self._version += 1
 
     def add(self, transform: SpatialTransform) -> None:
         """Agrega una transformación al pipeline (alias de add_transform)."""
@@ -39,10 +46,12 @@ class TransformationPipeline:
     def remove(self, transform: SpatialTransform) -> None:
         """Remueve una transformación del pipeline."""
         self._transforms.remove(transform)
+        self._version += 1
 
     def clear(self) -> None:
         """Limpia todas las transformaciones del pipeline."""
         self._transforms.clear()
+        self._version += 1
 
     def apply(self, frame: np.ndarray) -> np.ndarray:
         """

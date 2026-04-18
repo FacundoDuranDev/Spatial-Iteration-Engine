@@ -27,6 +27,12 @@ class TrackingPipeline:
         """
         self._trackers: List[ObjectTracker] = list(trackers) if trackers else []
         self._lock = threading.Lock()
+        self._version: int = 0
+
+    @property
+    def version(self) -> int:
+        """Structural version counter, incremented on add/remove/replace mutations."""
+        return self._version
 
     @property
     def trackers(self) -> List[ObjectTracker]:
@@ -42,36 +48,44 @@ class TrackingPipeline:
         """Agrega un tracker al pipeline."""
         with self._lock:
             self._trackers.append(tracker)
+            self._version += 1
 
     def extend(self, trackers: Iterable[ObjectTracker]) -> None:
         """Extiende el pipeline con múltiples trackers."""
         with self._lock:
             self._trackers.extend(trackers)
+            self._version += 1
 
     def insert(self, index: int, tracker: ObjectTracker) -> None:
         """Inserta un tracker en una posición específica."""
         with self._lock:
             self._trackers.insert(index, tracker)
+            self._version += 1
 
     def remove(self, tracker: ObjectTracker) -> None:
         """Remueve un tracker del pipeline."""
         with self._lock:
             self._trackers.remove(tracker)
+            self._version += 1
 
     def pop(self, index: int = -1) -> ObjectTracker:
         """Remueve y retorna un tracker del pipeline."""
         with self._lock:
-            return self._trackers.pop(index)
+            result = self._trackers.pop(index)
+            self._version += 1
+            return result
 
     def clear(self) -> None:
         """Limpia todos los trackers del pipeline."""
         with self._lock:
             self._trackers.clear()
+            self._version += 1
 
     def replace(self, trackers: Iterable[ObjectTracker]) -> None:
         """Reemplaza todos los trackers."""
         with self._lock:
             self._trackers = list(trackers)
+            self._version += 1
 
     def set_enabled(self, name: str, enabled: bool) -> bool:
         """
