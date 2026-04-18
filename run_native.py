@@ -219,7 +219,7 @@ def build_engine(tk_root, camera_index=2, width=640, height=480):
     cfg = EngineConfig(fps=30, enable_temporal=True, enable_events=True)
     engine = StreamEngine(
         source=source, renderer=renderer, sink=sink,
-        config=cfg, use_graph=True, enable_profiling=False,
+        config=cfg, enable_profiling=False,
     )
     try:
         engine.analyzer_pipeline.add(HandLandmarkAnalyzer(max_num_hands=2))

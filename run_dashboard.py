@@ -168,7 +168,7 @@ preview_sink = PreviewSink(window_name="Spatial-Iteration-Engine — f=fullscree
 sink = CompositeOutputSink([buffer_sink, preview_sink])
 engine = StreamEngine(
     source=source, renderer=renderer, sink=sink,
-    config=config, use_graph=True, enable_profiling=True,
+    config=config, enable_profiling=True,
 )
 fp = engine.filter_pipeline
 
