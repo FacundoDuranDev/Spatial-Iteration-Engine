@@ -2,6 +2,7 @@
 """MP3 FX Dashboard — integrated with StreamEngine pipeline. All 40 filters."""
 import sys
 import os
+import socket
 import threading
 import time as _time
 
@@ -11,6 +12,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "cpp", "build"))
 import cv2
 import numpy as np
 import gradio as gr
+
+try:
+    import qrcode as _qrcode
+except ImportError:
+    _qrcode = None
 
 print("Loading engine...", flush=True)
 from ascii_stream_engine.application.engine import StreamEngine
@@ -655,7 +661,38 @@ with gr.Blocks(title="Spatial-Iteration-Engine FX") as demo:
                              ["num_agents", "opacity"]), c, status)
 
 
+def _get_lan_ip():
+    """Return the outbound LAN IP without sending packets. Falls back to localhost."""
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(("8.8.8.8", 80))
+        return s.getsockname()[0]
+    except OSError:
+        return "127.0.0.1"
+    finally:
+        s.close()
+
+
+def print_banner(port=7860):
+    ip = _get_lan_ip()
+    url = f"http://{ip}:{port}"
+    bar = "═" * 60
+    print(f"\n{bar}\n  Spatial-Iteration-Engine — MP3 FX Dashboard\n{bar}")
+    print(f"  Open on this PC:     http://localhost:{port}")
+    print(f"  Open on phone (LAN): {url}")
+    print(f"  Video preview:       native cv2 window (f = fullscreen, ESC)")
+    print(f"{bar}")
+    if _qrcode is not None:
+        qr = _qrcode.QRCode(border=1)
+        qr.add_data(url)
+        qr.make(fit=True)
+        qr.print_ascii(invert=True)
+    else:
+        print("  (install `qrcode` to see a scannable QR here)")
+    print(f"{bar}\n", flush=True)
+
+
 print(f"Total filters available: {len(ALL_FILTERS)}", flush=True)
-print("Launching on http://localhost:7860 ...", flush=True)
 print("Click 'Start' to begin.", flush=True)
+print_banner(port=7860)
 demo.launch(server_name="0.0.0.0", server_port=7860)
