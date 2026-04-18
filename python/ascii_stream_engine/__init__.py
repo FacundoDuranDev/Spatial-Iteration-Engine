@@ -71,13 +71,6 @@ except ImportError:
     TRACKERS_AVAILABLE = False
 
 try:
-    from .adapters.controllers import ControllerManager, MidiController, OscController
-
-    CONTROLLERS_AVAILABLE = True
-except ImportError:
-    CONTROLLERS_AVAILABLE = False
-
-try:
     from .adapters.sensors import AudioSensor, BaseSensor, DepthSensor, SensorFusion
 
     SENSORS_AVAILABLE = True
@@ -157,15 +150,6 @@ if TRACKERS_AVAILABLE:
             "KalmanTracker",
             "MultiObjectTracker",
             "TrackingPipeline",
-        ]
-    )
-
-if CONTROLLERS_AVAILABLE:
-    __all__.extend(
-        [
-            "ControllerManager",
-            "MidiController",
-            "OscController",
         ]
     )
 

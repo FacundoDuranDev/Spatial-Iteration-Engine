@@ -48,7 +48,6 @@ class StreamEngine:
         filters: Optional[FilterPipeline] = None,
         trackers: Optional[TrackingPipeline] = None,
         transformations: Optional[TransformationPipeline] = None,
-        controllers: Optional[any] = None,  # ControllerManager
         sensors: Optional[list] = None,  # Lista de sensores
         enable_profiling: bool = False,
         use_graph: bool = True,
@@ -65,7 +64,6 @@ class StreamEngine:
             filters: Pipeline de filtros
             trackers: Pipeline de trackers
             transformations: Pipeline de transformaciones
-            controllers: Gestor de controladores
             sensors: Lista de sensores
             enable_profiling: Habilitar profiling de performance
             use_graph: Use graph-based execution model instead of PipelineOrchestrator
@@ -82,7 +80,6 @@ class StreamEngine:
         self._filters = filters or FilterPipeline()
         self._trackers = trackers
         self._transformations = transformations
-        self._controllers = controllers
         self._sensors = sensors or []
         self._use_graph = use_graph
         self._analysis_lock = threading.Lock()
@@ -120,9 +117,7 @@ class StreamEngine:
         self._orchestrator: Optional[PipelineOrchestrator] = None
         self._pipeline_version_snapshot: int = 0
 
-        # Configurar controladores y sensores con event bus
-        if self._controllers and self._event_bus:
-            self._controllers.set_mapping(self._controllers.get_mapping())
+        # Configurar sensores con event bus
         if self._sensors and self._event_bus:
             for sensor in self._sensors:
                 sensor.set_event_bus(self._event_bus)
@@ -360,13 +355,6 @@ class StreamEngine:
         if self._frame_processor:
             self._frame_processor.start()
 
-        # Conectar controladores si están disponibles
-        if self._controllers:
-            try:
-                self._controllers.connect_all()
-            except Exception as e:
-                logger.warning(f"Error conectando controladores: {e}")
-
         if blocking:
             self._run()
             return
@@ -380,13 +368,6 @@ class StreamEngine:
         # Detener procesamiento paralelo
         if self._frame_processor:
             self._frame_processor.stop()
-
-        # Desconectar controladores
-        if self._controllers:
-            try:
-                self._controllers.disconnect_all()
-            except Exception as e:
-                logger.warning(f"Error desconectando controladores: {e}")
 
         self._retry_manager.safe_close_source(self._source)
         self._retry_manager.safe_close_sink(self._sink)
