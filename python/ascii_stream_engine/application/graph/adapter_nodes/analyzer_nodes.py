@@ -32,25 +32,19 @@ def _build_analyzer_nodes() -> Dict[str, Type[AnalyzerNode]]:
     nodes: Dict[str, Type[AnalyzerNode]] = {}
     try:
         from ....adapters.perception import (
-            EmotionAnalyzer,
             FaceLandmarkAnalyzer,
             HandGestureAnalyzer,
             HandLandmarkAnalyzer,
-            ObjectDetectionAnalyzer,
             PoseLandmarkAnalyzer,
             PoseSkeletonAnalyzer,
-            SceneSegmentationAnalyzer,
         )
 
         for cls in [
-            EmotionAnalyzer,
             FaceLandmarkAnalyzer,
             HandGestureAnalyzer,
             HandLandmarkAnalyzer,
-            ObjectDetectionAnalyzer,
             PoseLandmarkAnalyzer,
             PoseSkeletonAnalyzer,
-            SceneSegmentationAnalyzer,
         ]:
             nodes[cls.__name__] = _make_analyzer_node(cls)
     except ImportError:

@@ -48,22 +48,12 @@ def main():
     print("=" * 70)
 
     # Import all analyzers
-    from ascii_stream_engine.adapters.perception.emotion import EmotionAnalyzer
     from ascii_stream_engine.adapters.perception.hand_gesture import HandGestureAnalyzer
-    from ascii_stream_engine.adapters.perception.object_detection import (
-        ObjectDetectionAnalyzer,
-    )
     from ascii_stream_engine.adapters.perception.pose_skeleton import PoseSkeletonAnalyzer
-    from ascii_stream_engine.adapters.perception.segmentation import (
-        SceneSegmentationAnalyzer,
-    )
 
     analyzers = [
         ("hand_gesture", HandGestureAnalyzer),
-        ("objects", ObjectDetectionAnalyzer),
-        ("emotion", EmotionAnalyzer),
         ("pose_skeleton", PoseSkeletonAnalyzer),
-        ("segmentation", SceneSegmentationAnalyzer),
     ]
 
     print("\nPer-Analyzer Latency (budget: 5ms each):")
