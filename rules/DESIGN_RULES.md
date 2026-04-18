@@ -31,14 +31,11 @@ Orden en el flujo:
 
 **Regla:** Respetar este orden en el orquestador. Percepción solo describe; filtros y renderer permanecen agnósticos al origen/concreto del sink.
 
-### Dual execution models
+### Execution model
 
-The pipeline order is enforced by two execution models:
+`StreamEngine` has a single execution backend: `GraphScheduler`, built from the DAG that `GraphBuilder.build()` derives from the `FilterPipeline`, `AnalyzerPipeline`, `TrackingPipeline`, and `TransformationPipeline` wrappers. The stage order above is preserved.
 
-- **PipelineOrchestrator** (default): Imperative loop executing stages in order. Uses FilterPipeline, AnalyzerPipeline, etc.
-- **GraphScheduler** (opt-in: `StreamEngine(use_graph=True)`): DAG of typed nodes executed in topological order. Same `process_frame()` API. GraphBuilder constructs the graph from pipeline objects following the same stage order.
-
-Both produce identical output for the same input (byte-level parity verified by tests). New components can be written as either adapters (works with both) or native graph nodes (graph-only).
+New components can be written either as adapters (Filter / Analyzer / Renderer / OutputSink), which `GraphBuilder` wraps as nodes automatically, or as native `BaseNode` subclasses for full graph control (fan-out, composite, fan-in). See `rules/GRAPH_ARCHITECTURE.md`.
 
 ---
 

@@ -20,12 +20,12 @@ Este proyecto es un motor de procesamiento audiovisual en tiempo real que permit
 ## Núcleo (canónico)
 - python/ascii_stream_engine
   - domain (tipos, eventos, config)
-  - application (engine, pipeline, orquestación)
-    - application/graph (graph-based execution model, opt-in via `use_graph=True`)
+  - application (engine, pipeline, graph)
+    - application/graph (graph-based execution model — StreamEngine's sole execution backend)
       - graph/core (BaseNode, Graph, Connection, PortType, InputPort, OutputPort)
       - graph/nodes (ProcessorNode, AnalyzerNode, RendererNode, SourceNode, OutputNode, TrackerNode, TransformNode)
       - graph/adapter_nodes (factory-generated node wrappers for existing adapters)
-      - graph/scheduler (GraphScheduler — topological execution, same API as PipelineOrchestrator)
+      - graph/scheduler (GraphScheduler — topological execution, process_frame API)
       - graph/bridge (GraphBuilder — converts pipeline objects to Graph; adapter_registry)
   - infrastructure (event bus, logging, plugins)
   - ports (interfaces de sensores, filtros, outputs)
@@ -71,7 +71,7 @@ El núcleo es el motor de pipeline en python/ascii_stream_engine/application que
 
 ## 7. Graph Execution Model (`application/graph/`)
 
-Opt-in alternative execution model: `StreamEngine(use_graph=True)`. The default `PipelineOrchestrator` remains unchanged.
+StreamEngine's sole execution backend. Every `StreamEngine(...)` call builds a graph via `GraphBuilder.build()` and runs it through `GraphScheduler`. See `rules/GRAPH_ARCHITECTURE.md` for the full guide.
 
 ### Core (`graph/core/`)
 - **PortType** enum: `VIDEO_FRAME`, `ANALYSIS_DATA`, `RENDER_FRAME`, `TRACKING_DATA`, `CONTROL_SIGNAL`, `MASK`, `CONFIG`
@@ -95,7 +95,7 @@ Opt-in alternative execution model: `StreamEngine(use_graph=True)`. The default 
 Factory-generated `ProcessorNode`/`AnalyzerNode`/etc. subclasses that wrap existing adapters. Each copies temporal declarations from the adapter class and delegates `process()` to the adapter's native method (`apply`, `analyze`, etc.).
 
 ### Scheduler (`graph/scheduler/`)
-**GraphScheduler** executes nodes in topological order. Same `process_frame(frame, timestamp) -> (bool, error_msg)` API as `PipelineOrchestrator`. Features:
+**GraphScheduler** executes nodes in topological order. `process_frame(frame, timestamp) -> (bool, error_msg)` is the only entrypoint. Features:
 - FilterContext injection for ProcessorNodes (temporal access)
 - TemporalManager integration (configured from node declarations)
 - Error isolation: processor/analyzer failures are non-fatal (passthrough), renderer/output failures are fatal

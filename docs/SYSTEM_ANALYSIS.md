@@ -17,13 +17,14 @@
    ├─ Control de FPS: target = 1.0 / max(1, int(cfg.fps)) (línea 496)
    └─ time.sleep(sleep) para mantener FPS
    ↓
-3. PipelineOrchestrator.process_frame()
-   ├─ Fase 1: Captura
-   ├─ Fase 2: Análisis (IA - perception_cpp) ⚠️ COSTOSO
-   ├─ Fase 3: Transformaciones
-   ├─ Fase 4: Filtrado (filtros de imagen)
-   ├─ Fase 5: Renderizado (LandmarksOverlayRenderer)
-   └─ Fase 6: Salida (NotebookPreviewSink)
+3. GraphScheduler.process_frame()  (el DAG que arma GraphBuilder)
+   ├─ SourceNode
+   ├─ AnalyzerNode(s)  (IA - perception_cpp) ⚠️ COSTOSO
+   ├─ TrackerNode(s)
+   ├─ TransformNode(s)
+   ├─ ProcessorNode(s) (filtros de imagen)
+   ├─ RendererNode     (LandmarksOverlayRenderer)
+   └─ OutputNode       (NotebookPreviewSink)
 ```
 
 ---
