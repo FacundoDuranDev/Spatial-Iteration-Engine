@@ -1,11 +1,11 @@
-"""Gradio + FastRTC dashboard for the Spatial-Iteration-Engine.
+"""LEGACY Gradio + FastRTC dashboard.
 
-Real-time webcam video processing with Max Payne 3-style visual effects.
-Uses the FastRTC WebRTC component inside a custom Gradio Blocks layout for
-low-latency streaming (~50-100ms) with full control panels.
+Kept for reference only. This module has its own filter state that is NOT
+connected to StreamEngine, so its controls do not affect the real pipeline.
+Use ``run_dashboard.py`` at the repo root instead.
 
-Usage:
-    from ascii_stream_engine.presentation.gradio_app import build_gradio_dashboard
+If you really need to load it:
+    from ascii_stream_engine.presentation.legacy.gradio_app import build_gradio_dashboard
     demo = build_gradio_dashboard()
     demo.launch()
 """
@@ -20,7 +20,7 @@ except ImportError:
         "Gradio is required for the dashboard. Install with: pip install gradio>=4.0"
     )
 
-from ..adapters.processors.filters import (
+from ...adapters.processors.filters import (
     ALL_FILTERS,
     BloomCinematicFilter,
     ChromaticAberrationFilter,
@@ -37,8 +37,8 @@ from ..adapters.processors.filters import (
     VignetteFilter,
     deserialize_filter,
 )
-from ..domain.config import EngineConfig
-from .gradio_helpers import load_mp3_presets, order_mp3_filters
+from ...domain.config import EngineConfig
+from ..gradio_helpers import load_mp3_presets, order_mp3_filters
 
 
 # ---------------------------------------------------------------------------
