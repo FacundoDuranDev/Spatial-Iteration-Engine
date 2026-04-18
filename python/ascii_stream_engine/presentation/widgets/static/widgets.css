@@ -1,0 +1,57 @@
+/* Spatial-Iteration-Engine — shared widget styles. */
+
+.sie-angle-dial {
+  display: inline-block;
+  user-select: none;
+  touch-action: none;
+  cursor: grab;
+  padding: 8px 12px;
+}
+
+.sie-angle-dial:active {
+  cursor: grabbing;
+}
+
+.sie-widget-label {
+  font-size: 0.82rem;
+  opacity: 0.75;
+  text-align: center;
+  margin-bottom: 4px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sie-dial-svg {
+  width: 140px;
+  height: 140px;
+  max-width: 100%;
+  display: block;
+  margin: 0 auto;
+}
+
+.sie-dial-ring {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  opacity: 0.25;
+}
+
+.sie-dial-needle {
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  transform-origin: 60px 60px;
+  transition: transform 0.05s linear;
+}
+
+.sie-dial-hub {
+  fill: currentColor;
+  opacity: 0.8;
+}
+
+.sie-dial-readout {
+  fill: currentColor;
+  font-size: 14px;
+  font-family: ui-monospace, monospace;
+  opacity: 0.9;
+}
