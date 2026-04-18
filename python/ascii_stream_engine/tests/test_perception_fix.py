@@ -133,8 +133,9 @@ class TestHandLandmarkAnalyzer:
         assert result == {}
 
     def test_graceful_fallback_no_mediapipe(self):
-        """If mediapipe is not installed, should return empty dict (not crash)."""
+        """If mediapipe is not installed, should fallback to C++ or return empty."""
         from ascii_stream_engine.adapters.perception.hands import (
+            _CPP_AVAILABLE,
             _MP_AVAILABLE,
             HandLandmarkAnalyzer,
         )
@@ -143,7 +144,15 @@ class TestHandLandmarkAnalyzer:
             pytest.skip("mediapipe IS available, can't test fallback")
         analyzer = HandLandmarkAnalyzer()
         result = analyzer.analyze(_synthetic_frame(), _make_config())
-        assert result == {}
+        if _CPP_AVAILABLE:
+            # C++ fallback produces left/right keys with normalized coords
+            assert "left" in result or "right" in result
+            for key in ("left", "right"):
+                if key in result and result[key].size > 0:
+                    assert result[key].max() <= 1.0
+                    assert result[key].min() >= 0.0
+        else:
+            assert result == {}
 
     @pytest.mark.slow
     def test_mediapipe_output_format(self):
