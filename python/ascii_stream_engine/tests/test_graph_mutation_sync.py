@@ -216,7 +216,6 @@ class TestGraphAutoRebuild:
             config=EngineConfig(),
             filters=fp,
             analyzers=ap,
-            use_graph=True,
         )
 
     def test_combined_pipeline_version(self):
@@ -291,27 +290,8 @@ class TestGraphAutoRebuild:
         current_v = engine._combined_pipeline_version()
         assert current_v == engine._pipeline_version_snapshot
 
-    def test_use_graph_is_default(self):
-        """Verify use_graph defaults to True."""
-        import inspect
-
-        sig = inspect.signature(StreamEngine.__init__)
-        assert sig.parameters["use_graph"].default is True
-
     def test_get_node_timings_returns_dict(self):
         engine = self._make_engine(filters=[DummyFilter()])
         engine._create_orchestrator()
         timings = engine.get_node_timings()
         assert isinstance(timings, dict)
-
-    def test_get_node_timings_empty_without_graph(self):
-        engine = StreamEngine(
-            source=DummySource(),
-            renderer=DummyRenderer(),
-            sink=DummySink(),
-            config=EngineConfig(),
-            use_graph=False,
-        )
-        engine._create_orchestrator()
-        timings = engine.get_node_timings()
-        assert timings == {}

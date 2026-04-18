@@ -295,10 +295,11 @@ class GraphScheduler:
             except Exception as e:
                 node_duration = time.perf_counter() - node_start
                 self._node_timings[node.name] = node_duration
+                error_category = _phase_for_node(node) or node.name
                 # Fatal for renderer and output nodes
                 if isinstance(node, (RendererNode, OutputNode)):
                     if self._metrics:
-                        self._metrics.record_error(node.name)
+                        self._metrics.record_error(error_category)
                     _end_current_phase()
                     if self._profiler:
                         self._profiler.end_frame()
@@ -306,7 +307,7 @@ class GraphScheduler:
                 # Non-fatal: log and passthrough
                 logger.warning("Node %s failed: %s", node.name, e)
                 if self._metrics:
-                    self._metrics.record_error(node.name)
+                    self._metrics.record_error(error_category)
                 self._passthrough_disabled(node)
                 continue
 
@@ -444,7 +445,7 @@ class GraphScheduler:
                 self._node_timings[node.name] = time.perf_counter() - node_start
                 logger.warning("Node %s failed: %s", node.name, e)
                 if self._metrics:
-                    self._metrics.record_error(node.name)
+                    self._metrics.record_error(_phase_for_node(node) or node.name)
                 self._passthrough_disabled(node)
                 return
             self._node_timings[node.name] = time.perf_counter() - node_start
@@ -485,7 +486,7 @@ class GraphScheduler:
                     self._node_timings[node.name] = 0.0
                     logger.warning("Node %s failed: %s", node.name, e)
                     if self._metrics:
-                        self._metrics.record_error(node.name)
+                        self._metrics.record_error(_phase_for_node(node) or node.name)
                     self._passthrough_disabled(node)
 
     def _resolve_inputs(

@@ -1,11 +1,10 @@
-"""Integration tests: StreamEngine with use_graph=True produces frames."""
+"""Integration tests for StreamEngine's GraphScheduler pipeline."""
 
 import numpy as np
-import pytest
 
+from ascii_stream_engine.adapters.processors.filters import BrightnessFilter, InvertFilter
 from ascii_stream_engine.application.engine import StreamEngine
 from ascii_stream_engine.application.pipeline import FilterPipeline
-from ascii_stream_engine.adapters.processors.filters import BrightnessFilter, InvertFilter
 from ascii_stream_engine.domain.config import EngineConfig
 from ascii_stream_engine.domain.types import RenderFrame
 
@@ -55,14 +54,13 @@ class DummySink:
 
 
 class TestGraphIntegration:
-    def test_use_graph_produces_frames(self):
-        """StreamEngine(use_graph=True) produces frames through the graph."""
+    def test_graph_produces_frames(self):
+        """StreamEngine produces frames through the GraphScheduler."""
         sink = DummySink()
         engine = StreamEngine(
             source=DummySource(),
             renderer=DummyRenderer(),
             sink=sink,
-            use_graph=True,
         )
         engine._create_orchestrator()
 
@@ -73,8 +71,8 @@ class TestGraphIntegration:
         assert err is None
         assert len(sink.frames) == 1
 
-    def test_use_graph_with_filters(self):
-        """Graph mode with filters processes frames correctly."""
+    def test_graph_with_filters(self):
+        """Graph with filters processes frames correctly."""
         sink = DummySink()
         renderer = DummyRenderer()
         pipeline = FilterPipeline([BrightnessFilter()])
@@ -84,7 +82,6 @@ class TestGraphIntegration:
             renderer=renderer,
             sink=sink,
             filters=pipeline,
-            use_graph=True,
         )
         engine._create_orchestrator()
 
@@ -93,11 +90,10 @@ class TestGraphIntegration:
 
         assert success is True
         assert len(sink.frames) == 1
-        # Renderer received a processed frame
         assert renderer.last_frame is not None
 
-    def test_use_graph_with_multiple_filters(self):
-        """Graph mode chains multiple filters correctly."""
+    def test_graph_with_multiple_filters(self):
+        """Graph chains multiple filters correctly."""
         sink = DummySink()
         renderer = DummyRenderer()
         pipeline = FilterPipeline([BrightnessFilter(), InvertFilter()])
@@ -107,7 +103,6 @@ class TestGraphIntegration:
             renderer=renderer,
             sink=sink,
             filters=pipeline,
-            use_graph=True,
         )
         engine._create_orchestrator()
 
@@ -115,81 +110,24 @@ class TestGraphIntegration:
         success, _ = engine._orchestrator.process_frame(frame, 1.0)
         assert success is True
 
-    def test_parity_with_pipeline_orchestrator(self):
-        """Graph mode produces same output structure as PipelineOrchestrator mode."""
-        sink_graph = DummySink()
-        renderer_graph = DummyRenderer()
-        sink_pipeline = DummySink()
-        renderer_pipeline = DummyRenderer()
-
-        frame = np.ones((10, 10, 3), dtype=np.uint8) * 100
-        pipeline = FilterPipeline([BrightnessFilter()])
-
-        # Graph mode
-        engine_graph = StreamEngine(
-            source=DummySource(),
-            renderer=renderer_graph,
-            sink=sink_graph,
-            filters=pipeline,
-            use_graph=True,
-        )
-        engine_graph._create_orchestrator()
-        success_g, _ = engine_graph._orchestrator.process_frame(frame.copy(), 1.0)
-
-        # Pipeline mode (need a fresh pipeline since FilterPipeline may have state)
-        pipeline2 = FilterPipeline([BrightnessFilter()])
-        engine_pipeline = StreamEngine(
-            source=DummySource(),
-            renderer=renderer_pipeline,
-            sink=sink_pipeline,
-            filters=pipeline2,
-            use_graph=False,
-        )
-        engine_pipeline._create_orchestrator()
-        success_p, _ = engine_pipeline._orchestrator.process_frame(frame.copy(), 1.0)
-
-        assert success_g is True
-        assert success_p is True
-        assert len(sink_graph.frames) == 1
-        assert len(sink_pipeline.frames) == 1
-
-        # Both should produce RenderFrame objects
-        assert isinstance(sink_graph.frames[0], RenderFrame)
-        assert isinstance(sink_pipeline.frames[0], RenderFrame)
-
-    def test_use_graph_false_unchanged(self):
-        """use_graph=False still uses PipelineOrchestrator."""
-        from ascii_stream_engine.application.orchestration import PipelineOrchestrator
-
-        engine = StreamEngine(
-            source=DummySource(),
-            renderer=DummyRenderer(),
-            sink=DummySink(),
-            use_graph=False,
-        )
-        engine._create_orchestrator()
-        assert isinstance(engine._orchestrator, PipelineOrchestrator)
-
-    def test_use_graph_true_uses_scheduler(self):
-        """use_graph=True creates a GraphScheduler."""
+    def test_engine_uses_graph_scheduler(self):
+        """_create_orchestrator always builds a GraphScheduler."""
         from ascii_stream_engine.application.graph.scheduler.graph_scheduler import GraphScheduler
 
         engine = StreamEngine(
             source=DummySource(),
             renderer=DummyRenderer(),
             sink=DummySink(),
-            use_graph=True,
         )
         engine._create_orchestrator()
         assert isinstance(engine._orchestrator, GraphScheduler)
 
     def test_graph_get_last_analysis(self):
-        """Graph mode's get_last_analysis works like pipeline mode."""
+        """Graph's get_last_analysis returns a dict with a timestamp."""
         engine = StreamEngine(
             source=DummySource(),
             renderer=DummyRenderer(),
             sink=DummySink(),
-            use_graph=True,
         )
         engine._create_orchestrator()
 
@@ -201,19 +139,18 @@ class TestGraphIntegration:
         assert "timestamp" in analysis
 
     def test_graph_update_config(self):
-        """Graph mode's update_config works."""
+        """Graph's update_config propagates the new config."""
         engine = StreamEngine(
             source=DummySource(),
             renderer=DummyRenderer(),
             sink=DummySink(),
-            use_graph=True,
         )
         engine._create_orchestrator()
         engine._orchestrator.update_config(EngineConfig(fps=60))
         assert engine._orchestrator._config.fps == 60
 
     def test_graph_with_temporal(self):
-        """Graph mode with temporal manager enabled."""
+        """Graph honors EngineConfig(enable_temporal=True)."""
         sink = DummySink()
         config = EngineConfig(enable_temporal=True)
         pipeline = FilterPipeline([BrightnessFilter()])
@@ -224,7 +161,6 @@ class TestGraphIntegration:
             sink=sink,
             config=config,
             filters=pipeline,
-            use_graph=True,
         )
         engine._create_orchestrator()
 
@@ -291,7 +227,6 @@ class TestGraphComplexPipelines:
         assert err is None
         assert len(sink.frames) == 1
 
-        # Analysis should contain both analyzer and tracking data
         analysis = scheduler.get_last_analysis()
         assert "dummy_analyzer" in analysis
         assert analysis["dummy_analyzer"]["detected"] is True
@@ -346,7 +281,6 @@ class TestGraphComplexPipelines:
 
         assert success is True
         assert len(sink.frames) == 1
-        # Transform doubled pixels from 50->100, then brightness filter applied
         assert renderer.last_frame is not None
 
     def test_multi_frame_state_isolation(self):
@@ -373,7 +307,6 @@ class TestGraphComplexPipelines:
             assert err is None
 
         assert len(sink.frames) == 5
-        # Each analysis timestamp should match the last frame
         analysis = scheduler.get_last_analysis()
         assert analysis["timestamp"] == 4.0
 
@@ -433,122 +366,6 @@ class TestGraphComplexPipelines:
         assert len(sink.frames) == 1
         assert renderer.last_frame is not None
 
-    def test_byte_level_parity_brightness(self):
-        """Graph and pipeline produce identical pixel values for BrightnessFilter."""
-        sink_graph = DummySink()
-        renderer_graph = DummyRenderer()
-        sink_pipe = DummySink()
-        renderer_pipe = DummyRenderer()
-
-        frame = np.ones((10, 10, 3), dtype=np.uint8) * 100
-
-        # Graph mode
-        engine_graph = StreamEngine(
-            source=DummySource(),
-            renderer=renderer_graph,
-            sink=sink_graph,
-            filters=FilterPipeline([BrightnessFilter()]),
-            use_graph=True,
-        )
-        engine_graph._create_orchestrator()
-        engine_graph._orchestrator.process_frame(frame.copy(), 1.0)
-
-        # Pipeline mode
-        engine_pipe = StreamEngine(
-            source=DummySource(),
-            renderer=renderer_pipe,
-            sink=sink_pipe,
-            filters=FilterPipeline([BrightnessFilter()]),
-            use_graph=False,
-        )
-        engine_pipe._create_orchestrator()
-        engine_pipe._orchestrator.process_frame(frame.copy(), 1.0)
-
-        # Both renderers should have received the same processed frame
-        assert renderer_graph.last_frame is not None
-        assert renderer_pipe.last_frame is not None
-        np.testing.assert_array_equal(
-            renderer_graph.last_frame,
-            renderer_pipe.last_frame,
-        )
-
-    def test_byte_level_parity_chained_filters(self):
-        """Graph and pipeline produce identical results for chained Brightness + Invert."""
-        sink_graph = DummySink()
-        renderer_graph = DummyRenderer()
-        sink_pipe = DummySink()
-        renderer_pipe = DummyRenderer()
-
-        frame = np.ones((10, 10, 3), dtype=np.uint8) * 80
-
-        engine_graph = StreamEngine(
-            source=DummySource(),
-            renderer=renderer_graph,
-            sink=sink_graph,
-            filters=FilterPipeline([BrightnessFilter(), InvertFilter()]),
-            use_graph=True,
-        )
-        engine_graph._create_orchestrator()
-        engine_graph._orchestrator.process_frame(frame.copy(), 1.0)
-
-        engine_pipe = StreamEngine(
-            source=DummySource(),
-            renderer=renderer_pipe,
-            sink=sink_pipe,
-            filters=FilterPipeline([BrightnessFilter(), InvertFilter()]),
-            use_graph=False,
-        )
-        engine_pipe._create_orchestrator()
-        engine_pipe._orchestrator.process_frame(frame.copy(), 1.0)
-
-        np.testing.assert_array_equal(
-            renderer_graph.last_frame,
-            renderer_pipe.last_frame,
-        )
-
-    def test_disabled_filter_parity(self):
-        """Disabled filter in graph produces same result as pipeline (passthrough)."""
-        sink_graph = DummySink()
-        renderer_graph = DummyRenderer()
-        sink_pipe = DummySink()
-        renderer_pipe = DummyRenderer()
-
-        # BrightnessFilter starts enabled, InvertFilter disabled
-        bf_graph = BrightnessFilter()
-        inv_graph = InvertFilter()
-        inv_graph.enabled = False
-
-        bf_pipe = BrightnessFilter()
-        inv_pipe = InvertFilter()
-        inv_pipe.enabled = False
-
-        frame = np.ones((10, 10, 3), dtype=np.uint8) * 120
-
-        engine_graph = StreamEngine(
-            source=DummySource(),
-            renderer=renderer_graph,
-            sink=sink_graph,
-            filters=FilterPipeline([bf_graph, inv_graph]),
-            use_graph=True,
-        )
-        engine_graph._create_orchestrator()
-        engine_graph._orchestrator.process_frame(frame.copy(), 1.0)
-
-        engine_pipe = StreamEngine(
-            source=DummySource(),
-            renderer=renderer_pipe,
-            sink=sink_pipe,
-            filters=FilterPipeline([bf_pipe, inv_pipe]),
-            use_graph=False,
-        )
-        engine_pipe._create_orchestrator()
-        engine_pipe._orchestrator.process_frame(frame.copy(), 1.0)
-
-        np.testing.assert_array_equal(
-            renderer_graph.last_frame,
-            renderer_pipe.last_frame,
-        )
-
     def test_graph_setup_teardown(self):
         """GraphScheduler setup/teardown lifecycle works via StreamEngine."""
         from ascii_stream_engine.application.graph.scheduler.graph_scheduler import GraphScheduler
@@ -558,12 +375,10 @@ class TestGraphComplexPipelines:
             source=DummySource(),
             renderer=DummyRenderer(),
             sink=sink,
-            use_graph=True,
         )
         engine._create_orchestrator()
         assert isinstance(engine._orchestrator, GraphScheduler)
 
-        # setup/teardown should not crash
         engine._orchestrator.setup()
         frame = np.ones((10, 10, 3), dtype=np.uint8) * 100
         success, _ = engine._orchestrator.process_frame(frame, 1.0)
