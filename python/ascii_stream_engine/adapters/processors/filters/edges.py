@@ -18,4 +18,5 @@ class EdgeFilter(BaseFilter):
             gray = get_cached_conversion(frame, cv2.COLOR_BGR2GRAY)
         else:
             gray = frame
-        return cv2.Canny(gray, self._low, self._high)
+        edges = cv2.Canny(gray, self._low, self._high)
+        return cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)

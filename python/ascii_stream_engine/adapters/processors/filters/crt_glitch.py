@@ -109,12 +109,16 @@ class CRTGlitchFilter(BaseFilter):
             # Normalize: typical motion range 0-20 pixels/frame
             motion = float(np.mean(mag)) / 10.0
 
-        # Boost from hand speed if hands detected
+        # Boost from hand motion if hands detected (compute from landmark spread)
         hands = analysis.get("hands") if hasattr(analysis, "get") else None
         if hands and isinstance(hands, dict):
-            speed = hands.get("speed", 0.0)
-            if isinstance(speed, (int, float)):
-                motion += float(speed) * 0.5
+            for key in ("left", "right"):
+                pts = hands.get(key, None)
+                if pts is not None and hasattr(pts, "__len__") and len(pts) > 0:
+                    arr = np.asarray(pts)
+                    if arr.ndim == 2 and arr.shape[0] > 1:
+                        spread = float(np.std(arr))
+                        motion += spread * 2.0
 
         return min(1.0, max(0.0, motion))
 
@@ -209,7 +213,5 @@ class CRTGlitchFilter(BaseFilter):
         scale = 1.0 + k * r_norm**2
         map_x = (xv / scale + cx).astype(np.float32)
         map_y = (yv / scale + cy).astype(np.float32)
-        result = cv2.remap(
-            frame, map_x, map_y, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT
-        )
+        result = cv2.remap(frame, map_x, map_y, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
         return result

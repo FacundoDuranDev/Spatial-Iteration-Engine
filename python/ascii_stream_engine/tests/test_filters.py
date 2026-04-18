@@ -57,7 +57,7 @@ class TestCv2Filters(unittest.TestCase):
         from ascii_stream_engine.adapters.processors import EdgeFilter
 
         filt = EdgeFilter()
-        frame = np.zeros((10, 10), dtype=np.uint8)
+        frame = np.zeros((10, 10, 3), dtype=np.uint8)
         result = filt.apply(frame, DummyConfig())
         self.assertEqual(result.shape, frame.shape)
 

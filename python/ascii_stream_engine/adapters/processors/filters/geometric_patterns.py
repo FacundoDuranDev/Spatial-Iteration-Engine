@@ -268,18 +268,22 @@ class GeometricPatternFilter(BaseFilter):
         # Face landmarks (normalized 0-1)
         face = analysis.get("face") if hasattr(analysis, "get") else None
         if face and isinstance(face, dict):
-            landmarks = face.get("landmarks", [])
-            for lm in landmarks:
-                if isinstance(lm, (list, tuple)) and len(lm) >= 2:
-                    points.append([int(lm[0] * w), int(lm[1] * h)])
+            face_pts = face.get("points", None)
+            if face_pts is not None and hasattr(face_pts, "__len__") and len(face_pts) > 0:
+                arr = np.asarray(face_pts)
+                if arr.ndim == 2 and arr.shape[1] >= 2:
+                    for lm in arr:
+                        points.append([int(lm[0] * w), int(lm[1] * h)])
 
-        # Hand landmarks
+        # Hand landmarks (left/right arrays of shape (21, 2))
         hands = analysis.get("hands") if hasattr(analysis, "get") else None
         if hands and isinstance(hands, dict):
-            for hand in hands.get("landmarks", []):
-                if isinstance(hand, (list, tuple)):
-                    for lm in hand:
-                        if isinstance(lm, (list, tuple)) and len(lm) >= 2:
+            for key in ("left", "right"):
+                hand_pts = hands.get(key, None)
+                if hand_pts is not None and hasattr(hand_pts, "__len__") and len(hand_pts) > 0:
+                    arr = np.asarray(hand_pts)
+                    if arr.ndim == 2 and arr.shape[1] >= 2:
+                        for lm in arr:
                             points.append([int(lm[0] * w), int(lm[1] * h)])
 
         return np.array(points) if points else np.array([]).reshape(0, 2)

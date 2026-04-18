@@ -71,7 +71,7 @@ class OpticalFlowParticlesFilter(BaseFilter):
         if flow is None:
             # Fallback: compute privately (no TemporalManager available)
             gray = get_cached_conversion(frame, cv2.COLOR_BGR2GRAY)
-            if self._prev_gray is None:
+            if self._prev_gray is None or self._prev_gray.shape[:2] != (h, w):
                 self._prev_gray = gray.copy()
                 return frame
             flow = cv2.calcOpticalFlowFarneback(
