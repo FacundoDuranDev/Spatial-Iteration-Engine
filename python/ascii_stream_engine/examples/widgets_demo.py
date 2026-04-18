@@ -30,8 +30,13 @@ def build() -> gr.Blocks:
     body, .gradio-container { background: #05060b !important; }
     .gradio-container { max-width: 440px !important; }
     """
-    with gr.Blocks(js=bundle_js(), css=bundle_css() + extra_css,
-                   title="SIE widget kit") as demo:
+    # `head=` on Blocks is the official way to inject <style>/<script>
+    # that Gradio will NOT sanitize (unlike gr.HTML content).
+    head = (
+        f"<style>{bundle_css()}</style>\n"
+        f"<script>{bundle_js()}</script>"
+    )
+    with gr.Blocks(css=extra_css, head=head, title="SIE widget kit") as demo:
         gr.HTML("""
           <div class="sie-root" style="padding: 16px;">
             <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">

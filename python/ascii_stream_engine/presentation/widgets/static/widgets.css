@@ -5,6 +5,19 @@
    Gradio's built-in stylesheet. Scope everything to .sie-root.
    ============================================================ */
 
+/* Visually-hidden helper: the backing gr.Number / gr.Checkbox lives in
+   the DOM so JS can read / write its <input>, but takes zero visual space. */
+.sie-hidden-host {
+  position: absolute !important;
+  left: -9999px !important;
+  top: auto !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
+
 .sie-root {
   /* ---- Palette ---- */
   --sie-bg:            #05060b;

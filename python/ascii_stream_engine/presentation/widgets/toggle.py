@@ -48,7 +48,8 @@ def toggle(
     checkbox = gr.Checkbox(
         value=value,
         elem_id=f"{elem_id}-value",
-        visible=False,
+        elem_classes=["sie-hidden-host"],
         interactive=True,
+        show_label=False,
     )
     return html_component, checkbox

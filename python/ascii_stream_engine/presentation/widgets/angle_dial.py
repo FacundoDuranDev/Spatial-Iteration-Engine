@@ -44,11 +44,14 @@ def angle_dial(
     """
 
     dial_html = gr.HTML(html, elem_id=elem_id)
+    # Kept in DOM (not visible=False) so the JS can read/write its <input>.
+    # Visually hidden via the sie-hidden-host CSS class.
     value_component = gr.Number(
         value=value,
         elem_id=f"{elem_id}-value",
-        visible=False,
+        elem_classes=["sie-hidden-host"],
         precision=2,
         interactive=True,
+        show_label=False,
     )
     return dial_html, value_component

@@ -40,8 +40,9 @@ def stepper(
     value_component = gr.Number(
         value=value,
         elem_id=f"{elem_id}-value",
-        visible=False,
+        elem_classes=["sie-hidden-host"],
         precision=0,
         interactive=True,
+        show_label=False,
     )
     return html_component, value_component
