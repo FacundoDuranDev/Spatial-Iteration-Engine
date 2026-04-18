@@ -3,6 +3,7 @@
 import logging
 from typing import Dict, List, Optional
 
+# EventBus is cross-cutting infrastructure — adapters may depend on it per ARCHITECTURE.md
 from ...infrastructure.event_bus import EventBus
 from .base import BaseController
 from .control_mapping import ControlMapping

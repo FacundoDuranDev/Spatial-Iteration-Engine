@@ -218,7 +218,6 @@ class NdiOutputSink:
                 | OutputCapability.HIGH_QUALITY
                 | OutputCapability.ADAPTIVE_QUALITY
             ),
-
             supported_qualities=[
                 OutputQuality.LOW,
                 OutputQuality.MEDIUM,

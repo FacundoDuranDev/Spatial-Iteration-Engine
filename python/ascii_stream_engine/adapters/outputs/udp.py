@@ -143,7 +143,6 @@ class FfmpegUdpOutput:
 
         return OutputCapabilities(
             capabilities=capabilities,
-
             supported_qualities=[
                 OutputQuality.LOW,
                 OutputQuality.MEDIUM,

@@ -70,7 +70,6 @@ class AsciiFrameRecorder:
         """
         return OutputCapabilities(
             capabilities=OutputCapability.RECORDING,
-
             supported_qualities=[OutputQuality.LOW],  # Solo texto ASCII
             max_clients=1,  # Solo un archivo a la vez
             protocol_name="File (ASCII)",

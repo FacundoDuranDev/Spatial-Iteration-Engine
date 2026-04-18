@@ -198,7 +198,6 @@ class VideoRecorderSink:
                 | OutputCapability.HIGH_QUALITY
                 | OutputCapability.CUSTOM_BITRATE
             ),
-
             supported_qualities=[
                 OutputQuality.LOW,
                 OutputQuality.MEDIUM,

@@ -325,7 +325,6 @@ class WebRTCOutput:
                 | OutputCapability.ADAPTIVE_QUALITY
                 | OutputCapability.MULTI_CLIENT
             ),
-
             supported_qualities=[
                 OutputQuality.LOW,
                 OutputQuality.MEDIUM,

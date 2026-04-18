@@ -247,7 +247,6 @@ class OscOutputSink:
                 | OutputCapability.LOW_LATENCY
                 | OutputCapability.ULTRA_LOW_LATENCY
             ),
-
             supported_qualities=[OutputQuality.LOW, OutputQuality.MEDIUM],
             max_clients=None,  # UDP can broadcast
             protocol_name="OSC/UDP",

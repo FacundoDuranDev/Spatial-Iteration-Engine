@@ -75,7 +75,6 @@ class NotebookPreviewSink:
     def get_capabilities(self) -> OutputCapabilities:
         return OutputCapabilities(
             capabilities=OutputCapability.STREAMING | OutputCapability.LOW_LATENCY,
-
             supported_qualities=[OutputQuality.LOW, OutputQuality.MEDIUM, OutputQuality.HIGH],
             max_clients=1,
             min_bitrate=None,

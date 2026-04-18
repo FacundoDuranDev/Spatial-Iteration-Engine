@@ -180,7 +180,6 @@ class FfmpegRtspSink:
                 | OutputCapability.CUSTOM_BITRATE
                 | OutputCapability.MULTI_CLIENT
             ),
-
             supported_qualities=[
                 OutputQuality.LOW,
                 OutputQuality.MEDIUM,
