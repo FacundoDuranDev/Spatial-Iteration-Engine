@@ -1,5 +1,7 @@
 #!/usr/bin/env python
-"""Minimal demo of the custom widget factory — no engine attached.
+"""Minimal demo of the Spatial-Iteration-Engine widget kit — no engine
+attached. Renders the four core widgets (angle dial, slider, stepper,
+toggle) inside a phone-sized frame matching ``design/ui_kits/mcp_v2``.
 
 Run: ``python python/ascii_stream_engine/examples/widgets_demo.py``
 Then open http://localhost:7861 (or the LAN URL printed in console).
@@ -17,36 +19,67 @@ from ascii_stream_engine.presentation.widgets import (
     angle_dial,
     bundle_css,
     bundle_js,
+    slider_row,
+    stepper,
+    toggle,
 )
 
 
 def build() -> gr.Blocks:
-    with gr.Blocks(js=bundle_js(), css=bundle_css(), title="SIE widget demo") as demo:
-        gr.Markdown("# Angle dial widget — POC\nDrag the needle or tap around the ring.")
+    extra_css = """
+    body, .gradio-container { background: #05060b !important; }
+    .gradio-container { max-width: 440px !important; }
+    """
+    with gr.Blocks(js=bundle_js(), css=bundle_css() + extra_css,
+                   title="SIE widget kit") as demo:
+        gr.HTML("""
+          <div class="sie-root" style="padding: 16px;">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+              <div class="sie-pill sie-pill-running">
+                <span class="sie-pill-dot"></span> Running
+              </div>
+              <span class="sie-num" style="color:#8891a6; font-size:13px;">28.3 FPS</span>
+            </div>
+            <div class="sie-dial-label" style="opacity:0.6;">Widget kit — live preview</div>
+          </div>
+        """)
 
-        with gr.Row():
-            with gr.Column(scale=1):
-                _, scan_angle = angle_dial(
-                    value=0.0, label="Temporal scan angle", elem_id="dial-a"
-                )
-            with gr.Column(scale=1):
-                _, kal_rot = angle_dial(
-                    value=45.0, label="Kaleidoscope rotation", elem_id="dial-b"
-                )
+        gr.HTML('<div class="sie-root" style="padding: 0 16px;">'
+                '<div class="sie-row sie-expanded"><div class="sie-row-head">'
+                '<div class="sie-row-name">Temporal Scan</div></div>'
+                '<div class="sie-row-body">')
+
+        with gr.Column():
+            _, scan_angle = angle_dial(value=134.0, label="Angle", elem_id="dial-scan")
+            _, buffer_n = stepper(value=18, minimum=2, maximum=60, step=1,
+                                  elem_id="step-buffer")
+            _, blur = slider_row(value=0.65, minimum=0, maximum=1, step=0.01,
+                                 label="Blur strength", elem_id="slider-blur")
+            _, toggle_enable = toggle(value=True, label="Enable",
+                                       elem_id="toggle-enable")
+
+        gr.HTML("</div></div></div>")
 
         readout = gr.Textbox(
             label="Live values",
-            value="scan=0.00°   kaleidoscope=45.00°",
+            value="angle=134°  buffer=18  blur=0.65  enabled=True",
             interactive=False,
         )
 
-        def refresh(a, b):
-            a = float(a or 0.0)
-            b = float(b or 0.0)
-            return f"scan={a:.2f}°   kaleidoscope={b:.2f}°"
+        def refresh(a, b, bl, en):
+            return (
+                f"angle={float(a or 0):.0f}°  "
+                f"buffer={int(b or 0)}  "
+                f"blur={float(bl or 0):.2f}  "
+                f"enabled={bool(en)}"
+            )
 
-        scan_angle.change(refresh, inputs=[scan_angle, kal_rot], outputs=readout)
-        kal_rot.change(refresh, inputs=[scan_angle, kal_rot], outputs=readout)
+        for comp in (scan_angle, buffer_n, blur, toggle_enable):
+            comp.change(
+                refresh,
+                inputs=[scan_angle, buffer_n, blur, toggle_enable],
+                outputs=readout,
+            )
 
     return demo
 

@@ -1,6 +1,8 @@
 """Angle dial widget — draggable SVG needle that writes a float into a hidden
-Gradio Number component. Use it for any 0-360° parameter (TemporalScan angle,
-Kaleidoscope rotation, Radial Blur direction, etc.).
+Gradio Number component. SVG shape matches design/ui_kits/mcp_v2 — tick
+marks, phosphor-cyan arc, pointer, center puck, glowing knob handle. Used
+for any 0-360° parameter (TemporalScan angle, Kaleidoscope rotation,
+Radial Blur direction, etc.).
 """
 
 from typing import Tuple
@@ -25,27 +27,23 @@ def angle_dial(
     Returns ``(dial_html, value_component)``. Wire ``value_component.change``
     to your filter callback exactly as you would for a ``gr.Slider``.
     """
-    # elem_id must be unique per instance; Gradio uses it for DOM lookups.
     if elem_id is None:
-        elem_id = f"angle-dial-{id(object())}"
+        elem_id = f"sie-angle-dial-{id(object())}"
 
-    svg = f"""
-    <div class="sie-angle-dial" data-widget="angle-dial"
-         data-target="{elem_id}-value"
-         data-min="{min_value}" data-max="{max_value}" data-step="{step}">
-      <div class="sie-widget-label">{label}</div>
-      <svg viewBox="0 0 120 120" class="sie-dial-svg">
-        <circle cx="60" cy="60" r="52" class="sie-dial-ring"/>
-        <line x1="60" y1="60" x2="60" y2="12" class="sie-dial-needle"/>
-        <circle cx="60" cy="60" r="6" class="sie-dial-hub"/>
-        <text x="60" y="112" text-anchor="middle" class="sie-dial-readout">
-          {value:.0f}°
-        </text>
-      </svg>
+    html = f"""
+    <div class="sie-root">
+      <div class="sie-angle-dial" data-widget="angle-dial"
+           data-target="{elem_id}-value"
+           data-min="{min_value}" data-max="{max_value}" data-step="{step}"
+           id="{elem_id}-dial">
+        <div class="sie-dial-label">{label}</div>
+        <div class="sie-dial-ring"></div>
+        <div class="sie-dial-readout">{value:.0f}°</div>
+      </div>
     </div>
     """
 
-    dial_html = gr.HTML(svg, elem_id=elem_id)
+    dial_html = gr.HTML(html, elem_id=elem_id)
     value_component = gr.Number(
         value=value,
         elem_id=f"{elem_id}-value",

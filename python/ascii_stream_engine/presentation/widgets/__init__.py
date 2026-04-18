@@ -1,10 +1,12 @@
 """Custom Gradio widgets for the Spatial-Iteration-Engine dashboard.
 
 Each widget is a small factory function that returns a hidden value
-component plus the visible HTML/SVG. The JS that drives the widget is
-kept in ``static/`` and bundled once per Gradio app via ``bundle_js()``.
+component plus the visible HTML/SVG. The JS that drives the widget lives
+in ``static/`` and is bundled once per Gradio app via ``bundle_js()`` /
+``bundle_css()``.
 
-See ``README.md`` in this folder for how to author a new widget.
+Visual style is ported from ``design/ui_kits/mcp_v2`` (phosphor-cyan
+mobile control surface). See ``README.md`` for how to author new widgets.
 """
 
 from pathlib import Path
@@ -12,7 +14,6 @@ from typing import List
 
 _STATIC_DIR = Path(__file__).parent / "static"
 
-# Modules append their JS/CSS file names here at import time.
 _JS_FILES: List[str] = []
 _CSS_FILES: List[str] = []
 
@@ -41,10 +42,21 @@ def bundle_css() -> str:
     return "\n".join(parts) or ""
 
 
-# Import widgets so they self-register their assets.
-from .angle_dial import angle_dial  # noqa: E402,F401
-
-# Base stylesheet is always shipped.
+# Base stylesheet ships with every widget — register before the factories
+# so it lands first in the bundle.
 register_assets(css="widgets.css")
 
-__all__ = ["angle_dial", "bundle_js", "bundle_css", "register_assets"]
+from .angle_dial import angle_dial  # noqa: E402,F401
+from .slider_row import slider_row  # noqa: E402,F401
+from .stepper import stepper  # noqa: E402,F401
+from .toggle import toggle  # noqa: E402,F401
+
+__all__ = [
+    "angle_dial",
+    "slider_row",
+    "stepper",
+    "toggle",
+    "bundle_js",
+    "bundle_css",
+    "register_assets",
+]

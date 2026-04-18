@@ -1,57 +1,366 @@
-/* Spatial-Iteration-Engine — shared widget styles. */
+/* ============================================================
+   Spatial-Iteration-Engine · Mobile Control Surface widget kit
+   Ported from design/ui_kits/mcp_v2/{tokens,components}.css.
+   Every class is prefixed with sie- to avoid clashing with
+   Gradio's built-in stylesheet. Scope everything to .sie-root.
+   ============================================================ */
 
-.sie-angle-dial {
-  display: inline-block;
-  user-select: none;
-  touch-action: none;
-  cursor: grab;
-  padding: 8px 12px;
+.sie-root {
+  /* ---- Palette ---- */
+  --sie-bg:            #05060b;
+  --sie-surface:       #0e1018;
+  --sie-surface-high:  #141724;
+  --sie-line:          #1a1d2a;
+  --sie-line-strong:   #262a3c;
+  --sie-text:          #ffffff;
+  --sie-text-2:        #8891a6;
+  --sie-text-3:        #5a6278;
+  --sie-disabled:      #3a3f52;
+
+  --sie-cyan:          #00fff2;
+  --sie-cyan-dim:      #00b8ae;
+  --sie-cyan-soft:     rgba(0, 255, 242, 0.08);
+  --sie-cyan-glow:     0 0 12px rgba(0, 255, 242, 0.35), 0 0 2px rgba(0, 255, 242, 0.7);
+  --sie-cyan-glow-lg:  0 0 24px rgba(0, 255, 242, 0.45), 0 0 2px rgba(0, 255, 242, 0.9);
+
+  --sie-mag:           #ff2bd6;
+  --sie-mag-dim:       #c2179f;
+  --sie-mag-soft:      rgba(255, 43, 214, 0.08);
+  --sie-mag-glow:      0 0 12px rgba(255, 43, 214, 0.35), 0 0 2px rgba(255, 43, 214, 0.7);
+
+  /* ---- Type ---- */
+  --sie-font-sans: "Space Grotesk", "Inter", -apple-system, system-ui, sans-serif;
+  --sie-font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+  --sie-fs-title:   20px;
+  --sie-fs-row:     16px;
+  --sie-fs-label:   13px;
+  --sie-fs-readout: 16px;
+  --sie-fs-kpi:     13px;
+  --sie-fs-micro:   11px;
+  --sie-tracking-label: 0.04em;
+  --sie-tracking-kicker: 0.18em;
+
+  /* ---- Spacing (4pt) ---- */
+  --sie-sp-1: 4px; --sie-sp-2: 8px; --sie-sp-3: 12px; --sie-sp-4: 16px;
+  --sie-sp-5: 20px; --sie-sp-6: 24px; --sie-sp-7: 32px; --sie-sp-8: 40px;
+  --sie-gutter:   16px;
+  --sie-card-pad: 16px;
+  --sie-row-h:    64px;
+
+  /* ---- Radii ---- */
+  --sie-r-s:  6px; --sie-r-m: 10px; --sie-r-l: 14px; --sie-r-pill: 999px;
+
+  /* ---- Motion ---- */
+  --sie-ease:     cubic-bezier(0.4, 0, 0.2, 1);
+  --sie-dur:      150ms;
+  --sie-dur-fast: 80ms;
+
+  background: var(--sie-bg);
+  color: var(--sie-text);
+  font-family: var(--sie-font-sans);
+  -webkit-font-smoothing: antialiased;
+  font-size: 14px;
+  line-height: 1.4;
+  box-sizing: border-box;
+}
+.sie-root *, .sie-root *::before, .sie-root *::after { box-sizing: border-box; }
+
+.sie-num {
+  font-family: var(--sie-font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
 }
 
-.sie-angle-dial:active {
-  cursor: grabbing;
+/* ============================================================
+   Status pill — running / stopped
+   ============================================================ */
+.sie-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 12px; border-radius: var(--sie-r-pill);
+  font-family: var(--sie-font-mono); font-size: 11px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  border: 1px solid var(--sie-text-3);
+  color: var(--sie-text-2);
+}
+.sie-pill-running {
+  color: var(--sie-cyan);
+  border-color: var(--sie-cyan);
+  background: var(--sie-cyan-soft);
+  text-shadow: 0 0 6px rgba(0,255,242,0.4);
+}
+.sie-pill-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--sie-text-3);
+  flex-shrink: 0;
+}
+.sie-pill-running .sie-pill-dot {
+  background: var(--sie-cyan);
+  box-shadow: 0 0 6px var(--sie-cyan);
+  animation: sie-pulse 2.4s ease-in-out infinite;
+}
+.sie-pill-stopped .sie-pill-dot {
+  background: transparent;
+  border: 1.5px solid var(--sie-text-3);
+  width: 8px; height: 8px;
+}
+@keyframes sie-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.55; transform: scale(0.85); }
 }
 
-.sie-widget-label {
-  font-size: 0.82rem;
-  opacity: 0.75;
-  text-align: center;
-  margin-bottom: 4px;
-  letter-spacing: 0.04em;
+/* ============================================================
+   Category card (Hub)
+   ============================================================ */
+.sie-card-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  padding: 8px 16px 16px;
+}
+.sie-cat-card {
+  position: relative;
+  background: var(--sie-surface);
+  border: 1px solid var(--sie-line);
+  border-radius: var(--sie-r-m);
+  padding: 16px;
+  min-height: 160px;
+  color: var(--sie-text);
+  cursor: pointer;
+  display: flex; flex-direction: column; gap: 12px;
+  font-family: var(--sie-font-sans);
+  text-align: left;
+  transition: background var(--sie-dur) var(--sie-ease), border-color var(--sie-dur) var(--sie-ease);
+}
+.sie-cat-card:active { background: var(--sie-surface-high); transform: scale(0.98); }
+.sie-cat-card.sie-has-active::before {
+  content: "";
+  position: absolute; left: 0; top: 12px; bottom: 12px;
+  width: 2px; background: var(--sie-cyan);
+  box-shadow: 0 0 6px rgba(0,255,242,0.6);
+  border-radius: 1px;
+}
+.sie-cat-name {
+  font-family: var(--sie-font-sans);
+  font-size: var(--sie-fs-row); font-weight: 600;
+  letter-spacing: var(--sie-tracking-label);
+  text-transform: uppercase;
+  margin-top: auto;
+}
+.sie-cat-count {
+  font-family: var(--sie-font-mono); font-size: var(--sie-fs-kpi);
+  color: var(--sie-text-3); letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-
-.sie-dial-svg {
-  width: 140px;
-  height: 140px;
-  max-width: 100%;
-  display: block;
-  margin: 0 auto;
+.sie-cat-count.sie-on {
+  color: var(--sie-cyan);
+  text-shadow: 0 0 6px rgba(0,255,242,0.35);
 }
 
-.sie-dial-ring {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  opacity: 0.25;
+/* ============================================================
+   Filter row (category detail, expand-inline)
+   ============================================================ */
+.sie-row {
+  background: var(--sie-surface);
+  border: 1px solid var(--sie-line);
+  border-radius: var(--sie-r-m);
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 10px;
+}
+.sie-row-head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 16px; min-height: var(--sie-row-h); height: var(--sie-row-h);
+  cursor: pointer;
+}
+.sie-row-name {
+  flex: 1; min-width: 0;
+  font-family: var(--sie-font-sans); font-size: var(--sie-fs-row); font-weight: 600;
+  letter-spacing: var(--sie-tracking-label);
+  text-transform: uppercase;
+  color: var(--sie-text);
+}
+.sie-row.sie-expanded { background: var(--sie-surface-high); }
+.sie-row.sie-expanded::before {
+  content: "";
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 2px; background: var(--sie-cyan);
+  box-shadow: 0 0 6px rgba(0,255,242,0.5);
+}
+.sie-row-body {
+  padding: 8px 16px 16px 16px;
+  display: flex; flex-direction: column; gap: 16px;
+  border-top: 1px dashed var(--sie-line-strong);
 }
 
-.sie-dial-needle {
-  stroke: currentColor;
-  stroke-width: 3;
-  stroke-linecap: round;
-  transform-origin: 60px 60px;
-  transition: transform 0.05s linear;
+/* ============================================================
+   Toggle (on/off pill)
+   ============================================================ */
+.sie-toggle {
+  width: 52px; height: 30px; border-radius: var(--sie-r-pill);
+  background: transparent;
+  border: 1.5px solid var(--sie-line-strong);
+  position: relative; cursor: pointer;
+  transition: background var(--sie-dur) var(--sie-ease), border-color var(--sie-dur) var(--sie-ease);
+  flex-shrink: 0;
+  user-select: none; touch-action: manipulation;
+}
+.sie-toggle-thumb {
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 21px; height: 21px;
+  border-radius: 50%;
+  background: var(--sie-text-3);
+  transition: transform var(--sie-dur) var(--sie-ease), background var(--sie-dur) var(--sie-ease);
+}
+.sie-toggle.sie-on {
+  border-color: var(--sie-cyan);
+  background: var(--sie-cyan-soft);
+  box-shadow: 0 0 12px rgba(0,255,242,0.25);
+}
+.sie-toggle.sie-on .sie-toggle-thumb {
+  transform: translateX(21px);
+  background: var(--sie-cyan);
+  box-shadow: 0 0 8px var(--sie-cyan);
+}
+.sie-toggle.sie-disabled { opacity: 0.35; pointer-events: none; }
+
+/* ============================================================
+   Slider row — label + value + track + handle
+   ============================================================ */
+.sie-slider {
+  display: flex; flex-direction: column; gap: 8px;
+  user-select: none; touch-action: none;
+}
+.sie-slider-top {
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.sie-slider-label {
+  font-family: var(--sie-font-sans); font-size: var(--sie-fs-label);
+  letter-spacing: var(--sie-tracking-label); text-transform: uppercase;
+  color: var(--sie-text);
+  font-weight: 500;
+}
+.sie-slider-val {
+  font-family: var(--sie-font-mono); font-size: var(--sie-fs-readout);
+  color: var(--sie-cyan);
+  font-variant-numeric: tabular-nums;
+}
+.sie-slider-track {
+  position: relative; height: 6px; border-radius: 3px;
+  background: var(--sie-line-strong);
+  cursor: pointer;
+}
+.sie-slider-fill {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  background: var(--sie-cyan); border-radius: 3px;
+  box-shadow: 0 0 8px rgba(0,255,242,0.4);
+  pointer-events: none;
+}
+.sie-slider-handle {
+  position: absolute; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--sie-bg); border: 2px solid var(--sie-cyan);
+  box-shadow: var(--sie-cyan-glow);
+  pointer-events: none;
+}
+.sie-slider.sie-dragging .sie-slider-handle {
+  box-shadow: var(--sie-cyan-glow-lg);
+  transform: translate(-50%, -50%) scale(1.15);
 }
 
-.sie-dial-hub {
-  fill: currentColor;
-  opacity: 0.8;
+/* ============================================================
+   Stepper (-/+)
+   ============================================================ */
+.sie-stepper {
+  display: inline-flex; align-items: stretch;
+  border: 1px solid var(--sie-line-strong); border-radius: var(--sie-r-s);
+  overflow: hidden;
+  user-select: none;
+}
+.sie-stepper-btn {
+  width: 44px; height: 40px;
+  background: transparent; color: var(--sie-text);
+  font-family: var(--sie-font-mono); font-size: 20px; line-height: 1;
+  border: none; cursor: pointer;
+}
+.sie-stepper-btn:active { background: var(--sie-surface-high); }
+.sie-stepper-val {
+  min-width: 56px; text-align: center;
+  font-family: var(--sie-font-mono); font-size: var(--sie-fs-readout);
+  color: var(--sie-cyan);
+  display: inline-flex; align-items: center; justify-content: center;
+  text-shadow: 0 0 4px rgba(0,255,242,0.3);
+  border-left: 1px solid var(--sie-line-strong);
+  border-right: 1px solid var(--sie-line-strong);
+  padding: 0 12px;
 }
 
+/* ============================================================
+   Segmented control (LINEAR / EASE…)
+   ============================================================ */
+.sie-seg {
+  display: flex; gap: 0;
+  border: 1px solid var(--sie-line-strong); border-radius: var(--sie-r-s);
+  overflow: hidden;
+}
+.sie-seg-btn {
+  flex: 1; padding: 10px 14px;
+  background: transparent; color: var(--sie-text-2);
+  font-family: var(--sie-font-sans); font-size: 12px;
+  letter-spacing: var(--sie-tracking-label); text-transform: uppercase;
+  border: none; cursor: pointer;
+  border-right: 1px solid var(--sie-line-strong);
+}
+.sie-seg-btn:last-child { border-right: none; }
+.sie-seg-btn.sie-on {
+  background: var(--sie-cyan-soft); color: var(--sie-cyan);
+  text-shadow: 0 0 6px rgba(0,255,242,0.4);
+}
+
+/* ============================================================
+   Angle dial — 140px SVG knob
+   ============================================================ */
+.sie-angle-dial {
+  display: inline-flex; flex-direction: column; align-items: center; gap: 10px;
+  user-select: none; touch-action: none; cursor: grab;
+}
+.sie-angle-dial:active { cursor: grabbing; }
+.sie-dial-label {
+  font-size: 0.82rem; opacity: 0.75; letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.sie-dial-ring { position: relative; width: 140px; height: 140px; }
 .sie-dial-readout {
-  fill: currentColor;
-  font-size: 14px;
-  font-family: ui-monospace, monospace;
-  opacity: 0.9;
+  font-family: var(--sie-font-mono); font-size: 22px; color: var(--sie-cyan);
+  text-shadow: 0 0 8px rgba(0,255,242,0.4);
+}
+
+/* ============================================================
+   Primary / stop / ghost buttons (sticky footer)
+   ============================================================ */
+.sie-btn-primary {
+  height: 56px; border-radius: var(--sie-r-m); cursor: pointer;
+  font-family: var(--sie-font-sans); font-size: 14px; font-weight: 700;
+  letter-spacing: 0.2em;
+  background: var(--sie-cyan); color: var(--sie-bg);
+  border: 1px solid var(--sie-cyan);
+  box-shadow: var(--sie-cyan-glow-lg);
+  text-transform: uppercase;
+}
+.sie-btn-stop {
+  height: 56px; border-radius: var(--sie-r-m); cursor: pointer;
+  font-family: var(--sie-font-sans); font-size: 14px; font-weight: 700;
+  letter-spacing: 0.2em;
+  background: transparent; color: var(--sie-mag);
+  border: 1px solid var(--sie-mag);
+  box-shadow: 0 0 16px rgba(255,43,214,0.2);
+  text-shadow: 0 0 6px rgba(255,43,214,0.5);
+  text-transform: uppercase;
+}
+.sie-btn-ghost {
+  height: 56px; border-radius: var(--sie-r-m); cursor: pointer;
+  background: var(--sie-surface); color: var(--sie-text);
+  border: 1px solid var(--sie-line-strong);
+  font-family: var(--sie-font-sans); font-size: 12px; letter-spacing: var(--sie-tracking-label);
+  text-transform: uppercase; font-weight: 500;
+  padding: 0 14px;
 }
