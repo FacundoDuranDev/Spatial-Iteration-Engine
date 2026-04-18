@@ -160,3 +160,4 @@ test_captures/
 *.backup
 *.old
 *~
+.git.backup-*/
