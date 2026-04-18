@@ -10,7 +10,7 @@ from .config_loader import (
     save_config_to_file,
 )
 from .frame_analysis import FaceAnalysis, HandAnalysis, PoseAnalysis
-from .types import RenderFrame
+from .types import ROI, RenderFrame
 
 __all__ = [
     "FaceAnalysis",
@@ -19,6 +19,7 @@ __all__ = [
     "ConfigValidationError",
     "EngineConfig",
     "NeuralConfig",
+    "ROI",
     "RenderFrame",
     "ConfigLoadError",
     "get_predefined_profile",
