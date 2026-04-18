@@ -1,0 +1,89 @@
+/* ============================================================
+   B — Industrial Minimal
+   Gris cemento + negro + un acento eléctrico (amarillo cadmium).
+   Tipografía: geométrica, mono para números.
+   Inspiración: mixers, eurorack panels, hardware controllers.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root {
+  /* Palette — concrete & steel */
+  --bg: #1c1d1f;             /* chasis negro */
+  --panel: #2a2b2e;          /* panel principal */
+  --panel-2: #34363a;        /* panel alzado */
+  --panel-3: #44474c;        /* borde biselado claro */
+  --groove: #0f1012;         /* surco grabado */
+  --rule: #52565c;           /* línea división */
+  --text: #f1f2f4;           /* texto primario */
+  --text-2: #9ea3ab;         /* secundario */
+  --text-3: #676c74;         /* tertiary */
+  --accent: #ffd400;         /* cadmio — activo/seleccionado */
+  --accent-ink: #1c1d1f;     /* texto sobre acento */
+  --live: #ff3a2f;           /* REC / peligro */
+  --ok: #35d77a;             /* OK sutíl */
+
+  /* Type */
+  --font-ui: 'Archivo', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Scale */
+  --t-xs: 10px;
+  --t-sm: 12px;
+  --t-md: 14px;
+  --t-lg: 17px;
+  --t-xl: 22px;
+  --t-2xl: 32px;
+  --t-3xl: 48px;
+
+  /* Spacing */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 28px;
+  --s-7: 40px;
+  --s-8: 56px;
+
+  /* Radii */
+  --r-sm: 3px;
+  --r-md: 6px;
+  --r-lg: 10px;
+
+  /* Shadows — bevel */
+  --bevel: inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -1px 0 rgba(0,0,0,0.5), 0 1px 0 rgba(0,0,0,0.4);
+  --inset: inset 0 2px 4px rgba(0,0,0,0.6);
+  --pop: 0 4px 14px rgba(0,0,0,0.5);
+
+  /* Hit */
+  --hit: 48px;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: var(--t-md);
+  line-height: 1.35;
+  font-feature-settings: "ss01", "tnum";
+}
+
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.cap {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  color: var(--text-2);
+}
+
+/* Engraved groove — a hairline used everywhere for panel division */
+.groove {
+  height: 2px;
+  background: linear-gradient(180deg, var(--groove), rgba(255,255,255,0.04));
+  margin: var(--s-4) 0;
+}

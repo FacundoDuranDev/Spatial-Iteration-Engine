@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0;padding:0;background:var(--bg-0);color:var(--fg-0);font-family:var(--font-mono)}
+  .card{padding:20px;box-sizing:border-box;width:700px;height:260px;display:flex;flex-direction:column;gap:10px}
+  .wm{font-size:20px;font-weight:700;letter-spacing:-0.01em;color:var(--fg-0)}
+  .wm .slash{color:var(--accent)}
+  .sub{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--fg-2)}
+  svg{width:100%;height:180px;display:block}
+  .node-label{font-family:var(--font-mono);font-size:10px;fill:var(--fg-1);letter-spacing:0.02em}
+  .node-sub{font-family:var(--font-mono);font-size:8px;fill:var(--fg-3);letter-spacing:0.04em}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="wm">SPATIAL<span class="slash">/</span>ITERATION</div>
+  <div class="sub">source → perception → filters → renderer → output</div>
+  <svg viewBox="0 0 660 180" preserveAspectRatio="xMidYMid meet">
+    <defs>
+      <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+        <path d="M0,0 L10,5 L0,10 z" fill="#5a564c"/>
+      </marker>
+      <marker id="arr-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+        <path d="M0,0 L10,5 L0,10 z" fill="#9dff4e"/>
+      </marker>
+    </defs>
+
+    <!-- edges -->
+    <g fill="none" stroke-width="1">
+      <path d="M 70,90 L 165,90" stroke="#5a564c" marker-end="url(#arr)"/>
+      <path d="M 225,90 L 320,90" stroke="#5a564c" marker-end="url(#arr)"/>
+      <path d="M 380,90 L 475,90" stroke="#5a564c" marker-end="url(#arr)"/>
+      <path d="M 535,90 Q 580,90 600,90" stroke="#9dff4e" marker-end="url(#arr-g)"/>
+      <!-- branch from perception down to IA -->
+      <path d="M 195,115 Q 195,145 240,145" stroke="#ff6ac1" stroke-dasharray="3 3"/>
+      <!-- branch from filters up to C++ -->
+      <path d="M 350,65 Q 350,35 395,35" stroke="#ffb454" stroke-dasharray="3 3"/>
+    </g>
+
+    <!-- nodes: circles with role color; label beside -->
+    <g>
+      <!-- Source -->
+      <circle cx="40" cy="90" r="22" fill="#0a0c0d" stroke="#5ecfff" stroke-width="1.2"/>
+      <text class="node-label" x="40" y="93" text-anchor="middle" fill="#5ecfff">src</text>
+      <text class="node-sub" x="40" y="128" text-anchor="middle">cv2.cam</text>
+
+      <!-- Perception -->
+      <circle cx="195" cy="90" r="22" fill="#0a0c0d" stroke="#ff6ac1" stroke-width="1.2"/>
+      <text class="node-label" x="195" y="93" text-anchor="middle" fill="#ff6ac1">perc</text>
+      <text class="node-sub" x="195" y="128" text-anchor="middle">face·hand·pose</text>
+
+      <!-- Filters -->
+      <circle cx="350" cy="90" r="22" fill="#0a0c0d" stroke="#c9c4b8" stroke-width="1.2"/>
+      <text class="node-label" x="350" y="93" text-anchor="middle" fill="#f2efe8">filt</text>
+      <text class="node-sub" x="350" y="128" text-anchor="middle">py · cpp</text>
+
+      <!-- Renderer -->
+      <circle cx="505" cy="90" r="22" fill="#0a0c0d" stroke="#9dff4e" stroke-width="1.2"/>
+      <text class="node-label" x="505" y="93" text-anchor="middle" fill="#9dff4e">rend</text>
+      <text class="node-sub" x="505" y="128" text-anchor="middle">ascii · raw</text>
+
+      <!-- Output -->
+      <circle cx="625" cy="90" r="16" fill="#9dff4e"/>
+      <text class="node-sub" x="625" y="93" text-anchor="middle" fill="#0a0c0d" font-weight="700">udp</text>
+      <text class="node-sub" x="625" y="128" text-anchor="middle">:1234</text>
+
+      <!-- branch nodes -->
+      <circle cx="260" cy="145" r="10" fill="#0a0c0d" stroke="#ff6ac1" stroke-width="1"/>
+      <text class="node-sub" x="275" y="148" fill="#ff6ac1">ia · overlay</text>
+
+      <circle cx="415" cy="35" r="10" fill="#0a0c0d" stroke="#ffb454" stroke-width="1"/>
+      <text class="node-sub" x="430" y="38" fill="#ffb454">pybind11 · onnx</text>
+    </g>
+  </svg>
+</div>
+</body>
+</html>

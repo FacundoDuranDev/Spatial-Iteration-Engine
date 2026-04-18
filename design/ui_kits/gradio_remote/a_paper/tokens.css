@@ -1,0 +1,97 @@
+/* ============================================================
+   A — Paper Console — tokens
+   Papel crema + tinta sepia/negra + bermellón reservado.
+   Tipografía editorial: Fraunces display, IBM Plex para UI.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700;9..144,900&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap');
+
+:root {
+  --paper-0: #f1e7d0;
+  --paper-1: #e6d8b7;
+  --paper-2: #d9c9a3;
+  --paper-3: #bfa57d;
+  --paper-edge: #8a7448;
+
+  --ink-0: #1a140c;
+  --ink-1: #3a2a18;
+  --ink-2: #6b5638;
+  --ink-3: #9a8560;
+
+  --accent: #b6371a;
+  --accent-ink: #7a1f0c;
+  --accent-soft: #e9a58f;
+  --stamp-ok: #2a5d4a;
+  --stamp-ink: #174a3a;
+  --gold: #a07e2b;
+
+  --font-display: 'Fraunces', 'Times New Roman', serif;
+  --font-ui: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  --t-xs: 10px;
+  --t-sm: 12px;
+  --t-md: 14px;
+  --t-lg: 17px;
+  --t-xl: 22px;
+  --t-2xl: 30px;
+  --t-3xl: 44px;
+  --t-4xl: 64px;
+
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 28px;
+  --s-7: 40px;
+
+  --hair: 1px solid var(--ink-3);
+  --rule: 1px solid var(--ink-0);
+  --double: 3px double var(--ink-1);
+  --thick: 2px solid var(--ink-0);
+
+  --r-sm: 2px;
+  --r-md: 4px;
+
+  --press: inset 0 1px 0 rgba(255,255,255,0.5), 0 1px 0 rgba(26,20,12,0.08);
+
+  --hit: 52px;
+
+  --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='3'/><feColorMatrix values='0 0 0 0 0.1  0 0 0 0 0.08  0 0 0 0 0.05  0 0 0 0.08 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-md);
+  line-height: 1.4;
+}
+
+.a-screen {
+  background: var(--paper-0);
+  color: var(--ink-0);
+  font-family: var(--font-ui);
+  position: relative;
+}
+.a-screen::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: var(--grain);
+  background-size: 160px 160px;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  opacity: 0.45;
+  z-index: 3;
+}
+.a-screen > * { position: relative; z-index: 1; }
+
+.display { font-family: var(--font-display); font-weight: 500; letter-spacing: -0.015em; }
+.italic { font-family: var(--font-display); font-style: italic; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.cap { text-transform: uppercase; letter-spacing: 0.16em; font-size: var(--t-xs); font-weight: 600; font-family: var(--font-ui); }
+
+.a-statusbar { background: var(--paper-0); color: var(--ink-1); border-bottom: var(--hair); }
+.a-statusbar .island { background: var(--ink-0); }

@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Spatial-Iteration-Engine · Mobile Control Surface v3</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+<style>
+  body {
+    margin: 0; padding: 40px 32px 80px;
+    background: var(--bg);
+    font-family: var(--font-sans);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  .wrap { max-width: 1600px; margin: 0 auto; }
+  .title { font-size: 28px; font-weight: 600; margin: 0 0 6px; letter-spacing: 0.02em; }
+  .sub { font-family: var(--font-mono); font-size: 13px; color: var(--text-2); letter-spacing: 0.1em; margin: 0 0 40px; text-transform: uppercase; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 32px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-m);
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 12px;
+    text-decoration: none; color: inherit;
+    transition: border-color 150ms;
+  }
+  .card:hover { border-color: var(--cyan); box-shadow: 0 0 16px rgba(0,255,242,0.1); }
+  .card iframe {
+    width: 100%; aspect-ratio: 390 / 844;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-s);
+    background: var(--bg);
+    pointer-events: none;
+  }
+  .card-title {
+    font-size: 16px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+  }
+  .card-sub { font-family: var(--font-mono); font-size: 11px; color: var(--text-2); letter-spacing: 0.08em; }
+  .tokens {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-m);
+    padding: 24px;
+    margin-top: 32px;
+    font-family: var(--font-mono); font-size: 12px;
+    color: var(--text-2);
+    letter-spacing: 0.04em;
+  }
+  .tokens a { color: var(--cyan); text-decoration: none; }
+  .tokens a:hover { text-shadow: 0 0 6px rgba(0,255,242,0.4); }
+</style>
+</head>
+<body class="mcp-root">
+<div class="wrap">
+  <h1 class="title">Spatial-Iteration-Engine · Mobile Control Surface</h1>
+  <p class="sub">v3 · Cyberpunk Neon · 390 × 844 · Portrait Locked</p>
+
+  <div class="grid">
+    <a class="card" href="s1_home.html" target="_blank">
+      <iframe src="s1_home.html" loading="lazy"></iframe>
+      <div class="card-title">S1 · Home</div>
+      <div class="card-sub">Hub · 6 cards · running state</div>
+    </a>
+    <a class="card" href="s2_distort.html" target="_blank">
+      <iframe src="s2_distort.html" loading="lazy"></iframe>
+      <div class="card-title">S2 · Distort</div>
+      <div class="card-sub">Temporal Scan dial · DoF XY pad</div>
+    </a>
+    <a class="card" href="s3_color.html" target="_blank">
+      <iframe src="s3_color.html" loading="lazy"></iframe>
+      <div class="card-title">S3 · Color</div>
+      <div class="card-sub">Dual color wheels · grading sliders</div>
+    </a>
+    <a class="card" href="s4_config.html" target="_blank">
+      <iframe src="s4_config.html" loading="lazy"></iframe>
+      <div class="card-title">S4 · Config</div>
+      <div class="card-sub">Engine · Network · Performance</div>
+    </a>
+    <a class="card" href="s5_presets.html" target="_blank">
+      <iframe src="s5_presets.html" loading="lazy"></iframe>
+      <div class="card-title">S5 · Presets</div>
+      <div class="card-sub">Colored stripe preset list</div>
+    </a>
+    <a class="card" href="s6_stopped.html" target="_blank">
+      <iframe src="s6_stopped.html" loading="lazy"></iframe>
+      <div class="card-title">S6 · Stopped</div>
+      <div class="card-sub">Engine off · banner · START glow</div>
+    </a>
+    <a class="card" href="components.html" target="_blank" style="grid-column: span 2;">
+      <iframe src="components.html" loading="lazy" style="aspect-ratio: 16 / 10;"></iframe>
+      <div class="card-title">Component Spec Sheet</div>
+      <div class="card-sub">All components · all states · horizontal review</div>
+    </a>
+  </div>
+
+  <div class="tokens">
+    <div style="color:var(--text); font-family: var(--font-sans); font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px;">Drop-in Files</div>
+    → <a href="tokens.css">tokens.css</a> — palette, type, spacing, motion variables<br>
+    → <a href="components.css">components.css</a> — component classes (slider, toggle, dial, xy, wheel, cards, pill, footer)<br>
+    <br>
+    <span style="color:var(--text-3);">Each screen HTML is self-contained and links these two files. No framework, no build step, no Tailwind.</span>
+  </div>
+</div>
+</body>
+</html>

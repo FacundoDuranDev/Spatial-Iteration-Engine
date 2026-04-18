@@ -1,0 +1,98 @@
+/* ============================================================
+   Mobile Control Panel — Cyberpunk Neon tokens
+   Scoped to this UI kit only. Does NOT override the global
+   phosphor/terminal system in colors_and_type.css.
+   ============================================================ */
+
+.mcp {
+  --mcp-bg:        #05060b;
+  --mcp-bg-1:     #0b0d16;   /* raised card */
+  --mcp-bg-2:     #12141f;   /* deeper card / expanded */
+  --mcp-line:     #1c2036;   /* hairline divider */
+  --mcp-line-2:   #272c47;   /* stronger border */
+
+  --mcp-fg:       #e8ebf5;   /* primary text */
+  --mcp-fg-1:    #b8bcd2;   /* body */
+  --mcp-fg-2:    #7a7f9e;   /* secondary labels */
+  --mcp-fg-3:    #4a4f6a;   /* tertiary / disabled */
+
+  --mcp-cyan:    #00fff2;   /* primary / state-on */
+  --mcp-cyan-dim: #00b8ae;
+  --mcp-mag:     #ff2bd6;   /* destructive / warning */
+  --mcp-mag-dim: #c2179f;
+  --mcp-amber:   #ffcf4a;   /* caution */
+
+  --mcp-cyan-glow: 0 0 12px rgba(0,255,242,0.45), 0 0 2px rgba(0,255,242,0.8);
+  --mcp-mag-glow:  0 0 12px rgba(255,43,214,0.45), 0 0 2px rgba(255,43,214,0.8);
+  --mcp-cyan-soft: rgba(0,255,242,0.08);
+  --mcp-mag-soft:  rgba(255,43,214,0.08);
+
+  /* Type */
+  --mcp-mono: "JetBrains Mono", ui-monospace, monospace;
+  --mcp-sans: "Inter", -apple-system, system-ui, sans-serif;
+
+  /* Spacing */
+  --mcp-sp-1: 4px;
+  --mcp-sp-2: 8px;
+  --mcp-sp-3: 12px;
+  --mcp-sp-4: 16px;
+  --mcp-sp-5: 20px;
+  --mcp-sp-6: 24px;
+  --mcp-sp-7: 32px;
+
+  /* Radii */
+  --mcp-r-s: 6px;
+  --mcp-r-m: 10px;
+  --mcp-r-l: 16px;
+
+  /* Motion */
+  --mcp-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --mcp-dur:  150ms;
+
+  /* Touch target min */
+  --mcp-tap: 60px;
+
+  background: var(--mcp-bg);
+  color: var(--mcp-fg);
+  font-family: var(--mcp-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Subtle scanline hint for frames only — not inside controls */
+.mcp-scanlines {
+  position: relative;
+}
+.mcp-scanlines::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 2px,
+    rgba(255,255,255,0.015) 2px,
+    rgba(255,255,255,0.015) 3px
+  );
+  z-index: 1;
+}
+
+/* Mono numbers — universal for values */
+.mcp-num {
+  font-family: var(--mcp-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+.mcp-label {
+  font-family: var(--mcp-sans);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: var(--mcp-fg);
+}
+.mcp-kicker {
+  font-family: var(--mcp-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mcp-fg-2);
+}

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0;padding:0;background:var(--bg-0);color:var(--fg-0);font-family:var(--font-mono)}
+  .card{padding:20px;box-sizing:border-box;width:700px;height:360px;display:grid;grid-template-columns:1.2fr 1fr;grid-template-rows:auto auto;gap:12px}
+  .panel{background:var(--bg-1);border:1px solid var(--bg-3);border-radius:3px;padding:12px;display:flex;flex-direction:column;gap:8px}
+  .h{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--fg-2);display:flex;align-items:center;gap:6px}
+  .dot{width:6px;height:6px;border-radius:50%}
+  .k{font-size:11px;color:var(--fg-2)}
+  .v{font-size:13px;color:var(--fg-0)}
+  .metric{display:flex;justify-content:space-between;align-items:baseline;padding:2px 0;border-bottom:1px dashed var(--bg-3)}
+  .metric:last-child{border:none}
+  .big{font-size:22px;font-weight:700;color:var(--accent);line-height:1}
+  .unit{font-size:11px;color:var(--fg-2);margin-left:4px}
+  .sub{font-size:10px;color:var(--fg-3);margin-top:-2px}
+  .chart{flex:1;position:relative;background:var(--bg-0);border:1px solid var(--bg-3);border-radius:2px;padding:4px}
+  .axis{position:absolute;right:4px;font-size:9px;color:var(--fg-3);letter-spacing:0.04em}
+  .graph-span{grid-column:1 / -1}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="panel">
+    <div class="h"><span class="dot" style="background:var(--accent);box-shadow:0 0 6px var(--accent)"></span>Latencia / métricas</div>
+    <div><span class="big">29.8</span><span class="unit">fps</span> <span style="color:var(--fg-3);font-size:11px;margin-left:8px">avg 60s · 28.9</span></div>
+    <div class="metric"><span class="k">Frames</span><span class="v">4 212</span></div>
+    <div class="metric"><span class="k">Latencia avg</span><span class="v">32.1 ms</span></div>
+    <div class="metric"><span class="k">min / max</span><span class="v">18 / 64 ms</span></div>
+    <div class="metric"><span class="k">Uptime</span><span class="v">141.2 s</span></div>
+  </div>
+  <div class="panel">
+    <div class="h"><span class="dot" style="background:var(--magenta)"></span>Detector</div>
+    <div class="metric"><span class="k">Cara</span><span class="v" style="color:var(--magenta)">468 pts</span></div>
+    <div class="metric"><span class="k">Manos</span><span class="v" style="color:var(--amber)">42 pts</span></div>
+    <div class="metric"><span class="k">Pose</span><span class="v" style="color:var(--fg-3)">—</span></div>
+    <div class="metric"><span class="k">Backend</span><span class="v" style="color:var(--cyan)">V4L2 · OpenCV 4.8</span></div>
+    <div class="metric"><span class="k">Dropped</span><span class="v">3</span></div>
+  </div>
+  <div class="panel graph-span" style="gap:6px">
+    <div class="h" style="display:flex;justify-content:space-between">
+      <span><span class="dot" style="background:var(--accent);display:inline-block;margin-right:6px"></span>FPS — últimos 60s</span>
+      <span style="color:var(--fg-3);letter-spacing:0.08em">target 30 · avg 28.9 · min 22</span>
+    </div>
+    <div class="chart" id="chart"></div>
+  </div>
+</div>
+<script>
+(() => {
+  const c = document.getElementById('chart');
+  const cw = 640, ch = 90;
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${cw} ${ch}`);
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', '100%');
+  svg.setAttribute('preserveAspectRatio', 'none');
+
+  // target line
+  const target = 30, maxY = 40, minY = 18;
+  const y = v => ch - ((v - minY) / (maxY - minY)) * (ch - 8) - 4;
+
+  // gridlines
+  [20, 30, 40].forEach(v => {
+    const l = document.createElementNS(svgNS, 'line');
+    l.setAttribute('x1', 0); l.setAttribute('x2', cw);
+    l.setAttribute('y1', y(v)); l.setAttribute('y2', y(v));
+    l.setAttribute('stroke', '#21272b'); l.setAttribute('stroke-dasharray', v === 30 ? '0' : '2 3');
+    l.setAttribute('stroke-width', v === 30 ? 1 : 1);
+    svg.appendChild(l);
+    const t = document.createElementNS(svgNS, 'text');
+    t.setAttribute('x', cw - 4); t.setAttribute('y', y(v) - 2);
+    t.setAttribute('fill', '#5a564c'); t.setAttribute('font-size', 9);
+    t.setAttribute('text-anchor', 'end'); t.setAttribute('font-family', 'monospace');
+    t.textContent = v;
+    svg.appendChild(t);
+  });
+
+  // data — 60 samples, 29.8 avg with dip
+  const N = 60;
+  const data = [];
+  for (let i = 0; i < N; i++) {
+    let v = 30 + Math.sin(i * 0.3) * 1.8 + (Math.random() - 0.5) * 2.2;
+    if (i > 18 && i < 28) v -= 7 + Math.random() * 2;   // a rough patch
+    if (i > 55) v += 0.5;
+    data.push(Math.max(minY, Math.min(maxY, v)));
+  }
+  const xs = i => (i / (N - 1)) * cw;
+
+  // area fill
+  const areaPath = data.map((v, i) => `${i === 0 ? 'M' : 'L'}${xs(i)},${y(v)}`).join(' ')
+    + ` L${cw},${ch} L0,${ch} Z`;
+  const area = document.createElementNS(svgNS, 'path');
+  area.setAttribute('d', areaPath);
+  area.setAttribute('fill', 'rgba(157,255,78,0.12)');
+  svg.appendChild(area);
+
+  // line
+  const linePath = data.map((v, i) => `${i === 0 ? 'M' : 'L'}${xs(i)},${y(v)}`).join(' ');
+  const line = document.createElementNS(svgNS, 'path');
+  line.setAttribute('d', linePath);
+  line.setAttribute('fill', 'none');
+  line.setAttribute('stroke', '#9dff4e');
+  line.setAttribute('stroke-width', 1.2);
+  line.setAttribute('stroke-linejoin', 'round');
+  svg.appendChild(line);
+
+  // last point
+  const last = data[data.length - 1];
+  const pt = document.createElementNS(svgNS, 'circle');
+  pt.setAttribute('cx', xs(N - 1)); pt.setAttribute('cy', y(last));
+  pt.setAttribute('r', 2.5); pt.setAttribute('fill', '#9dff4e');
+  svg.appendChild(pt);
+
+  c.appendChild(svg);
+})();
+</script>
+</body>
+</html>

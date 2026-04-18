@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0;padding:0;background:var(--bg-0);color:var(--fg-0);font-family:var(--font-mono)}
+  .card{padding:24px;box-sizing:border-box;width:700px;height:240px;display:flex;flex-direction:column;gap:10px}
+  .row{display:flex;align-items:center;gap:14px;font-size:11px}
+  .tok{width:60px;color:var(--fg-2);letter-spacing:0.08em;text-transform:uppercase}
+  .val{width:50px;color:var(--fg-3);text-align:right}
+  .bar{background:var(--accent);height:12px;border-radius:0}
+  .radii{display:flex;gap:14px;margin-top:4px;align-items:flex-end}
+  .rbox{width:48px;height:48px;background:var(--bg-2);border:1px solid var(--bg-3);display:flex;align-items:flex-end;justify-content:center;font-size:10px;color:var(--fg-2);padding-bottom:4px}
+  .line{height:1px;background:var(--bg-3);margin:4px 0}
+</style>
+</head>
+<body>
+<div class="card">
+  <div style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--fg-2)">SPACING — 4PX GRID</div>
+  <div class="row"><span class="tok">sp-1</span><span class="val">4</span><div class="bar" style="width:4px"></div></div>
+  <div class="row"><span class="tok">sp-2</span><span class="val">8</span><div class="bar" style="width:8px"></div></div>
+  <div class="row"><span class="tok">sp-3</span><span class="val">12</span><div class="bar" style="width:12px"></div></div>
+  <div class="row"><span class="tok">sp-4</span><span class="val">16</span><div class="bar" style="width:16px"></div></div>
+  <div class="row"><span class="tok">sp-5</span><span class="val">24</span><div class="bar" style="width:24px"></div></div>
+  <div class="row"><span class="tok">sp-6</span><span class="val">32</span><div class="bar" style="width:32px"></div></div>
+  <div class="row"><span class="tok">sp-7</span><span class="val">48</span><div class="bar" style="width:48px"></div></div>
+  <div class="row"><span class="tok">sp-8</span><span class="val">64</span><div class="bar" style="width:64px"></div></div>
+</div>
+</body>
+</html>

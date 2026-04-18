@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0;padding:0;background:var(--bg-0);color:var(--fg-0);font-family:var(--font-mono)}
+  .card{padding:24px;box-sizing:border-box;width:700px;height:240px;display:flex;flex-direction:column;gap:14px}
+  .specimen{font-weight:700;font-size:22px;line-height:1.15;color:var(--fg-0)}
+  .meta{display:flex;gap:24px;font-size:11px;color:var(--fg-2)}
+  .meta span b{color:var(--fg-0);font-weight:500;margin-right:4px}
+  .charset{font-size:14px;color:var(--fg-1);letter-spacing:0.02em;line-height:1.4;word-break:break-all}
+  .charset .ramp{color:var(--accent)}
+  .line{height:1px;background:var(--bg-3)}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="specimen">JetBrains Mono · the product font</div>
+  <div class="meta">
+    <span><b>Primary</b>JetBrains Mono 400/500/700</span>
+    <span><b>Fallback</b>DejaVu Sans Mono</span>
+    <span><b>Body</b>Inter (long docs only)</span>
+  </div>
+  <div class="line"></div>
+  <div style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--fg-2)">ASCII CHARSETS (from charset dropdown)</div>
+  <div class="charset"><span style="color:var(--fg-2);width:50px;display:inline-block">simple</span> <span class="ramp">&nbsp;.:-=+*#</span></div>
+  <div class="charset"><span style="color:var(--fg-2);width:50px;display:inline-block">medio</span> <span class="ramp">&nbsp;.:-=+*#%@</span></div>
+  <div class="charset" style="font-size:12px"><span style="color:var(--fg-2);width:50px;display:inline-block;font-size:14px">denso</span> <span class="ramp">&nbsp;.'`^",:;Il!i~+_-?][}{1)(|\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&amp;8%B@$</span></div>
+</div>
+</body>
+</html>

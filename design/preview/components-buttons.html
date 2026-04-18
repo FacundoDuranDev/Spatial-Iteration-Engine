@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0;padding:0;background:var(--bg-0);color:var(--fg-0);font-family:var(--font-mono)}
+  .card{padding:24px;box-sizing:border-box;width:700px;height:200px;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  button{font-family:var(--font-mono);font-size:13px;padding:8px 16px;border-radius:2px;cursor:pointer;border:1px solid;transition:all 120ms}
+  .btn-primary{background:var(--accent);color:#0a0c0d;border-color:var(--accent);font-weight:600}
+  .btn-primary:hover{background:var(--accent-dim);border-color:var(--accent-dim)}
+  .btn-stop{background:transparent;color:#ff5d5d;border-color:#ff5d5d}
+  .btn-stop:hover{background:rgba(255,93,93,.12)}
+  .btn-secondary{background:var(--bg-1);color:var(--fg-0);border-color:var(--bg-3)}
+  .btn-secondary:hover{background:var(--bg-2)}
+  .btn-ghost{background:transparent;color:var(--fg-1);border-color:transparent}
+  .btn-ghost:hover{color:var(--fg-0);background:var(--bg-1)}
+  .btn-disabled{background:var(--bg-1);color:var(--fg-3);border-color:var(--bg-3);cursor:not-allowed}
+  .lbl{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--fg-2);width:100%;margin-bottom:-4px}
+</style>
+</head>
+<body>
+<div class="card">
+  <span class="lbl">Buttons</span>
+  <button class="btn-primary">▶ Iniciar</button>
+  <button class="btn-stop">■ Detener</button>
+  <button class="btn-secondary">Aplicar red</button>
+  <button class="btn-secondary">Aplicar ajustes</button>
+  <button class="btn-ghost">Actualizar</button>
+  <button class="btn-disabled">Ejecutar benchmark</button>
+</div>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0;padding:0;background:var(--bg-0);color:var(--fg-0);font-family:var(--font-mono)}
+  .card{padding:20px;box-sizing:border-box;width:700px;height:340px;display:flex;flex-direction:column;gap:12px}
+  .status{padding:8px 12px;border-radius:4px;font-size:12px;border:1px solid;display:flex;align-items:center;gap:8px}
+  .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .s-ok{background:rgba(157,255,78,.08);border-color:#9dff4e;color:#c9f9a8}
+  .s-warn{background:rgba(255,180,84,.08);border-color:#ffb454;color:#ffd89c}
+  .s-info{background:rgba(94,207,255,.08);border-color:#5ecfff;color:#a5e3ff}
+  .s-err{background:rgba(255,93,93,.08);border-color:#ff5d5d;color:#ffb0b0}
+  .s-idle{background:var(--bg-1);border-color:var(--bg-3);color:var(--fg-2)}
+  .tabs{display:flex;border-bottom:1px solid var(--bg-3)}
+  .tab{padding:8px 14px;font-size:12px;color:var(--fg-2);border-bottom:2px solid transparent;cursor:pointer}
+  .tab.active{color:var(--fg-0);border-bottom-color:var(--accent)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{font-size:11px;padding:3px 10px;border-radius:2px;border:1px solid var(--bg-3);color:var(--fg-2)}
+  .chip.on{border-color:var(--accent);color:var(--accent);background:rgba(157,255,78,.08)}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="status s-ok"><span class="dot" style="background:#9dff4e;box-shadow:0 0 8px #9dff4e"></span>Motor en marcha. El preview se actualiza en la celda de arriba.</div>
+  <div class="status s-info"><span class="dot" style="background:#5ecfff"></span>Red aplicada: Local → 127.0.0.1:1234</div>
+  <div class="status s-warn"><span class="dot" style="background:#ffb454"></span>Sin módulo de percepción. Arranca Jupyter con PYTHONPATH=python:cpp/build.</div>
+  <div class="status s-err"><span class="dot" style="background:#ff5d5d"></span>Error: la cámara en índice 0 no abre.</div>
+  <div class="status s-idle"><span class="dot" style="background:#5a564c"></span>Engine detenido. Pulsa Iniciar para arrancar.</div>
+  <div class="tabs"><div class="tab">Red</div><div class="tab active">Motor</div><div class="tab">Filtros</div><div class="tab">Vista</div><div class="tab">IA</div></div>
+  <div class="chips"><span class="chip on">Edges</span><span class="chip">Brightness/Contrast</span><span class="chip on">Invert</span><span class="chip">Invert (C++)</span><span class="chip">Detail Boost</span></div>
+</div>
+</body>
+</html>

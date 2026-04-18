@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0;padding:0;background:var(--bg-0);font-family:var(--font-mono);color:var(--fg-0)}
+  .card{padding:20px;box-sizing:border-box;width:700px;height:220px;display:grid;grid-template-columns:repeat(2,1fr);gap:10px 20px;align-content:start}
+  .row{display:flex;align-items:center;gap:10px;font-size:12px}
+  .dot{width:10px;height:10px;border-radius:50%}
+  .label{font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.12em;font-size:10px;color:var(--fg-2);width:60px}
+  .msg{color:var(--fg-0)}
+  .msg .hex{color:var(--fg-3);margin-left:6px;font-size:10px}
+  .pill{display:inline-block;padding:2px 8px;border-radius:2px;font-size:11px;border:1px solid}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><span class="dot" style="background:#9dff4e;box-shadow:0 0 12px #9dff4e"></span><span class="label">ok</span><span class="msg">Motor en marcha<span class="hex">#9DFF4E</span></span></div>
+  <div class="row"><span class="dot" style="background:#ffb454"></span><span class="label">warn</span><span class="msg">Sin módulo percepción<span class="hex">#FFB454</span></span></div>
+  <div class="row"><span class="dot" style="background:#ff5d5d"></span><span class="label">err</span><span class="msg">Error: cámara no abre<span class="hex">#FF5D5D</span></span></div>
+  <div class="row"><span class="dot" style="background:#5ecfff"></span><span class="label">info</span><span class="msg">Red aplicada: Local<span class="hex">#5ECFFF</span></span></div>
+  <div class="row"><span class="dot" style="background:#5a564c"></span><span class="label">idle</span><span class="msg">Engine detenido<span class="hex">#5A564C</span></span></div>
+  <div class="row"><span class="label">tints</span>
+    <span class="pill" style="background:rgba(157,255,78,.12);border-color:#9dff4e;color:#9dff4e">Live</span>
+    <span class="pill" style="background:rgba(255,180,84,.12);border-color:#ffb454;color:#ffb454;margin-left:4px">Procesando</span>
+    <span class="pill" style="background:rgba(94,207,255,.12);border-color:#5ecfff;color:#5ecfff;margin-left:4px">UDP</span>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S5 · Presets — Spatial-Iteration-Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+</head>
+<body class="mcp-host">
+<div class="phone mcp-root mcp-scan" data-screen-label="S5 Presets">
+
+  <header class="hdr">
+    <button class="hdr-back">‹</button>
+    <span class="hdr-title">PRESETS</span>
+    <span class="mcp-kicker">5 Saved</span>
+  </header>
+
+  <div style="padding: 12px 16px 16px;">
+
+    <button class="preset-new">
+      <span style="font-size:20px;">+</span>
+      <span>New Preset</span>
+    </button>
+
+    <!-- Applied / selected preset -->
+    <div class="preset-row" style="border-color: var(--cyan); box-shadow: 0 0 14px rgba(0,255,242,0.15);">
+      <div class="preset-stripe" style="background:#00fff2; color:#00fff2;"></div>
+      <div class="preset-body" style="padding-left:12px;">
+        <div class="preset-name">MP3_NOIR</div>
+        <div class="preset-meta">6 filters · shadows · temporal scan · dof</div>
+      </div>
+      <span class="pill pill-running" style="padding:4px 10px; margin-right:4px;"><span class="pill-dot"></span>ACTIVE</span>
+    </div>
+
+    <div class="preset-row">
+      <div class="preset-stripe" style="background:#ff2bd6; color:#ff2bd6;"></div>
+      <div class="preset-body" style="padding-left:12px;">
+        <div class="preset-name">RITUAL</div>
+        <div class="preset-meta">4 filters · kaleidoscope · invert · hue shift</div>
+      </div>
+    </div>
+
+    <div class="preset-row">
+      <div class="preset-stripe" style="background:#ffd11a; color:#ffd11a;"></div>
+      <div class="preset-body" style="padding-left:12px;">
+        <div class="preset-name">MP3_BLOOM</div>
+        <div class="preset-meta">7 filters · bloom · chromatic · soft lut</div>
+      </div>
+    </div>
+
+    <div class="preset-row">
+      <div class="preset-stripe" style="background:#7dff4a; color:#7dff4a;"></div>
+      <div class="preset-body" style="padding-left:12px;">
+        <div class="preset-name">STATIC_RAIN</div>
+        <div class="preset-meta">5 filters · glitch · scanlines · grain</div>
+      </div>
+    </div>
+
+    <div class="preset-row">
+      <div class="preset-stripe" style="background:#5a3bff; color:#5a3bff;"></div>
+      <div class="preset-body" style="padding-left:12px;">
+        <div class="preset-name">DEEP_FIELD</div>
+        <div class="preset-meta">3 filters · dof · motion blur · vignette</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="flex:1;"></div>
+
+  <footer class="ftr">
+    <button class="btn-stop">STOP</button>
+    <button class="btn-ghost"><small>Scene</small><b>MP3_NOIR ▾</b></button>
+    <button class="btn-ghost" style="flex:0.8;"><small>&nbsp;</small><b style="color:var(--text-2);">RESET</b></button>
+  </footer>
+</div>
+</body>
+</html>

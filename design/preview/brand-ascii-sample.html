@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0;padding:0;background:var(--bg-0);color:var(--fg-0);font-family:var(--font-mono)}
+  .card{padding:16px;box-sizing:border-box;width:700px;height:280px;display:grid;grid-template-columns:1fr 260px;gap:16px}
+  .frame{background:#000;border:1px solid var(--bg-3);border-radius:2px;padding:10px;position:relative;overflow:hidden}
+  .ascii{font-family:var(--font-mono);font-size:8.5px;line-height:1;color:var(--accent);white-space:pre;letter-spacing:0;margin:0;text-shadow:0 0 4px rgba(157,255,78,0.25)}
+  .overlay{position:absolute;inset:10px;pointer-events:none}
+  .tag{position:absolute;font-size:9px;color:var(--magenta);letter-spacing:0.08em;text-transform:uppercase;background:rgba(0,0,0,0.6);padding:1px 4px;border:1px solid var(--magenta)}
+  .lm{position:absolute;width:3px;height:3px;background:var(--magenta);border-radius:50%;box-shadow:0 0 4px var(--magenta)}
+  .side{display:flex;flex-direction:column;gap:8px}
+  .h{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--fg-2)}
+  .note{font-size:11px;color:var(--fg-1);line-height:1.4}
+  .meta{font-family:var(--font-mono);font-size:10px;color:var(--fg-2);display:grid;grid-template-columns:auto 1fr;gap:2px 10px;padding-top:6px;border-top:1px dashed var(--bg-3)}
+  .meta b{color:var(--accent);font-weight:400}
+  .hud{position:absolute;top:12px;left:14px;font-size:9px;color:var(--fg-3);letter-spacing:0.08em}
+  .hud-r{position:absolute;top:12px;right:14px;font-size:9px;color:var(--accent);letter-spacing:0.08em}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="frame">
+    <div class="hud">REC · 29.8fps</div>
+    <div class="hud-r">● LIVE</div>
+    <pre class="ascii" id="a"></pre>
+    <div class="overlay" id="ov"></div>
+  </div>
+  <div class="side">
+    <div class="h">Output artifact</div>
+    <div class="note">El frame ASCII es <b style="color:var(--accent)">lo que el engine produce</b>: captura → detección → mapeo a charset → stream UDP. Esta es la forma canónica en la que la marca aparece en público.</div>
+    <div class="meta">
+      <span>grid</span><b>120 × 40</b>
+      <span>charset</span><b>" .:-=+*#%@"</b>
+      <span>detector</span><b>face · 468 pts</b>
+      <span>sink</span><b>udp://:1234</b>
+    </div>
+  </div>
+</div>
+<script>
+// Build a recognizable silhouette: head + shoulders, soft-shaded into ASCII.
+const W=68, H=34, chars=" .:-=+*#%@";
+function shade(x,y){
+  const cx=x-W/2, cy=y-H*0.45;
+  // head ellipse
+  const head = 1 - Math.sqrt((cx/8)**2 + (cy/10)**2);
+  // shoulders: wide flattened ellipse below
+  const sy = y - H*0.85;
+  const shoulders = 1 - Math.sqrt((cx/22)**2 + (sy/4.5)**2);
+  // neck bridge
+  const ny = y - H*0.68;
+  const neck = 1 - Math.sqrt((cx/3)**2 + (ny/2.2)**2);
+  let v = Math.max(head, shoulders, neck);
+  // inner shading — eyes/mouth hollow
+  const le = 1 - Math.sqrt(((cx+3)/1.2)**2 + ((cy+1)/1.2)**2); if(le>0) v -= le*0.9;
+  const re = 1 - Math.sqrt(((cx-3)/1.2)**2 + ((cy+1)/1.2)**2); if(re>0) v -= re*0.9;
+  const mo = 1 - Math.sqrt((cx/2.5)**2 + ((cy-3)/0.8)**2); if(mo>0) v -= mo*0.6;
+  // directional light from top-left
+  v += (-cx*0.01 - cy*0.015);
+  v = Math.max(0, Math.min(1, v));
+  return v;
+}
+let out="";
+for(let y=0;y<H;y++){
+  for(let x=0;x<W;x++){
+    const v=shade(x,y);
+    out += v<0.08 ? " " : chars[Math.floor(v*(chars.length-1))];
+  }
+  out+="\n";
+}
+document.getElementById("a").textContent=out;
+
+// landmark overlay — eyes, nose, mouth corners, jaw
+const ov = document.getElementById('ov');
+const pts = [
+  [0.43,0.34],[0.50,0.34],[0.57,0.34], // left eye
+  [0.60,0.34],[0.66,0.34],              // right eye (reading LTR)
+  [0.50,0.45],                          // nose
+  [0.45,0.54],[0.52,0.56],[0.58,0.54],  // mouth
+  [0.38,0.48],[0.72,0.48],              // cheeks
+  [0.40,0.62],[0.60,0.62],[0.50,0.64],  // chin
+];
+// tag
+const t1 = document.createElement('div'); t1.className='tag'; t1.textContent='face · 468'; t1.style.left='45%'; t1.style.top='18%'; ov.appendChild(t1);
+for(const [px,py] of pts){
+  const d=document.createElement('div'); d.className='lm';
+  d.style.left=(px*100)+'%'; d.style.top=(py*100)+'%'; ov.appendChild(d);
+}
+</script>
+</body>
+</html>

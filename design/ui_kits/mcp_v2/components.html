@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Component Spec Sheet — Spatial-Iteration-Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+<style>
+  body {
+    margin: 0; padding: 40px 32px 80px;
+    background: var(--bg);
+    font-family: var(--font-sans);
+    color: var(--text);
+  }
+  .doc { max-width: 1280px; margin: 0 auto; }
+  .doc-title {
+    font-family: var(--font-sans); font-size: 28px; font-weight: 600;
+    letter-spacing: 0.02em; margin: 0 0 8px;
+  }
+  .doc-sub {
+    font-family: var(--font-mono); font-size: 13px; color: var(--text-2);
+    letter-spacing: 0.08em; margin: 0 0 40px;
+  }
+  .block {
+    border-top: 1px solid var(--line);
+    padding: 24px 0 32px;
+  }
+  .block-head {
+    display: flex; align-items: baseline; gap: 16px; margin-bottom: 20px;
+  }
+  .block-name {
+    font-family: var(--font-sans); font-size: 18px; font-weight: 600;
+    letter-spacing: 0.04em; text-transform: uppercase;
+  }
+  .block-tag {
+    font-family: var(--font-mono); font-size: 11px; color: var(--text-3);
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .states {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+  }
+  .state {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-m);
+    padding: 20px 16px 16px;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 16px;
+    min-height: 140px;
+  }
+  .state-name {
+    font-family: var(--font-mono); font-size: 11px; color: var(--text-2);
+    letter-spacing: 0.15em; text-transform: uppercase;
+    margin-top: auto;
+  }
+  .swatches { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 32px; }
+  .sw {
+    display: flex; flex-direction: column; gap: 6px;
+    font-family: var(--font-mono); font-size: 10px; color: var(--text-2);
+    letter-spacing: 0.08em;
+  }
+  .sw-chip {
+    width: 96px; height: 56px; border-radius: var(--r-s);
+    border: 1px solid var(--line-strong);
+  }
+  .type-row {
+    display: flex; align-items: baseline; gap: 24px;
+    padding: 12px 0; border-bottom: 1px dashed var(--line-strong);
+  }
+  .type-row b { font-weight: 400; color: var(--text); }
+  .type-tag {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em;
+    color: var(--text-3); text-transform: uppercase;
+    width: 120px;
+  }
+  /* force a tight demo card size so states render uniformly */
+  .demo-phone-strip {
+    width: 220px; background: var(--bg);
+    border: 1px solid var(--line); border-radius: var(--r-m);
+  }
+</style>
+</head>
+<body class="mcp-root">
+<div class="doc">
+
+  <h1 class="doc-title">Spatial-Iteration-Engine · Mobile Control Surface</h1>
+  <p class="doc-sub">COMPONENT SPEC SHEET · v3 · 390 × 844 · NEON CYAN / MAGENTA</p>
+
+  <!-- Palette -->
+  <section class="block" style="border-top:none; padding-top:0;">
+    <div class="block-head"><div class="block-name">Palette</div><div class="block-tag">tokens.css</div></div>
+    <div class="swatches">
+      <div class="sw"><div class="sw-chip" style="background:#05060b;"></div>BG #05060B</div>
+      <div class="sw"><div class="sw-chip" style="background:#0e1018;"></div>SURFACE #0E1018</div>
+      <div class="sw"><div class="sw-chip" style="background:#141724;"></div>SURFACE-HIGH</div>
+      <div class="sw"><div class="sw-chip" style="background:#1a1d2a;"></div>LINE #1A1D2A</div>
+      <div class="sw"><div class="sw-chip" style="background:#ffffff;"></div>TEXT #FFFFFF</div>
+      <div class="sw"><div class="sw-chip" style="background:#8891a6;"></div>TEXT-2 #8891A6</div>
+      <div class="sw"><div class="sw-chip" style="background:#3a3f52;"></div>DISABLED #3A3F52</div>
+      <div class="sw"><div class="sw-chip" style="background:#00fff2; box-shadow: 0 0 16px rgba(0,255,242,0.5);"></div>CYAN #00FFF2</div>
+      <div class="sw"><div class="sw-chip" style="background:#ff2bd6; box-shadow: 0 0 16px rgba(255,43,214,0.5);"></div>MAGENTA #FF2BD6</div>
+    </div>
+  </section>
+
+  <!-- Type -->
+  <section class="block">
+    <div class="block-head"><div class="block-name">Typography</div><div class="block-tag">Space Grotesk · JetBrains Mono</div></div>
+    <div class="type-row"><span class="type-tag">TITLE / 20</span><b style="font-family:var(--font-sans); font-size:20px; letter-spacing:0.02em; font-weight:600;">DISTORT</b></div>
+    <div class="type-row"><span class="type-tag">ROW / 16</span><b style="font-family:var(--font-sans); font-size:16px; letter-spacing:0.04em; text-transform:uppercase; font-weight:600;">Temporal Scan</b></div>
+    <div class="type-row"><span class="type-tag">LABEL / 13</span><b style="font-family:var(--font-sans); font-size:13px; letter-spacing:0.04em; text-transform:uppercase; font-weight:500;">Buffer Frames</b></div>
+    <div class="type-row"><span class="type-tag">READOUT / 16</span><b class="mcp-num" style="font-family:var(--font-mono); font-size:16px; color:var(--cyan);">134°</b></div>
+    <div class="type-row"><span class="type-tag">KPI / 13</span><b class="mcp-num" style="font-family:var(--font-mono); font-size:13px; color:var(--text-2);">45.2 FPS</b></div>
+    <div class="type-row"><span class="type-tag">MICRO / 11</span><b class="mcp-kicker">SCENE · MP3_NOIR</b></div>
+  </section>
+
+  <!-- Slider row -->
+  <section class="block">
+    <div class="block-head"><div class="block-name">Slider Row</div><div class="block-tag">.slider</div></div>
+    <div class="states">
+      <div class="state">
+        <div class="slider" style="width:180px;">
+          <div class="slider-top"><span class="slider-label">Blur</span><span class="slider-val">0.65</span></div>
+          <div class="slider-track"><div class="slider-fill" style="width:65%"></div><div class="slider-handle" style="left:65%"></div></div>
+        </div>
+        <div class="state-name">Default</div>
+      </div>
+      <div class="state">
+        <div class="slider dragging" style="width:180px;">
+          <div class="slider-top"><span class="slider-label">Blur</span><span class="slider-val">0.65</span></div>
+          <div class="slider-track"><div class="slider-fill" style="width:65%"></div><div class="slider-handle" style="left:65%"></div></div>
+        </div>
+        <div class="state-name">Dragging</div>
+      </div>
+      <div class="state">
+        <div class="slider disabled" style="width:180px;">
+          <div class="slider-top"><span class="slider-label">Blur</span><span class="slider-val" style="color:var(--disabled);">—</span></div>
+          <div class="slider-track"><div class="slider-fill" style="width:65%"></div><div class="slider-handle" style="left:65%"></div></div>
+        </div>
+        <div class="state-name">Disabled</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Toggle -->
+  <section class="block">
+    <div class="block-head"><div class="block-name">Toggle</div><div class="block-tag">.toggle</div></div>
+    <div class="states">
+      <div class="state"><span class="toggle"><span class="toggle-thumb"></span></span><div class="state-name">Off</div></div>
+      <div class="state"><span class="toggle on"><span class="toggle-thumb"></span></span><div class="state-name">On</div></div>
+      <div class="state"><span class="toggle disabled"><span class="toggle-thumb"></span></span><div class="state-name">Disabled</div></div>
+      <div class="state"><span class="toggle on pressed"><span class="toggle-thumb"></span></span><div class="state-name">Pressed (0.97)</div></div>
+    </div>
+  </section>
+
+  <!-- Dial -->
+  <section class="block">
+    <div class="block-head"><div class="block-name">Angle Dial</div><div class="block-tag">.dial · 140 px</div></div>
+    <div class="states">
+      <!-- default -->
+      <div class="state">
+        <div class="dial-ring"><svg viewBox="0 0 140 140" width="140" height="140">
+          <circle cx="70" cy="70" r="60" fill="none" stroke="#1a1d2a" stroke-width="1"/>
+          <path d="M70,10 A60,60 0 0,1 113.17,93.14" fill="none" stroke="#00fff2" stroke-width="2" style="filter: drop-shadow(0 0 3px #00fff2);"/>
+          <line x1="70" y1="70" x2="113.17" y2="93.14" stroke="#00fff2" stroke-width="2"/>
+          <circle cx="70" cy="70" r="18" fill="#0e1018" stroke="#262a3c"/>
+          <circle cx="70" cy="70" r="3" fill="#00fff2"/>
+          <circle cx="113.17" cy="93.14" r="8" fill="#05060b" stroke="#00fff2" stroke-width="2" style="filter:drop-shadow(0 0 5px rgba(0,255,242,0.5));"/>
+        </svg></div>
+        <span class="mcp-num" style="color:var(--cyan); font-size:16px;">134°</span>
+        <div class="state-name">Default</div>
+      </div>
+      <!-- dragging -->
+      <div class="state">
+        <div class="dial-ring"><svg viewBox="0 0 140 140" width="140" height="140">
+          <circle cx="70" cy="70" r="60" fill="none" stroke="#1a1d2a" stroke-width="1"/>
+          <path d="M70,10 A60,60 0 0,1 113.17,93.14" fill="none" stroke="#00fff2" stroke-width="3" style="filter: drop-shadow(0 0 6px #00fff2);"/>
+          <line x1="70" y1="70" x2="113.17" y2="93.14" stroke="#00fff2" stroke-width="3" style="filter: drop-shadow(0 0 4px #00fff2);"/>
+          <circle cx="70" cy="70" r="18" fill="#0e1018" stroke="#262a3c"/>
+          <circle cx="70" cy="70" r="3" fill="#00fff2"/>
+          <circle cx="113.17" cy="93.14" r="10" fill="#05060b" stroke="#00fff2" stroke-width="2" style="filter:drop-shadow(0 0 10px rgba(0,255,242,0.9));"/>
+        </svg></div>
+        <span class="mcp-num" style="color:var(--cyan); font-size:18px; background:var(--cyan-soft); padding:2px 8px; border-radius:4px;">134°</span>
+        <div class="state-name">Dragging</div>
+      </div>
+      <!-- inactive -->
+      <div class="state">
+        <div class="dial-ring"><svg viewBox="0 0 140 140" width="140" height="140">
+          <circle cx="70" cy="70" r="60" fill="none" stroke="#1a1d2a" stroke-width="1"/>
+          <path d="M70,10 A60,60 0 0,1 113.17,93.14" fill="none" stroke="#3a3f52" stroke-width="2"/>
+          <line x1="70" y1="70" x2="113.17" y2="93.14" stroke="#3a3f52" stroke-width="2"/>
+          <circle cx="70" cy="70" r="18" fill="#0e1018" stroke="#262a3c"/>
+          <circle cx="70" cy="70" r="3" fill="#3a3f52"/>
+          <circle cx="113.17" cy="93.14" r="8" fill="#05060b" stroke="#3a3f52" stroke-width="2"/>
+        </svg></div>
+        <span class="mcp-num" style="color:var(--disabled); font-size:16px;">134°</span>
+        <div class="state-name">Inactive</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- XY pad -->
+  <section class="block">
+    <div class="block-head"><div class="block-name">XY Pad</div><div class="block-tag">.xy · 240 px</div></div>
+    <div class="states">
+      <div class="state">
+        <div class="xy" style="width:200px; height:200px;">
+          <div class="xy-cross" style="left:50%; top:0; bottom:0; width:1px;"></div>
+          <div class="xy-cross" style="top:50%; left:0; right:0; height:1px;"></div>
+          <div class="xy-thumb" style="left:50%; top:50%; box-shadow: var(--cyan-glow);"></div>
+        </div>
+        <div class="state-name">Default</div>
+      </div>
+      <div class="state">
+        <div class="xy" style="width:200px; height:200px;">
+          <div class="xy-cross" style="left:68%; top:0; bottom:0; width:1px;"></div>
+          <div class="xy-cross" style="top:32%; left:0; right:0; height:1px;"></div>
+          <div class="xy-thumb" style="left:68%; top:32%;"></div>
+        </div>
+        <div class="state-name">Thumb Active</div>
+      </div>
+      <div class="state">
+        <div class="xy" style="width:200px; height:200px; opacity:0.4;">
+          <div class="xy-cross" style="left:50%; top:0; bottom:0; width:1px;"></div>
+          <div class="xy-cross" style="top:50%; left:0; right:0; height:1px;"></div>
+          <div class="xy-thumb" style="left:50%; top:50%; border-color:var(--disabled); background:transparent; box-shadow:none;"></div>
+        </div>
+        <div class="state-name">Disabled</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Color wheel -->
+  <section class="block">
+    <div class="block-head"><div class="block-name">Color Wheel</div><div class="block-tag">.wheel · 140 px + lightness</div></div>
+    <div class="states">
+      <div class="state">
+        <div class="wheel">
+          <div class="wheel-ring"><svg viewBox="0 0 140 140" width="140" height="140">
+            <g transform="translate(70 70)">
+              <g opacity="0.9">
+                <circle r="60" fill="none" stroke="#ff3b5c" stroke-width="14" stroke-dasharray="31.4 345.6"/>
+                <circle r="60" fill="none" stroke="#ff8d2b" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(30)"/>
+                <circle r="60" fill="none" stroke="#ffd11a" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(60)"/>
+                <circle r="60" fill="none" stroke="#7dff4a" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(90)"/>
+                <circle r="60" fill="none" stroke="#00ff9e" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(120)"/>
+                <circle r="60" fill="none" stroke="#00fff2" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(150)"/>
+                <circle r="60" fill="none" stroke="#1a9dff" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(180)"/>
+                <circle r="60" fill="none" stroke="#5a3bff" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(210)"/>
+                <circle r="60" fill="none" stroke="#9a33ff" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(240)"/>
+                <circle r="60" fill="none" stroke="#ff2bd6" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(270)"/>
+                <circle r="60" fill="none" stroke="#ff2b87" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(300)"/>
+                <circle r="60" fill="none" stroke="#ff3b3b" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(330)"/>
+              </g>
+              <circle r="46" fill="#0e1018"/>
+              <circle cx="0" cy="0" r="4" fill="#fff" opacity="0.6"/>
+            </g>
+          </svg></div>
+          <div class="wheel-slider" style="background: linear-gradient(to right, #000, #8891a6, #fff);">
+            <div class="wheel-handle" style="left:50%;"></div>
+          </div>
+        </div>
+        <div class="state-name">Default</div>
+      </div>
+      <div class="state">
+        <div class="wheel">
+          <div class="wheel-ring"><svg viewBox="0 0 140 140" width="140" height="140">
+            <g transform="translate(70 70)">
+              <g opacity="0.9">
+                <circle r="60" fill="none" stroke="#ff3b5c" stroke-width="14" stroke-dasharray="31.4 345.6"/>
+                <circle r="60" fill="none" stroke="#ff8d2b" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(30)"/>
+                <circle r="60" fill="none" stroke="#ffd11a" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(60)"/>
+                <circle r="60" fill="none" stroke="#7dff4a" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(90)"/>
+                <circle r="60" fill="none" stroke="#00ff9e" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(120)"/>
+                <circle r="60" fill="none" stroke="#00fff2" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(150)"/>
+                <circle r="60" fill="none" stroke="#1a9dff" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(180)"/>
+                <circle r="60" fill="none" stroke="#5a3bff" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(210)"/>
+                <circle r="60" fill="none" stroke="#9a33ff" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(240)"/>
+                <circle r="60" fill="none" stroke="#ff2bd6" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(270)"/>
+                <circle r="60" fill="none" stroke="#ff2b87" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(300)"/>
+                <circle r="60" fill="none" stroke="#ff3b3b" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(330)"/>
+              </g>
+              <circle r="46" fill="#0e1018"/>
+              <circle cx="-22" cy="16" r="8" fill="#05060b" stroke="#ffffff" stroke-width="2" style="filter:drop-shadow(0 0 8px rgba(255,255,255,0.9));"/>
+              <line x1="0" y1="0" x2="-22" y2="16" stroke="#ffffff" stroke-width="1" opacity="0.6"/>
+            </g>
+          </svg></div>
+          <div class="wheel-slider" style="background: linear-gradient(to right, #000, #8891a6, #fff);">
+            <div class="wheel-handle" style="left:38%;"></div>
+          </div>
+        </div>
+        <div class="state-name">Thumb Active</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stepper -->
+  <section class="block">
+    <div class="block-head"><div class="block-name">Stepper</div><div class="block-tag">.stepper</div></div>
+    <div class="states">
+      <div class="state"><div class="stepper"><button class="stepper-btn">−</button><span class="stepper-val">5</span><button class="stepper-btn">+</button></div><div class="state-name">Default</div></div>
+      <div class="state"><div class="stepper"><button class="stepper-btn" style="background:var(--surface-high);">−</button><span class="stepper-val">4</span><button class="stepper-btn">+</button></div><div class="state-name">− Pressed</div></div>
+      <div class="state"><div class="stepper" style="opacity:0.35;"><button class="stepper-btn">−</button><span class="stepper-val" style="color:var(--disabled); text-shadow:none;">5</span><button class="stepper-btn">+</button></div><div class="state-name">Disabled</div></div>
+    </div>
+  </section>
+
+  <!-- Preset chip -->
+  <section class="block">
+    <div class="block-head"><div class="block-name">Preset Chip</div><div class="block-tag">.chip</div></div>
+    <div class="states">
+      <div class="state"><button class="chip">MP3_NOIR</button><div class="state-name">Default</div></div>
+      <div class="state"><button class="chip on">MP3_NOIR</button><div class="state-name">Selected</div></div>
+    </div>
+  </section>
+
+  <!-- Category card -->
+  <section class="block">
+    <div class="block-head"><div class="block-name">Category Card</div><div class="block-tag">.cat-card</div></div>
+    <div class="states">
+      <div class="state" style="padding:16px;">
+        <div style="width:180px;">
+          <button class="cat-card" style="width:100%; min-height:140px;">
+            <svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3 L21 20 L3 20 Z"/><path d="M12 3 L12 20"/></svg>
+            <span class="cat-name">Distort</span>
+            <span class="cat-count">0 / 8 ON</span>
+          </button>
+        </div>
+        <div class="state-name">Zero-active</div>
+      </div>
+      <div class="state" style="padding:16px;">
+        <div style="width:180px;">
+          <button class="cat-card has-active" style="width:100%; min-height:140px;">
+            <svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3 L21 20 L3 20 Z"/><path d="M12 3 L12 20"/></svg>
+            <span class="cat-name">Distort</span>
+            <span class="cat-count on">2 / 8 ON</span>
+          </button>
+        </div>
+        <div class="state-name">N-active</div>
+      </div>
+      <div class="state" style="padding:16px;">
+        <div style="width:180px;">
+          <button class="cat-card has-active" style="width:100%; min-height:140px; background:var(--surface-high); transform:scale(0.98);">
+            <svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3 L21 20 L3 20 Z"/><path d="M12 3 L12 20"/></svg>
+            <span class="cat-name">Distort</span>
+            <span class="cat-count on">2 / 8 ON</span>
+          </button>
+        </div>
+        <div class="state-name">Pressed</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Status pill -->
+  <section class="block">
+    <div class="block-head"><div class="block-name">Status Pill</div><div class="block-tag">.pill</div></div>
+    <div class="states">
+      <div class="state"><span class="pill pill-running"><span class="pill-dot"></span>RUNNING</span><div class="state-name">Running (pulse)</div></div>
+      <div class="state"><span class="pill pill-stopped"><span class="pill-dot"></span>STOPPED</span><div class="state-name">Stopped</div></div>
+    </div>
+  </section>
+
+  <!-- Footer bar -->
+  <section class="block">
+    <div class="block-head"><div class="block-name">Footer Bar</div><div class="block-tag">.ftr · 80 px</div></div>
+    <div class="states" style="grid-template-columns: 1fr;">
+      <div class="state" style="padding:24px;">
+        <div style="width:358px; display:flex; gap:10px;">
+          <button class="btn-stop">STOP</button>
+          <button class="btn-ghost"><small>Scene</small><b>MP3_NOIR ▾</b></button>
+          <button class="btn-ghost" style="flex:0.8;"><small>&nbsp;</small><b style="color:var(--text-2);">RESET</b></button>
+        </div>
+        <div class="state-name">Running — STOP shown</div>
+      </div>
+      <div class="state" style="padding:24px;">
+        <div style="width:358px; display:flex; gap:10px;">
+          <button class="btn-primary" style="box-shadow: 0 0 40px rgba(0,255,242,0.55), 0 0 2px rgba(0,255,242,1);">START</button>
+          <button class="btn-ghost"><small>Scene</small><b>MP3_NOIR ▾</b></button>
+          <button class="btn-ghost" style="flex:0.8;"><small>&nbsp;</small><b style="color:var(--text-2);">RESET</b></button>
+        </div>
+        <div class="state-name">Stopped — START shown (2× glow)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Motion -->
+  <section class="block">
+    <div class="block-head"><div class="block-name">Motion</div><div class="block-tag">--ease · --dur</div></div>
+    <div style="font-family:var(--font-mono); font-size:13px; color:var(--text-2); display:flex; flex-direction:column; gap:8px; letter-spacing:0.04em;">
+      <div>— State transitions: <b style="color:var(--cyan);">150 ms</b> cubic-bezier(0.4, 0, 0.2, 1)</div>
+      <div>— Glow fade-in: <b style="color:var(--cyan);">80 ms</b> ease-out</div>
+      <div>— Status pill pulse: <b style="color:var(--cyan);">2.4 s</b> ease-in-out, infinite</div>
+      <div>— No spring, no bounce. This is an instrument.</div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

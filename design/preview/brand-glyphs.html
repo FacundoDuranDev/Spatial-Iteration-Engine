@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0;padding:0;background:var(--bg-0);color:var(--fg-0);font-family:var(--font-mono)}
+  .card{padding:20px;box-sizing:border-box;width:700px;height:180px;display:flex;flex-wrap:wrap;gap:18px 24px;align-items:center}
+  .g{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;color:var(--fg-2);min-width:70px}
+  .gl{font-size:26px;line-height:1}
+  .lbl{letter-spacing:0.08em;text-transform:uppercase}
+  .green{color:var(--accent)}
+  .amber{color:var(--amber)}
+  .cyan{color:var(--cyan)}
+  .mag{color:var(--magenta)}
+  .fg{color:var(--fg-0)}
+  .dim{color:var(--fg-3)}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="g"><span class="gl green">▶</span><span class="lbl">play</span></div>
+  <div class="g"><span class="gl" style="color:#ff5d5d">■</span><span class="lbl">stop</span></div>
+  <div class="g"><span class="gl green">●</span><span class="lbl">live</span></div>
+  <div class="g"><span class="gl dim">○</span><span class="lbl">idle</span></div>
+  <div class="g"><span class="gl cyan">→</span><span class="lbl">flow</span></div>
+  <div class="g"><span class="gl fg">·</span><span class="lbl">sep</span></div>
+  <div class="g"><span class="gl amber">⚠</span><span class="lbl">warn</span></div>
+  <div class="g"><span class="gl mag">◆</span><span class="lbl">ia</span></div>
+  <div class="g"><span class="gl fg" style="font-size:18px">│├└─</span><span class="lbl">tree</span></div>
+</div>
+</body>
+</html>

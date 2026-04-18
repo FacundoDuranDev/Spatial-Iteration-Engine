@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S4 · Config — Spatial-Iteration-Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+</head>
+<body class="mcp-host">
+<div class="phone mcp-root mcp-scan" data-screen-label="S4 Config">
+
+  <header class="hdr">
+    <button class="hdr-back">‹</button>
+    <span class="hdr-title">CONFIG</span>
+  </header>
+
+  <section class="section">
+    <div class="section-kicker">Engine</div>
+    <div class="cfg-row">
+      <span class="cfg-label">Camera Res</span>
+      <select class="cfg-select">
+        <option>640 × 480</option>
+        <option>1280 × 720</option>
+        <option>1920 × 1080</option>
+      </select>
+    </div>
+    <div class="cfg-row">
+      <span class="cfg-label">Target FPS</span>
+      <select class="cfg-select">
+        <option>30</option>
+        <option>45</option>
+        <option>60</option>
+      </select>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-kicker">Network</div>
+    <div class="cfg-row" style="flex-direction:column; align-items:stretch; gap:12px; padding:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:baseline;">
+        <span class="cfg-label">LAN URL</span>
+        <span class="mcp-num" style="color:var(--cyan); font-size:13px;">http://192.168.1.38:7860</span>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="seg-btn" style="flex:1; border:1px solid var(--line-strong); border-radius:var(--r-s); padding:10px;">Copy</button>
+        <button class="seg-btn on" style="flex:1; border:1px solid var(--cyan); border-radius:var(--r-s); padding:10px; background:var(--cyan-soft);">Show QR</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-kicker">Performance</div>
+    <div class="cfg-row">
+      <span class="cfg-label">Current</span>
+      <span class="cfg-value"><b>45.2 FPS</b> · 22.1 ms</span>
+    </div>
+    <div class="cfg-row">
+      <span class="cfg-label">Target</span>
+      <span class="cfg-value">33.3 ms (30 FPS)</span>
+    </div>
+    <div class="cfg-row" style="flex-direction:column; align-items:stretch; gap:8px; padding:16px;">
+      <div style="display:flex; justify-content:space-between;">
+        <span class="mcp-kicker">Budget Utilization</span>
+        <span class="mcp-num" style="color:var(--cyan); font-size:12px;">66%</span>
+      </div>
+      <div class="budget-bar"><div class="budget-fill" style="width:66%"></div></div>
+      <div class="mcp-num" style="font-size:11px; color:var(--text-2); margin-top:4px; letter-spacing:0.06em;">
+        6 filters on · 2 analyzers on
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-bottom:24px;">
+    <div class="section-kicker">About</div>
+    <div class="cfg-row" style="flex-direction:column; align-items:flex-start; gap:4px; padding:16px;">
+      <span class="cfg-label">Spatial-Iteration-Engine</span>
+      <span class="mcp-num" style="color:var(--text-2); font-size:12px;">v0.1.0 · GraphScheduler (C++)</span>
+    </div>
+  </section>
+
+  <div style="flex:1;"></div>
+
+  <footer class="ftr">
+    <button class="btn-stop">STOP</button>
+    <button class="btn-ghost"><small>Scene</small><b>MP3_NOIR ▾</b></button>
+    <button class="btn-ghost" style="flex:0.8;"><small>&nbsp;</small><b style="color:var(--text-2);">RESET</b></button>
+  </footer>
+</div>
+</body>
+</html>

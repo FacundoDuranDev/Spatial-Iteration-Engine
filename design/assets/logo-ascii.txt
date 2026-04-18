@@ -1,0 +1,7 @@
+SPATIAL ITERATION ENGINE
+  ___  ___  ___
+ / __||_ _|| __|
+ \__ \ | | | _|
+ |___/|___||___|
+
+source -> perception -> filters -> renderer -> output

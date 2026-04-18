@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S3 · Color — Spatial-Iteration-Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+</head>
+<body class="mcp-host">
+<div class="phone mcp-root mcp-scan" data-screen-label="S3 Color">
+
+  <header class="hdr">
+    <button class="hdr-back">‹</button>
+    <span class="hdr-title">COLOR</span>
+    <span class="pill pill-running" style="padding:4px 10px;"><span class="pill-dot"></span>LIVE</span>
+  </header>
+
+  <div class="rows">
+
+    <!-- Color Grading: expanded -->
+    <div class="row expanded">
+      <div class="row-head">
+        <span class="row-name">Color Grading</span>
+        <span class="toggle on"><span class="toggle-thumb"></span></span>
+      </div>
+      <div class="row-body">
+
+        <!-- Dual wheels -->
+        <div class="wheel-wrap">
+          <div class="wheel">
+            <span class="mcp-kicker">Shadows</span>
+            <div class="wheel-ring">
+              <svg viewBox="0 0 140 140" width="140" height="140">
+                <defs>
+                  <radialGradient id="wheelA" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#0e1018"/>
+                    <stop offset="100%" stop-color="#0e1018" stop-opacity="0"/>
+                  </radialGradient>
+                  <!-- conic approximation via many slices -->
+                </defs>
+                <!-- color ring: emulate conic with 24 wedges -->
+                <g>
+                  <circle cx="70" cy="70" r="62" fill="none" stroke="#0e1018" stroke-width="2"/>
+                </g>
+                <g transform="translate(70 70)">
+                  <!-- simplified color ring using gradients is hard in svg; we fake with 12 arcs -->
+                  <g opacity="0.9">
+                    <circle r="60" fill="none" stroke="#ff3b5c" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(0)"/>
+                    <circle r="60" fill="none" stroke="#ff8d2b" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(30)"/>
+                    <circle r="60" fill="none" stroke="#ffd11a" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(60)"/>
+                    <circle r="60" fill="none" stroke="#7dff4a" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(90)"/>
+                    <circle r="60" fill="none" stroke="#00ff9e" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(120)"/>
+                    <circle r="60" fill="none" stroke="#00fff2" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(150)"/>
+                    <circle r="60" fill="none" stroke="#1a9dff" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(180)"/>
+                    <circle r="60" fill="none" stroke="#5a3bff" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(210)"/>
+                    <circle r="60" fill="none" stroke="#9a33ff" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(240)"/>
+                    <circle r="60" fill="none" stroke="#ff2bd6" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(270)"/>
+                    <circle r="60" fill="none" stroke="#ff2b87" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(300)"/>
+                    <circle r="60" fill="none" stroke="#ff3b3b" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(330)"/>
+                  </g>
+                  <circle r="54" fill="url(#wheelA)" opacity="0.6"/>
+                  <circle r="46" fill="#0e1018"/>
+                  <!-- thumb -->
+                  <circle cx="-22" cy="16" r="7" fill="#05060b" stroke="#ffffff" stroke-width="2"
+                          style="filter: drop-shadow(0 0 6px rgba(255,255,255,0.6));"/>
+                  <line x1="0" y1="0" x2="-22" y2="16" stroke="#ffffff" stroke-width="1" opacity="0.5"/>
+                </g>
+              </svg>
+            </div>
+            <div class="wheel-slider" style="background: linear-gradient(to right, #000, #8891a6, #fff);">
+              <div class="wheel-handle" style="left: 38%;"></div>
+            </div>
+            <span class="mcp-num" style="font-size:11px; color:var(--text-2);">R -0.12 · G 0.04 · B 0.18</span>
+          </div>
+
+          <div class="wheel">
+            <span class="mcp-kicker">Highlights</span>
+            <div class="wheel-ring">
+              <svg viewBox="0 0 140 140" width="140" height="140">
+                <g transform="translate(70 70)">
+                  <g opacity="0.9">
+                    <circle r="60" fill="none" stroke="#ff3b5c" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(0)"/>
+                    <circle r="60" fill="none" stroke="#ff8d2b" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(30)"/>
+                    <circle r="60" fill="none" stroke="#ffd11a" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(60)"/>
+                    <circle r="60" fill="none" stroke="#7dff4a" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(90)"/>
+                    <circle r="60" fill="none" stroke="#00ff9e" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(120)"/>
+                    <circle r="60" fill="none" stroke="#00fff2" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(150)"/>
+                    <circle r="60" fill="none" stroke="#1a9dff" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(180)"/>
+                    <circle r="60" fill="none" stroke="#5a3bff" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(210)"/>
+                    <circle r="60" fill="none" stroke="#9a33ff" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(240)"/>
+                    <circle r="60" fill="none" stroke="#ff2bd6" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(270)"/>
+                    <circle r="60" fill="none" stroke="#ff2b87" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(300)"/>
+                    <circle r="60" fill="none" stroke="#ff3b3b" stroke-width="14" stroke-dasharray="31.4 345.6" transform="rotate(330)"/>
+                  </g>
+                  <circle r="46" fill="#0e1018"/>
+                  <circle cx="24" cy="-12" r="7" fill="#05060b" stroke="#ffffff" stroke-width="2"
+                          style="filter: drop-shadow(0 0 6px rgba(255,255,255,0.6));"/>
+                  <line x1="0" y1="0" x2="24" y2="-12" stroke="#ffffff" stroke-width="1" opacity="0.5"/>
+                </g>
+              </svg>
+            </div>
+            <div class="wheel-slider" style="background: linear-gradient(to right, #000, #8891a6, #fff);">
+              <div class="wheel-handle" style="left: 72%;"></div>
+            </div>
+            <span class="mcp-num" style="font-size:11px; color:var(--text-2);">R 0.08 · G 0.02 · B -0.06</span>
+          </div>
+        </div>
+
+        <!-- Sliders -->
+        <div class="slider">
+          <div class="slider-top"><span class="slider-label">Saturation</span><span class="slider-val">1.18</span></div>
+          <div class="slider-track"><div class="slider-fill" style="width:59%"></div><div class="slider-handle" style="left:59%"></div></div>
+        </div>
+        <div class="slider">
+          <div class="slider-top"><span class="slider-label">Contrast</span><span class="slider-val">1.24</span></div>
+          <div class="slider-track"><div class="slider-fill" style="width:62%"></div><div class="slider-handle" style="left:62%"></div></div>
+        </div>
+        <div class="slider">
+          <div class="slider-top"><span class="slider-label">Lift</span><span class="slider-val">-0.04</span></div>
+          <div class="slider-track"><div class="slider-fill" style="width:48%"></div><div class="slider-handle" style="left:48%"></div></div>
+        </div>
+        <div class="slider">
+          <div class="slider-top"><span class="slider-label">Gamma</span><span class="slider-val">0.92</span></div>
+          <div class="slider-track"><div class="slider-fill" style="width:46%"></div><div class="slider-handle" style="left:46%"></div></div>
+        </div>
+        <div class="slider">
+          <div class="slider-top"><span class="slider-label">Gain</span><span class="slider-val">1.08</span></div>
+          <div class="slider-track"><div class="slider-fill" style="width:54%"></div><div class="slider-handle" style="left:54%"></div></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Other filters collapsed -->
+    <div class="row"><div class="row-head"><span class="row-name">Hue Shift</span><span class="toggle on"><span class="toggle-thumb"></span></span></div></div>
+    <div class="row"><div class="row-head"><span class="row-name">White Balance</span><span class="toggle on"><span class="toggle-thumb"></span></span></div></div>
+    <div class="row"><div class="row-head"><span class="row-name">Vignette</span><span class="toggle"><span class="toggle-thumb"></span></span></div></div>
+    <div class="row"><div class="row-head"><span class="row-name">LUT</span><span class="toggle"><span class="toggle-thumb"></span></span></div></div>
+    <div class="row"><div class="row-head"><span class="row-name">Invert</span><span class="toggle"><span class="toggle-thumb"></span></span></div></div>
+    <div class="row"><div class="row-head"><span class="row-name">Posterize</span><span class="toggle"><span class="toggle-thumb"></span></span></div></div>
+
+  </div>
+
+  <footer class="ftr">
+    <button class="btn-stop">STOP</button>
+    <button class="btn-ghost"><small>Scene</small><b>MP3_NOIR ▾</b></button>
+    <button class="btn-ghost" style="flex:0.8;"><small>&nbsp;</small><b style="color:var(--text-2);">RESET</b></button>
+  </footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S2 · Distort — Spatial-Iteration-Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+</head>
+<body class="mcp-host">
+<div class="phone mcp-root mcp-scan" data-screen-label="S2 Distort">
+
+  <header class="hdr">
+    <button class="hdr-back" aria-label="Back">‹</button>
+    <span class="hdr-title">DISTORT</span>
+    <span class="pill pill-running" style="padding:4px 10px;"><span class="pill-dot"></span>LIVE</span>
+  </header>
+
+  <div class="rows">
+
+    <!-- Kaleidoscope: collapsed, off -->
+    <div class="row">
+      <div class="row-head">
+        <span class="row-name">Kaleidoscope</span>
+        <span class="toggle"><span class="toggle-thumb"></span></span>
+      </div>
+    </div>
+
+    <!-- Temporal Scan: expanded, on -->
+    <div class="row expanded">
+      <div class="row-head">
+        <span class="row-name">Temporal Scan</span>
+        <span class="toggle on"><span class="toggle-thumb"></span></span>
+      </div>
+      <div class="row-body">
+
+        <!-- Angle dial -->
+        <div class="dial">
+          <div class="slider-top" style="width:100%;">
+            <span class="slider-label">Angle</span>
+            <span class="slider-val">134°</span>
+          </div>
+          <div class="dial-ring">
+            <svg viewBox="0 0 140 140" width="140" height="140">
+              <!-- tick marks -->
+              <g stroke="#262a3c" stroke-width="1">
+                <!-- generate via explicit coords -->
+                <line x1="70" y1="6"   x2="70" y2="14"/>
+                <line x1="70" y1="126" x2="70" y2="134"/>
+                <line x1="6"  y1="70"  x2="14" y2="70"/>
+                <line x1="126" y1="70" x2="134" y2="70"/>
+                <line x1="24" y1="24" x2="30" y2="30"/>
+                <line x1="110" y1="24" x2="116" y2="30"/>
+                <line x1="24" y1="116" x2="30" y2="110"/>
+                <line x1="110" y1="116" x2="116" y2="110"/>
+              </g>
+              <!-- outer ring -->
+              <circle cx="70" cy="70" r="60" fill="none" stroke="#1a1d2a" stroke-width="1"/>
+              <!-- arc from 0 to 134 deg (measured CW from top) -->
+              <!-- 134deg -> end point -->
+              <path d="M70,10 A60,60 0 0,1 113.17,93.14"
+                    fill="none" stroke="#00fff2" stroke-width="2"
+                    style="filter: drop-shadow(0 0 4px #00fff2);"/>
+              <!-- pointer line -->
+              <line x1="70" y1="70" x2="113.17" y2="93.14"
+                    stroke="#00fff2" stroke-width="2"
+                    style="filter: drop-shadow(0 0 4px #00fff2);"/>
+              <!-- center puck -->
+              <circle cx="70" cy="70" r="18" fill="#0e1018" stroke="#262a3c"/>
+              <circle cx="70" cy="70" r="3" fill="#00fff2"/>
+              <!-- knob handle -->
+              <circle cx="113.17" cy="93.14" r="8" fill="#05060b" stroke="#00fff2" stroke-width="2"
+                      style="filter: drop-shadow(0 0 6px rgba(0,255,242,0.6));"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Buffer frames slider -->
+        <div class="slider">
+          <div class="slider-top">
+            <span class="slider-label">Buffer Frames</span>
+            <span class="slider-val">18</span>
+          </div>
+          <div class="slider-track">
+            <div class="slider-fill" style="width:60%"></div>
+            <div class="slider-handle" style="left:60%"></div>
+          </div>
+        </div>
+
+        <!-- Curve segmented -->
+        <div class="slider" style="gap:10px;">
+          <span class="slider-label">Curve</span>
+          <div class="seg">
+            <button class="seg-btn on">Linear</button>
+            <button class="seg-btn">Ease</button>
+            <button class="seg-btn">Cubic</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Depth of Field: expanded, on -->
+    <div class="row expanded">
+      <div class="row-head">
+        <span class="row-name">Depth of Field</span>
+        <span class="toggle on"><span class="toggle-thumb"></span></span>
+      </div>
+      <div class="row-body">
+        <div>
+          <div class="slider-top" style="margin-bottom:8px;">
+            <span class="slider-label">Focus Point</span>
+            <span class="mcp-kicker">XY</span>
+          </div>
+          <div class="xy">
+            <!-- crosshair through current thumb -->
+            <div class="xy-cross" style="left: 62%; top: 0; bottom: 0; width: 1px;"></div>
+            <div class="xy-cross" style="top: 44%; left: 0; right: 0; height: 1px;"></div>
+            <div class="xy-thumb" style="left: 62%; top: 44%;"></div>
+          </div>
+          <div class="xy-readout">
+            <span>X <b>0.62</b></span>
+            <span>Y <b>0.44</b></span>
+          </div>
+        </div>
+
+        <div class="slider">
+          <div class="slider-top">
+            <span class="slider-label">Blur Strength</span>
+            <span class="slider-val">0.65</span>
+          </div>
+          <div class="slider-track">
+            <div class="slider-fill" style="width:65%"></div>
+            <div class="slider-handle" style="left:65%"></div>
+          </div>
+        </div>
+
+        <div class="slider">
+          <div class="slider-top">
+            <span class="slider-label">Bokeh Size</span>
+            <span class="slider-val">8</span>
+          </div>
+          <div class="slider-track">
+            <div class="slider-fill" style="width:50%"></div>
+            <div class="slider-handle" style="left:50%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Collapsed off rows -->
+    <div class="row"><div class="row-head"><span class="row-name">Radial Collapse</span><span class="toggle"><span class="toggle-thumb"></span></span></div></div>
+    <div class="row"><div class="row-head"><span class="row-name">Motion Blur</span><span class="toggle"><span class="toggle-thumb"></span></span></div></div>
+    <div class="row"><div class="row-head"><span class="row-name">UV Displacement</span><span class="toggle"><span class="toggle-thumb"></span></span></div></div>
+    <div class="row"><div class="row-head"><span class="row-name">Hand Spatial Warp</span><span class="toggle"><span class="toggle-thumb"></span></span></div></div>
+    <div class="row"><div class="row-head"><span class="row-name">Radial Blur</span><span class="toggle"><span class="toggle-thumb"></span></span></div></div>
+
+  </div>
+
+  <footer class="ftr">
+    <button class="btn-stop">STOP</button>
+    <button class="btn-ghost"><small>Scene</small><b>MP3_NOIR ▾</b></button>
+    <button class="btn-ghost" style="flex:0.8;"><small>&nbsp;</small><b style="color:var(--text-2);">RESET</b></button>
+  </footer>
+</div>
+</body>
+</html>

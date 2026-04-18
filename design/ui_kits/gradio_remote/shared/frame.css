@@ -1,0 +1,86 @@
+/* Phone frame genérico — cada variante aplica su tokens encima */
+
+.phones {
+  display: flex;
+  gap: 40px;
+  padding: 40px;
+  align-items: flex-start;
+  overflow-x: auto;
+  min-height: 100vh;
+}
+
+.phone {
+  flex: 0 0 auto;
+  width: 390px;
+  height: 844px;
+  border-radius: 44px;
+  padding: 10px;
+  background: #0a0a0a;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.4), 0 0 0 2px #222 inset;
+  position: relative;
+}
+.phone-screen {
+  width: 100%;
+  height: 100%;
+  border-radius: 34px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Status bar + dynamic island */
+.phone-statusbar {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  font-size: 13px;
+  font-weight: 600;
+  flex: 0 0 40px;
+  position: relative;
+  z-index: 2;
+}
+.phone-statusbar .island {
+  position: absolute;
+  left: 50%; top: 10px;
+  transform: translateX(-50%);
+  width: 110px; height: 28px;
+  background: #000;
+  border-radius: 14px;
+}
+.phone-statusbar .icons { display: flex; gap: 6px; align-items: center; }
+
+.phone-label {
+  text-align: center;
+  margin-top: 16px;
+  font-size: 12px;
+  color: #888;
+  font-family: ui-monospace, 'JetBrains Mono', monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Scrollable screen body */
+.screen-body { flex: 1; overflow-y: auto; }
+.screen-body::-webkit-scrollbar { width: 0; }
+
+/* Layout shell */
+.page-wrapper { background: #111; min-height: 100vh; }
+.page-title {
+  color: #fff;
+  padding: 32px 40px 16px;
+  font-family: ui-monospace, 'JetBrains Mono', monospace;
+  font-size: 14px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.page-sub {
+  color: #888;
+  padding: 0 40px 24px;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  max-width: 900px;
+  line-height: 1.5;
+}

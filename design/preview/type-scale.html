@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0;padding:0;background:var(--bg-0);color:var(--fg-0)}
+  .card{padding:24px;box-sizing:border-box;width:700px;height:380px;font-family:var(--font-mono)}
+  .row{display:flex;align-items:baseline;gap:16px;padding:8px 0;border-bottom:1px dashed var(--bg-3)}
+  .row:last-child{border-bottom:none}
+  .tag{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.12em;color:var(--fg-2);width:80px;flex-shrink:0}
+  .spec{color:var(--fg-3);font-size:10px;margin-left:auto;letter-spacing:0.04em}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><span class="tag">display</span><span style="font-size:40px;font-weight:700;letter-spacing:-0.01em">ASCII Stream</span><span class="spec">40/700 mono</span></div>
+  <div class="row"><span class="tag">h1</span><span style="font-size:28px;font-weight:700">Motor en marcha</span><span class="spec">28/700 mono</span></div>
+  <div class="row"><span class="tag">h2</span><span style="font-size:20px;font-weight:500">Servidor en red</span><span class="spec">20/500 mono</span></div>
+  <div class="row"><span class="tag">body</span><span style="font-family:var(--font-sans);font-size:14px;color:var(--fg-1)">Aplica un filtro al FilterPipeline y comprueba en pantalla.</span><span class="spec">14/400 sans</span></div>
+  <div class="row"><span class="tag">code</span><span style="font-size:13px;color:var(--accent);background:var(--bg-2);padding:2px 6px;border-radius:2px">udp://@127.0.0.1:1234</span><span class="spec">13 mono accent</span></div>
+  <div class="row"><span class="tag">label</span><span style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--fg-2)">NETWORK MODE</span><span class="spec">11 track.12em</span></div>
+  <div class="row"><span class="tag">kbd</span><span style="font-size:11px;padding:2px 6px;background:var(--bg-2);border:1px solid var(--bg-3);border-radius:2px">Ctrl+C</span><span class="spec">11 mono box</span></div>
+</div>
+</body>
+</html>

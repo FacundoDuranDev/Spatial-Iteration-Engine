@@ -1,0 +1,119 @@
+/* ============================================================
+   Spatial-Iteration-Engine · Mobile Control Surface
+   tokens.css — drop-in variables, no dependencies.
+   ============================================================ */
+
+:root {
+  /* -- Palette -- */
+  --bg:            #05060b;
+  --surface:       #0e1018;
+  --surface-high:  #141724;   /* expanded / pressed surface */
+  --line:          #1a1d2a;   /* inner top border */
+  --line-strong:   #262a3c;   /* stronger hairline */
+  --text:          #ffffff;
+  --text-2:        #8891a6;
+  --text-3:        #5a6278;   /* tertiary */
+  --disabled:      #3a3f52;
+
+  --cyan:          #00fff2;   /* primary accent, state-on */
+  --cyan-dim:      #00b8ae;
+  --cyan-soft:     rgba(0, 255, 242, 0.08);
+  --cyan-glow:     0 0 12px rgba(0, 255, 242, 0.35), 0 0 2px rgba(0, 255, 242, 0.7);
+  --cyan-glow-lg:  0 0 24px rgba(0, 255, 242, 0.45), 0 0 2px rgba(0, 255, 242, 0.9);
+
+  --mag:           #ff2bd6;   /* destructive / stop */
+  --mag-dim:       #c2179f;
+  --mag-soft:      rgba(255, 43, 214, 0.08);
+  --mag-glow:      0 0 12px rgba(255, 43, 214, 0.35), 0 0 2px rgba(255, 43, 214, 0.7);
+
+  /* -- Type -- */
+  --font-sans: "Space Grotesk", "Inter", -apple-system, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+
+  --fs-title:   20px;   /* S-level title */
+  --fs-row:     16px;   /* row title */
+  --fs-label:   13px;   /* labels */
+  --fs-readout: 16px;   /* numeric readout mono */
+  --fs-kpi:     13px;   /* mono kpi */
+  --fs-micro:   11px;   /* kicker / meta */
+
+  --tracking-label: 0.04em;
+  --tracking-kicker: 0.18em;
+
+  /* -- Spacing (4pt) -- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-7: 32px;
+  --sp-8: 40px;
+
+  --gutter:     16px;   /* screen side gutter */
+  --card-pad:   16px;
+  --row-h:      64px;
+
+  /* -- Radii -- */
+  --r-s:  6px;
+  --r-m:  10px;
+  --r-l:  14px;
+  --r-pill: 999px;
+
+  /* -- Motion -- */
+  --ease:  cubic-bezier(0.4, 0, 0.2, 1);
+  --dur:   150ms;
+  --dur-fast: 80ms;
+}
+
+/* ============================================================
+   Base resets + atomic helpers — scoped to .mcp-root
+   ============================================================ */
+
+.mcp-root {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  font-size: 14px;
+  line-height: 1.4;
+  box-sizing: border-box;
+}
+.mcp-root *, .mcp-root *::before, .mcp-root *::after { box-sizing: border-box; }
+
+.mcp-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.mcp-kicker {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: var(--tracking-kicker);
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.mcp-label {
+  font-family: var(--font-sans);
+  font-size: var(--fs-label);
+  letter-spacing: var(--tracking-label);
+  color: var(--text);
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+/* Scanline overlay — attach to a container with class mcp-scan */
+.mcp-scan { position: relative; }
+.mcp-scan::after {
+  content: "";
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0, transparent 2px,
+    rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 3px
+  );
+  z-index: 2;
+}

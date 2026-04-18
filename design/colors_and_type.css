@@ -1,0 +1,228 @@
+/* ============================================================
+   Spatial Iteration Engine — colors & type
+   A monospace, terminal-first design system.
+   ------------------------------------------------------------
+   The product is an engineering-first, Spanish-language ASCII
+   video-streaming engine. The visual identity borrows from
+   terminals, UDP/VLC streams, and hexagonal architecture
+   diagrams. Monospace everywhere; high contrast; minimal chrome.
+   ============================================================ */
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/JetBrainsMono-Variable.woff2") format("woff2-variations"),
+       url("https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKxjPVmUsaaDhw.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Inter";
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfAZ9hiA.woff2") format("woff2");
+}
+
+:root {
+  /* ----------------------------------------------------------
+     COLOR — Terminal palette
+     ---------------------------------------------------------- */
+
+  /* Base / backgrounds */
+  --bg-0: #0a0c0d;          /* terminal black, page base */
+  --bg-1: #101315;          /* panel / card */
+  --bg-2: #171b1e;          /* raised surface, hover */
+  --bg-3: #21272b;          /* borders, dividers, subtle */
+  --bg-inverse: #f2efe8;    /* paper — used for print docs, specimens */
+
+  /* Foreground / text */
+  --fg-0: #f2efe8;          /* primary text, bright */
+  --fg-1: #c9c4b8;          /* body text */
+  --fg-2: #8a8576;          /* secondary, labels */
+  --fg-3: #5a564c;          /* tertiary, placeholder */
+  --fg-dim: #3a3731;        /* borders on dark, muted */
+
+  /* Accent — "phosphor green" — the ASCII render default fg.
+     Use sparingly: status indicators, live data, selection. */
+  --accent: #9dff4e;        /* primary — lime phosphor */
+  --accent-dim: #6bb535;    /* hover / pressed */
+  --accent-soft: rgba(157, 255, 78, 0.12);  /* tint background */
+
+  /* Amber — runtime / processing state (like a CRT amber) */
+  --amber: #ffb454;
+  --amber-dim: #b87a2f;
+  --amber-soft: rgba(255, 180, 84, 0.12);
+
+  /* Cyan — network / UDP / IP / signal */
+  --cyan: #5ecfff;
+  --cyan-dim: #3d9bc2;
+  --cyan-soft: rgba(94, 207, 255, 0.12);
+
+  /* Magenta — IA / perception / style transfer */
+  --magenta: #ff6ac1;
+  --magenta-dim: #b8458b;
+  --magenta-soft: rgba(255, 106, 193, 0.12);
+
+  /* Semantic state */
+  --ok: var(--accent);
+  --warn: var(--amber);
+  --err: #ff5d5d;
+  --info: var(--cyan);
+
+  /* ----------------------------------------------------------
+     TYPE — Monospace first. Sans only for UI chrome / docs.
+     ---------------------------------------------------------- */
+  --font-mono: "JetBrains Mono", "DejaVu Sans Mono", "Menlo",
+               "Consolas", ui-monospace, monospace;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont,
+               "Segoe UI", sans-serif;
+
+  /* Type scale — modular, monospace-friendly */
+  --fs-xs:   11px;   /* labels, captions, chrome */
+  --fs-sm:   13px;   /* body small, controls */
+  --fs-base: 14px;   /* body, code default */
+  --fs-md:   16px;   /* emphasized body */
+  --fs-lg:   20px;   /* sub headings, section labels */
+  --fs-xl:   28px;   /* headings */
+  --fs-2xl:  40px;   /* display */
+  --fs-3xl:  64px;   /* hero / ASCII banner */
+
+  --lh-tight: 1.15;
+  --lh-snug:  1.35;
+  --lh-base:  1.55;
+  --lh-code:  1.4;    /* monospace looks best at ~1.4 */
+
+  --tracking-tight: -0.01em;
+  --tracking-base:   0;
+  --tracking-wide:   0.04em;  /* ALL-CAPS LABELS */
+  --tracking-widest: 0.12em;  /* SECTION HEADERS */
+
+  --fw-regular: 400;
+  --fw-medium:  500;
+  --fw-bold:    700;
+
+  /* ----------------------------------------------------------
+     SPACING — 4pt grid with terminal character widths in mind
+     ---------------------------------------------------------- */
+  --sp-0:  0;
+  --sp-1:  4px;
+  --sp-2:  8px;
+  --sp-3:  12px;
+  --sp-4:  16px;
+  --sp-5:  24px;
+  --sp-6:  32px;
+  --sp-7:  48px;
+  --sp-8:  64px;
+
+  /* Radii — keep it crisp. Terminals don't round. */
+  --radius-0: 0;
+  --radius-1: 2px;
+  --radius-2: 4px;
+  --radius-pill: 999px;
+
+  /* Borders */
+  --border-hairline: 1px solid var(--bg-3);
+  --border-strong:   1px solid var(--fg-dim);
+  --border-accent:   1px solid var(--accent);
+  --border-dashed:   1px dashed var(--bg-3);
+
+  /* Elevation — subtle. This is not Material. */
+  --shadow-0: none;
+  --shadow-1: 0 1px 0 var(--bg-3);
+  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 20px rgba(157, 255, 78, 0.25);
+
+  /* Motion — fast, linear-ish. No bouncy animations. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-std: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-slow: 320ms;
+}
+
+/* ------------------------------------------------------------
+   SEMANTIC TYPE — drop-in classes
+   ------------------------------------------------------------ */
+
+.t-display {
+  font-family: var(--font-mono);
+  font-size: var(--fs-3xl);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-tight);
+  font-weight: var(--fw-bold);
+  color: var(--fg-0);
+}
+
+.t-h1 {
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xl);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-bold);
+  color: var(--fg-0);
+}
+
+.t-h2 {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xl);
+  line-height: var(--lh-snug);
+  font-weight: var(--fw-bold);
+  color: var(--fg-0);
+}
+
+.t-h3 {
+  font-family: var(--font-mono);
+  font-size: var(--fs-lg);
+  line-height: var(--lh-snug);
+  font-weight: var(--fw-medium);
+  color: var(--fg-0);
+}
+
+.t-body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  line-height: var(--lh-base);
+  color: var(--fg-1);
+}
+
+.t-body-mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-base);
+  line-height: var(--lh-code);
+  color: var(--fg-1);
+}
+
+.t-small {
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-base);
+  color: var(--fg-2);
+}
+
+.t-code {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-code);
+  color: var(--accent);
+  background: var(--bg-2);
+  padding: 0 4px;
+  border-radius: var(--radius-1);
+}
+
+.t-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--fg-2);
+  font-weight: var(--fw-medium);
+}
+
+.t-kbd {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  padding: 2px 6px;
+  background: var(--bg-2);
+  border: var(--border-hairline);
+  border-radius: var(--radius-1);
+  color: var(--fg-0);
+}

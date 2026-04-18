@@ -1,0 +1,77 @@
+/* ============================================================
+   C — High-Contrast Stage
+   Negro profundo, blanco tipográfico XL, hit targets enormes.
+   Pensado para usarse en penumbra de teatro/club.
+   Un único acento: cyan fosforescente.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+:root {
+  /* Palette — stage blackout */
+  --bg: #000000;
+  --ink: #ffffff;
+  --ink-2: #c9c9c9;
+  --ink-3: #7a7a7a;
+  --ink-4: #3f3f3f;
+  --rule: #1c1c1c;
+  --accent: #22f1d0;         /* cyan fosforescente */
+  --accent-glow: 0 0 12px rgba(34, 241, 208, 0.55);
+  --live: #ff5a4e;           /* REC */
+  --off: #2a2a2a;
+
+  /* Type */
+  --font-ui: 'Space Grotesk', system-ui, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, monospace;
+
+  /* Scale — MUCH larger than normal */
+  --t-xs: 13px;
+  --t-sm: 16px;
+  --t-md: 19px;
+  --t-lg: 24px;
+  --t-xl: 34px;
+  --t-2xl: 48px;
+  --t-3xl: 72px;
+  --t-4xl: 104px;
+
+  /* Spacing */
+  --s-1: 6px;
+  --s-2: 10px;
+  --s-3: 16px;
+  --s-4: 22px;
+  --s-5: 28px;
+  --s-6: 40px;
+  --s-7: 56px;
+  --s-8: 72px;
+
+  /* Radii — sharp */
+  --r-sm: 0;
+  --r-md: 0;
+  --r-pill: 999px;
+
+  /* Hit target — GIGANTE, 64 mínimo */
+  --hit: 64px;
+  --hit-xl: 88px;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--t-md);
+  line-height: 1.25;
+  font-feature-settings: "ss01", "tnum";
+}
+
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.cap {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  color: var(--ink-3);
+}
+.xl-num { font-size: var(--t-3xl); font-weight: 500; letter-spacing: -0.03em; line-height: 0.9; }
