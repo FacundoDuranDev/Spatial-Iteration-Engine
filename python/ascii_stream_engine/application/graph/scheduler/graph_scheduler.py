@@ -1,6 +1,7 @@
 """GraphScheduler — executes a graph of nodes in topological order.
 
-Same process_frame() API as PipelineOrchestrator so StreamEngine can use either.
+Single execution path of StreamEngine: one frame per tick, scheduled across
+the DAG produced by GraphBuilder.
 """
 
 import logging
@@ -55,8 +56,10 @@ def _phase_for_node(node: BaseNode) -> Optional[str]:
 class GraphScheduler:
     """Executes a graph of nodes in topological order.
 
-    Provides the same process_frame(frame, timestamp) -> (bool, error_msg) API
-    as PipelineOrchestrator for drop-in use by StreamEngine.
+    StreamEngine's sole execution backend: ``process_frame(frame, timestamp)``
+    returns ``(success, error_message)`` and feeds the frame through the
+    source → analyzers → trackers → transforms → filters → renderer → output
+    chain as wired by GraphBuilder.
     """
 
     def __init__(
@@ -186,7 +189,9 @@ class GraphScheduler:
             timestamp: Frame timestamp.
 
         Returns:
-            (success, error_message) tuple matching PipelineOrchestrator API.
+            ``(success, error_message)``: ``success`` is False when a fatal
+            node (source/renderer/output) raised; analyzer/filter failures
+            are logged and swallowed, not propagated.
         """
         if timestamp is None:
             timestamp = time.time()
@@ -535,7 +540,7 @@ class GraphScheduler:
         return dict(self._node_timings)
 
     def get_last_analysis(self) -> Dict[str, Any]:
-        """Get the last frame's analysis results. Compatible with PipelineOrchestrator."""
+        """Return the most recent frame's merged analyzer output."""
         return dict(self._last_analysis)
 
     def get_node_output(self, node_name: str, port_name: str) -> Any:
