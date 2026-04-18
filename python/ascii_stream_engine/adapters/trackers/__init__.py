@@ -1,7 +1,5 @@
 """Módulo de tracking de objetos."""
 
-# TrackingPipeline: implementación única en application.pipeline
-from ...application.pipeline import TrackingPipeline
 from .base import BaseTracker
 from .kalman_tracker import KalmanTracker
 from .multi_object_tracker import MultiObjectTracker
@@ -12,5 +10,4 @@ __all__ = [
     "OpenCVTracker",
     "KalmanTracker",
     "MultiObjectTracker",
-    "TrackingPipeline",
 ]
