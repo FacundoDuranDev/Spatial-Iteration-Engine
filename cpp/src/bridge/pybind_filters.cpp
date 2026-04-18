@@ -24,7 +24,11 @@ static void apply_in_place(py::array_t<std::uint8_t> frame,
   int h = static_cast<int>(buf.shape[0]);
   int w = static_cast<int>(buf.shape[1]);
   int c = static_cast<int>(buf.shape[2]);
-  f(static_cast<std::uint8_t*>(buf.ptr), w, h, c);
+  auto* ptr = static_cast<std::uint8_t*>(buf.ptr);
+  // Release the GIL while the C++ kernel runs so other Python threads can
+  // progress (the numpy buffer is owned by Python and the pointer stays valid).
+  py::gil_scoped_release release;
+  f(ptr, w, h, c);
 }
 
 PYBIND11_MODULE(filters_cpp, m) {
