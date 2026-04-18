@@ -25,6 +25,7 @@ set(FILTERS_SOURCES
   src/filters/blur.cpp
   src/filters/posterize.cpp
   src/filters/sharpen.cpp
+  src/filters/temporal_scan.cpp
 )
 pybind11_add_module(filters_cpp src/bridge/pybind_filters.cpp ${FILTERS_SOURCES})
 target_include_directories(filters_cpp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)

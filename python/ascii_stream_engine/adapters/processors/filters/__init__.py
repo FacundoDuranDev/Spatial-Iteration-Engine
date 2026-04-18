@@ -15,6 +15,7 @@ from .cpp_grayscale import CppGrayscaleFilter
 from .cpp_invert import CppInvertFilter
 from .cpp_modifier import CppImageModifierFilter
 from .cpp_physarum import CppPhysarumFilter
+from .cpp_temporal_scan import CppTemporalScanFilter
 from .crt_glitch import CRTGlitchFilter
 from .depth_of_field import DepthOfFieldFilter
 from .detail import DetailBoostFilter
@@ -73,6 +74,7 @@ __all__ = [
     "CppImageModifierFilter",
     "CppInvertFilter",
     "CppPhysarumFilter",
+    "CppTemporalScanFilter",
     "CRTGlitchFilter",
     "DepthOfFieldFilter",
     "DetailBoostFilter",

@@ -3,8 +3,10 @@
  * Frame layout: (height, width, channels), uint8, BGR (OpenCV convention).
  */
 #include "filters/filters_api.hpp"
+#include "filters/temporal_scan.hpp"
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
+#include <cstring>
 #include <functional>
 #include <stdexcept>
 
@@ -105,4 +107,52 @@ PYBIND11_MODULE(filters_cpp, m) {
           filters::apply_sharpen_impl(p, w, h, c, strength);
         });
       }, py::arg("frame"), py::arg("strength") = 1.0, "Phase 2 stub: sharpen.");
+
+  // ---------------------------------------------------------------------------
+  // TemporalScan — stateful angle-aware temporal slit-scan.
+  // ---------------------------------------------------------------------------
+  py::class_<filters::TemporalScan>(m, "TemporalScan")
+      .def(py::init<int, double>(),
+           py::arg("max_frames") = 30,
+           py::arg("angle_deg") = 0.0,
+           "Create a TemporalScan with a ring buffer of `max_frames` frames "
+           "and an initial scan angle in degrees.")
+      .def("apply",
+           [](filters::TemporalScan& self, py::array_t<std::uint8_t> frame) {
+             require_3d_uint8(frame);
+             py::buffer_info buf = frame.request(false);  // read-only source
+             const int h = static_cast<int>(buf.shape[0]);
+             const int w = static_cast<int>(buf.shape[1]);
+             const int c = static_cast<int>(buf.shape[2]);
+
+             // Output array of the same shape; memory owned by numpy.
+             auto out = py::array_t<std::uint8_t>({h, w, c});
+             py::buffer_info obuf = out.request(true);
+             const std::uint8_t* in_ptr = static_cast<const std::uint8_t*>(buf.ptr);
+             std::uint8_t* out_ptr = static_cast<std::uint8_t*>(obuf.ptr);
+
+             {
+               // Kernel is heap-only; safe to release the GIL.
+               py::gil_scoped_release release;
+               self.apply(in_ptr, out_ptr, h, w, c);
+             }
+             return out;
+           },
+           py::arg("frame"),
+           "Push `frame` into the ring buffer and return the temporally-"
+           "scanned output as a new ndarray of the same shape.")
+      .def("reset", &filters::TemporalScan::reset,
+           "Clear the ring buffer.")
+      .def_property("angle_deg",
+                    &filters::TemporalScan::angle_deg,
+                    &filters::TemporalScan::set_angle_deg,
+                    "Scan direction in degrees (0 = right-to-left, 90 = top-to-bottom, "
+                    "arbitrary values produce diagonal scans).")
+      .def_property("curve",
+                    &filters::TemporalScan::curve,
+                    &filters::TemporalScan::set_curve,
+                    "Mapping curve from spatial projection to temporal index: "
+                    "0 = linear, 1 = ease (smoothstep).")
+      .def_property_readonly("max_frames", &filters::TemporalScan::max_frames)
+      .def_property_readonly("stored_frames", &filters::TemporalScan::stored_frames);
 }
