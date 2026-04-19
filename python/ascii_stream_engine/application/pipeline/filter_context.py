@@ -14,9 +14,12 @@ class FilterContext:
     Supports dict protocol (__contains__, __getitem__, get, keys) for backwards compatibility.
     """
 
-    def __init__(self, analysis: Optional[dict] = None, temporal=None) -> None:
+    def __init__(
+        self, analysis: Optional[dict] = None, temporal=None, audio=None
+    ) -> None:
         self._analysis = analysis or {}
         self._temporal = temporal
+        self._audio_service = audio
 
     # --- Dict protocol (backwards compatible) ---
 
@@ -104,3 +107,26 @@ class FilterContext:
     def tracking(self):
         """Shortcut for tracking data."""
         return self._analysis.get("tracking")
+
+    # --- Audio (reactive) ---
+
+    @property
+    def audio(self) -> dict:
+        """Latest audio analyzer snapshot.
+
+        Returns a dict with keys ``rms``, ``level``, ``bass``, ``mid``,
+        ``high``, ``onset``, ``bpm``, ``available``. Always non-None — when
+        no audio service is attached, every numeric value is 0.0 and
+        ``available`` is 0.0 so filters can short-circuit with a single
+        check: ``if ctx.audio["available"]``.
+        """
+        if self._audio_service is None:
+            return _AUDIO_SILENT
+        return self._audio_service.latest()
+
+
+_AUDIO_SILENT = {
+    "rms": 0.0, "level": 0.0,
+    "bass": 0.0, "mid": 0.0, "high": 0.0,
+    "onset": 0.0, "bpm": 0.0, "available": 0.0,
+}

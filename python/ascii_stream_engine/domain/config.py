@@ -54,6 +54,7 @@ class EngineConfig:
     plugin_paths: List[str] = field(default_factory=list)
     neural: Optional[NeuralConfig] = None
     enable_temporal: bool = True
+    enable_audio_reactive: bool = False
 
     def __post_init__(self) -> None:
         """Valida la configuración después de la inicialización."""

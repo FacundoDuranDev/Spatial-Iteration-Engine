@@ -38,6 +38,13 @@ from ascii_stream_engine.adapters.sources.camera import OpenCVCameraSource
 from ascii_stream_engine.adapters.renderers.passthrough_renderer import PassthroughRenderer
 from ascii_stream_engine.adapters.outputs.preview_sink import PreviewSink
 from ascii_stream_engine.adapters.outputs.composite import CompositeOutputSink
+try:
+    from ascii_stream_engine.adapters.outputs.ndi.ndi_sink import (
+        NdiOutputSink, NDI_AVAILABLE,
+    )
+except Exception:
+    NdiOutputSink = None  # type: ignore
+    NDI_AVAILABLE = False
 from ascii_stream_engine.domain.config import EngineConfig
 from ascii_stream_engine.adapters.processors.filters import (
     BloomFilter,
@@ -153,17 +160,50 @@ class ResizingCameraSource:
 # Engine
 # ---------------------------------------------------------------------------
 print("Creating StreamEngine...", flush=True)
-config = EngineConfig(fps=30, enable_temporal=True, enable_events=True)
+config = EngineConfig(
+    fps=30, enable_temporal=True, enable_events=True, enable_audio_reactive=True,
+)
 source = ResizingCameraSource(camera_index=2, width=640, height=480)
 renderer = PassthroughRenderer()
 buffer_sink = BufferSink()
 preview_sink = PreviewSink(window_name="Spatial-Iteration-Engine — f=fullscreen · ESC=exit")
+ndi_sink = None  # Lazy — only created when user toggles NDI on.
 sink = CompositeOutputSink([buffer_sink, preview_sink])
 engine = StreamEngine(
     source=source, renderer=renderer, sink=sink,
     config=config, enable_profiling=False,
 )
 fp = engine.filter_pipeline
+
+
+def set_ndi_enabled(on: bool) -> str:
+    """Start or stop the NDI output as a secondary sink on the composite."""
+    global ndi_sink
+    if on:
+        if not NDI_AVAILABLE:
+            return "NDI SDK missing — `pip install ndi-python` + https://ndi.video/sdk/"
+        if ndi_sink is None:
+            try:
+                ndi_sink = NdiOutputSink(source_name="Spatial-Iteration-Engine")
+                sink.add_sink(ndi_sink) if hasattr(sink, "add_sink") else \
+                    sink._sinks.append(ndi_sink)
+                return "NDI output: streaming as 'Spatial-Iteration-Engine'"
+            except Exception as e:
+                ndi_sink = None
+                return f"NDI failed: {e}"
+        return "NDI already on"
+    else:
+        if ndi_sink is not None:
+            try:
+                ndi_sink.close()
+            except Exception:
+                pass
+            if hasattr(sink, "remove_sink"):
+                sink.remove_sink(ndi_sink)
+            elif ndi_sink in getattr(sink, "_sinks", []):
+                sink._sinks.remove(ndi_sink)
+            ndi_sink = None
+        return "NDI output: off"
 
 
 # ---------------------------------------------------------------------------
@@ -322,14 +362,16 @@ with gr.Blocks(css=extra_css, head=head_tags,
                                     label="Contrast", elem_id="bc-c")
     row_end()
 
-    # ── Bloom ──
-    row_start("Bloom")
+    # ── Bloom (audio-reactive) ──
+    row_start("Bloom · audio-reactive")
     with gr.Column():
         _, bl_enable = toggle(value=False, label="ENABLE", elem_id="bl-enable")
         _, bl_intensity = slider_row(value=0.6, minimum=0, maximum=1, step=0.05,
                                      label="Intensity", elem_id="bl-i")
         _, bl_threshold = slider_row(value=200, minimum=100, maximum=255, step=5,
                                      label="Threshold", elem_id="bl-t")
+        _, bl_reactive = slider_row(value=1.0, minimum=0, maximum=3, step=0.1,
+                                    label="Audio-React (Bass)", elem_id="bl-r")
     row_end()
 
     # ── Chromatic Aberration ──
@@ -344,6 +386,20 @@ with gr.Blocks(css=extra_css, head=head_tags,
     row_start("Invert (C++)")
     with gr.Column():
         _, inv_enable = toggle(value=False, label="ENABLE", elem_id="inv-enable")
+    row_end()
+
+    # ── NDI output (network) ──
+    row_start("NDI output" + (" · install SDK" if not NDI_AVAILABLE else ""))
+    with gr.Column():
+        _, ndi_enable = toggle(value=False,
+                                label="STREAM" if NDI_AVAILABLE else "UNAVAILABLE",
+                                elem_id="ndi-enable")
+        ndi_status = gr.Textbox(
+            value=("Source name: 'Spatial-Iteration-Engine' on the LAN"
+                   if NDI_AVAILABLE else
+                   "Install ndi-python + NDI SDK (ndi.video/sdk) to enable"),
+            label="NDI status", interactive=False,
+        )
     row_end()
 
     # Footer: preset picker + resolution
@@ -369,10 +425,38 @@ with gr.Blocks(css=extra_css, head=head_tags,
                ('<div class="sie-pill sie-pill-stopped"><span class="sie-pill-dot"></span>'
                 ' Stopped</div>')
         stats = f'<span class="sie-stats"><b>{fps:4.1f}</b> FPS · <b>{n}</b> filt · {frames} fr</span>'
+
+        # Audio level bars (bass / mid / high) when the analyzer is alive.
+        audio_bars = ""
+        svc = getattr(engine, "_audio_analyzer", None)
+        if svc is not None and svc.is_running():
+            a = svc.latest()
+            def _bar(label, frac, color):
+                frac = max(0.0, min(1.0, float(frac)))
+                pct = int(frac * 100)
+                return (
+                    f'<div style="display:flex; align-items:center; gap:6px; '
+                    f'font-family:JetBrains Mono,monospace; font-size:10px; '
+                    f'color:{color};">{label}'
+                    f'<div style="flex:1; height:4px; background:#1a1d2a; '
+                    f'border-radius:2px; overflow:hidden;">'
+                    f'<div style="width:{pct}%; height:100%; background:{color}; '
+                    f'box-shadow:0 0 6px {color};"></div></div></div>'
+                )
+            audio_bars = (
+                '<div class="sie-root" style="padding: 0 16px 6px; '
+                'display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px;">'
+                + _bar("BASS", a.get("bass", 0.0), "#ff6ac1")
+                + _bar("MID",  a.get("mid", 0.0),  "#ffb454")
+                + _bar("HIGH", a.get("high", 0.0), "#00fff2")
+                + '</div>'
+            )
+
         return (
             '<div class="sie-root" style="padding: 16px 16px 8px;">'
             '<div style="display:flex; align-items:center; justify-content:space-between; '
             'gap:12px;">' + pill + stats + '</div></div>'
+            + audio_bars
         )
 
     stats_timer = gr.Timer(value=1.0)
@@ -410,16 +494,21 @@ with gr.Blocks(css=extra_css, head=head_tags,
     for comp in (bc_enable, bc_brightness, bc_contrast):
         comp.change(on_bc, inputs=[bc_enable, bc_brightness, bc_contrast], outputs=None)
 
-    # Bloom
-    def on_bloom(en, i, t):
-        f = ensure_filter("bloom", BloomFilter)
+    # Bloom (audio-reactive)
+    def on_bloom(en, i, t, r):
+        f = ensure_filter("bloom", BloomFilter, audio_reactive=1.0, audio_band="bass")
         f.enabled = bool(en)
         f._intensity = float(i or 0.0)
         f._threshold = int(t or 200)
+        f._audio_reactive = float(r or 0.0)
         return None
 
-    for comp in (bl_enable, bl_intensity, bl_threshold):
-        comp.change(on_bloom, inputs=[bl_enable, bl_intensity, bl_threshold], outputs=None)
+    for comp in (bl_enable, bl_intensity, bl_threshold, bl_reactive):
+        comp.change(
+            on_bloom,
+            inputs=[bl_enable, bl_intensity, bl_threshold, bl_reactive],
+            outputs=None,
+        )
 
     # Chromatic aberration
     def on_ca(en, s):
@@ -439,6 +528,9 @@ with gr.Blocks(css=extra_css, head=head_tags,
         return None
 
     inv_enable.change(on_invert, inputs=inv_enable, outputs=None)
+
+    # NDI toggle
+    ndi_enable.change(set_ndi_enabled, inputs=ndi_enable, outputs=ndi_status)
 
     # Master Start / Stop
     def on_start():

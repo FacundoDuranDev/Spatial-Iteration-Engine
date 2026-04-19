@@ -95,6 +95,13 @@ class StreamEngine:
         self._frame_buffer = FrameBuffer(max_size=self._config.frame_buffer_size)
         self._temporal = TemporalManager() if self._config.enable_temporal else None
 
+        # Audio analyzer (optional, background thread). Started lazily in
+        # start() so construction never hits the microphone.
+        self._audio_analyzer: Optional[Any] = None
+        if self._config.enable_audio_reactive:
+            from .services.audio_analyzer import AudioAnalyzerService
+            self._audio_analyzer = AudioAnalyzerService()
+
         # Sistema de eventos
         self._event_bus = EventBus() if self._config.enable_events else None
         self._error_handler = ErrorHandler(event_bus=self._event_bus)
@@ -308,6 +315,7 @@ class StreamEngine:
             event_bus=self._event_bus,
             profiler=self._profiler,
             metrics=self._metrics,
+            audio_analyzer=self._audio_analyzer,
         )
 
     def start(self, blocking: bool = False) -> None:
@@ -324,6 +332,14 @@ class StreamEngine:
         if self._frame_processor:
             self._frame_processor.start()
 
+        # Start the audio analyzer if configured. Non-fatal on failure —
+        # filters just see available=0.0 and can short-circuit.
+        if self._audio_analyzer is not None:
+            try:
+                self._audio_analyzer.start()
+            except Exception as e:
+                logger.warning(f"Audio analyzer failed to start: {e}")
+
         if blocking:
             self._run()
             return
@@ -337,6 +353,13 @@ class StreamEngine:
         # Detener procesamiento paralelo
         if self._frame_processor:
             self._frame_processor.stop()
+
+        # Stop the audio analyzer too.
+        if self._audio_analyzer is not None:
+            try:
+                self._audio_analyzer.stop()
+            except Exception as e:
+                logger.warning(f"Audio analyzer failed to stop: {e}")
 
         self._retry_manager.safe_close_source(self._source)
         self._retry_manager.safe_close_sink(self._sink)

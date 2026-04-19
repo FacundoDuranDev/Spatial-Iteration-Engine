@@ -70,6 +70,7 @@ class GraphScheduler:
         event_bus: Any = None,
         profiler: Any = None,
         metrics: Any = None,
+        audio_analyzer: Any = None,
         parallel_analyzers: bool = False,
     ) -> None:
         self._graph = graph
@@ -78,6 +79,7 @@ class GraphScheduler:
         self._event_bus = event_bus
         self._profiler = profiler
         self._metrics = metrics
+        self._audio = audio_analyzer
         self._temporal_configured = False
 
         # Pre-compute execution order and input maps
@@ -277,15 +279,17 @@ class GraphScheduler:
                 continue
 
             # For ProcessorNodes: push temporal input before first one
-            if isinstance(node, ProcessorNode) and self._temporal:
+            if isinstance(node, ProcessorNode) and (
+                self._temporal or self._audio
+            ):
                 video_in = inputs.get("video_in")
                 if video_in is not None:
                     # Only push once per frame (before first processor)
-                    if node is self._processor_nodes[0]:
+                    if self._temporal and node is self._processor_nodes[0]:
                         self._temporal.push_input(video_in)
-                    # Wrap analysis as FilterContext for temporal access
+                    # Wrap analysis as FilterContext for temporal + audio access
                     inputs["analysis_in"] = FilterContext(
-                        analysis, self._temporal
+                        analysis, self._temporal, self._audio
                     )
 
             # Execute node with timing

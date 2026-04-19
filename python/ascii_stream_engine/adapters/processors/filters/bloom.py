@@ -21,12 +21,19 @@ class BloomFilter(BaseFilter):
         threshold: int = 200,
         blur_size: int = 31,
         intensity: float = 0.6,
+        audio_reactive: float = 0.0,
+        audio_band: str = "bass",
         enabled: bool = True,
     ) -> None:
         super().__init__(enabled=enabled)
         self._threshold = threshold
         self._blur_size = blur_size
         self._intensity = intensity
+        # audio_reactive = 0.0 → no coupling (original behavior).
+        # audio_reactive = 1.0 → bloom intensity doubles on loud peaks of
+        # the chosen band.
+        self._audio_reactive = float(audio_reactive)
+        self._audio_band = audio_band
 
     def apply(self, frame, config, analysis=None):
         if not self.enabled:
@@ -35,6 +42,15 @@ class BloomFilter(BaseFilter):
         threshold = getattr(config, "bloom_threshold", self._threshold)
         blur_size = getattr(config, "bloom_blur_size", self._blur_size)
         intensity = getattr(config, "bloom_intensity", self._intensity)
+
+        # Audio-reactive boost: multiply intensity by (1 + reactive * band).
+        # analysis.audio is populated by FilterContext when the engine has
+        # AudioAnalyzerService running; otherwise the key is absent / zero.
+        if self._audio_reactive > 0.0 and analysis is not None:
+            audio = getattr(analysis, "audio", None)
+            if audio and audio.get("available"):
+                band = float(audio.get(self._audio_band, 0.0))
+                intensity = intensity * (1.0 + self._audio_reactive * band)
 
         if intensity <= 0.0:
             return frame
