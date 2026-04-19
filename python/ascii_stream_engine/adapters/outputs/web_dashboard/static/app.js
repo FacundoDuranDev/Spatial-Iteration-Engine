@@ -97,6 +97,7 @@
     backBtn:      document.getElementById("back-btn"),
     pill:         document.getElementById("pill"),
     pillLabel:    document.getElementById("pill-label"),
+    kpis:         document.getElementById("kpis"),
     fps:          document.getElementById("fps"),
     lat:          document.getElementById("lat"),
     primaryBtn:   document.getElementById("primary-btn"),
@@ -167,12 +168,16 @@
     }
     // The pill is hidden in cat / detail views (per brief).
     const cur = currentView();
+    els.hd.dataset.view = cur.view;
     if (cur.view === "hub") {
       els.pill.classList.remove("hidden");
+      els.kpis.classList.remove("hidden");
       els.backBtn.classList.add("hidden");
       els.hdTitle.textContent = "SIE \u00b7 Control";
     } else {
+      // Hide pill + KPIs in drill-down views — back+title need the room.
       els.pill.classList.add("hidden");
+      els.kpis.classList.add("hidden");
       els.backBtn.classList.remove("hidden");
       if (cur.view === "cat") {
         const c = CATEGORIES.find((x) => x.id === cur.cat);
