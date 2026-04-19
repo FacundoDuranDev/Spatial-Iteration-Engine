@@ -1,0 +1,74 @@
+<!doctype html>
+<!--
+  ════════════════════════════════════════════════════════════════
+  NOTA · Por qué este HTML NO incluye "Built with Gradio · Settings"
+  ════════════════════════════════════════════════════════════════
+  Esta UI no usa Gradio. Es una vanilla HTML/CSS/JS app servida
+  por FastAPI/uvicorn. Se omitió a propósito el footer estándar
+  de cualquier framework por:
+    1. Es un product surface mobile-first para uso en performance
+       en vivo (VJ), no un demo de framework.
+    2. El footer rompía el sticky-bar Iniciar/Detener al pie.
+    3. Distrae visualmente del contexto en penumbra de teatro/club.
+  Si en el futuro se reintroduce algún framework con chrome propia,
+  esta nota debe actualizarse Y discutirse antes de mergear.
+  Ver: docs/decisions/web_dashboard.md (a crear en Phase E)
+  ════════════════════════════════════════════════════════════════
+-->
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>SIE · Control</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" />
+  <link rel="stylesheet" href="/static/v3.css" />
+</head>
+<body class="theme-stage">
+  <div id="app" class="screen">
+    <header class="hd">
+      <h1 class="ttl">SIE · Control</h1>
+      <div class="kpis">
+        <span class="kpi"><b id="fps">0.0</b> fps</span>
+        <span class="sep">·</span>
+        <span class="kpi"><b id="lat">0.0</b> ms</span>
+      </div>
+      <span id="pill" class="pill"><span class="dot"></span><span id="pill-label">OFFLINE</span></span>
+    </header>
+
+    <main class="body" id="body">
+      <section class="hub-grid" id="hub">
+        <article class="cat" data-cat="DISTORT">
+          <span class="cap">DISTORT</span>
+          <span class="name">Distorsi&oacute;n</span>
+          <span class="meta"><span>Fase B</span></span>
+        </article>
+        <article class="cat" data-cat="COLOR">
+          <span class="cap">COLOR</span>
+          <span class="name">Color</span>
+          <span class="meta"><span>Fase B</span></span>
+        </article>
+        <article class="cat" data-cat="LIGHT">
+          <span class="cap">LIGHT</span>
+          <span class="name">Luz</span>
+          <span class="meta"><span>Fase B</span></span>
+        </article>
+        <article class="cat" data-cat="EFX">
+          <span class="cap">EFX</span>
+          <span class="name">Efectos</span>
+          <span class="meta"><span>Fase B</span></span>
+        </article>
+      </section>
+    </main>
+
+    <footer class="ft">
+      <button id="primary-btn" class="btn primary" type="button">
+        <span class="gly">&#9654;</span> <span id="primary-label">Iniciar</span>
+      </button>
+    </footer>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>
