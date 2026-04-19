@@ -28,42 +28,55 @@
 </head>
 <body class="theme-stage">
   <div id="app" class="screen">
-    <header class="hd">
-      <h1 class="ttl">SIE · Control</h1>
+    <header id="hd" class="hd" data-view="hub">
+      <button id="back-btn" class="back hidden" type="button" aria-label="Atr&aacute;s">
+        <span class="gly">&#8249;</span>
+      </button>
+      <h1 id="hd-title" class="ttl">SIE &middot; Control</h1>
       <div class="kpis">
         <span class="kpi"><b id="fps">0.0</b> fps</span>
-        <span class="sep">·</span>
+        <span class="sep">&middot;</span>
         <span class="kpi"><b id="lat">0.0</b> ms</span>
       </div>
       <span id="pill" class="pill"><span class="dot"></span><span id="pill-label">OFFLINE</span></span>
     </header>
 
     <main class="body" id="body">
-      <section class="hub-grid" id="hub">
-        <article class="cat" data-cat="DISTORT">
-          <span class="cap">DISTORT</span>
-          <span class="name">Distorsi&oacute;n</span>
-          <span class="meta"><span>Fase B</span></span>
-        </article>
-        <article class="cat" data-cat="COLOR">
-          <span class="cap">COLOR</span>
-          <span class="name">Color</span>
-          <span class="meta"><span>Fase B</span></span>
-        </article>
-        <article class="cat" data-cat="LIGHT">
-          <span class="cap">LIGHT</span>
-          <span class="name">Luz</span>
-          <span class="meta"><span>Fase B</span></span>
-        </article>
-        <article class="cat" data-cat="EFX">
-          <span class="cap">EFX</span>
-          <span class="name">Efectos</span>
-          <span class="meta"><span>Fase B</span></span>
-        </article>
+      <section id="view-hub" class="view view-hub">
+        <div class="hub-grid" id="hub-grid">
+          <article class="cat" data-cat="DISTORT">
+            <span class="cap">DISTORT</span>
+            <span class="name">Distorsi&oacute;n</span>
+            <span class="meta"><span class="meta-count" data-cat="DISTORT">0 activos / 0 total</span></span>
+          </article>
+          <article class="cat" data-cat="COLOR">
+            <span class="cap">COLOR</span>
+            <span class="name">Color</span>
+            <span class="meta"><span class="meta-count" data-cat="COLOR">0 activos / 0 total</span></span>
+          </article>
+          <article class="cat" data-cat="GLITCH">
+            <span class="cap">GLITCH</span>
+            <span class="name">Glitch</span>
+            <span class="meta"><span class="meta-count" data-cat="GLITCH">0 activos / 0 total</span></span>
+          </article>
+          <article class="cat" data-cat="STYLIZE">
+            <span class="cap">STYLIZE</span>
+            <span class="name">Estilo</span>
+            <span class="meta"><span class="meta-count" data-cat="STYLIZE">0 activos / 0 total</span></span>
+          </article>
+        </div>
+      </section>
+
+      <section id="view-cat" class="view view-cat hidden">
+        <div class="list" id="cat-list"></div>
+      </section>
+
+      <section id="view-detail" class="view view-detail hidden">
+        <div class="detail" id="detail-body"></div>
       </section>
     </main>
 
-    <footer class="ft">
+    <footer id="ft" class="ft">
       <button id="primary-btn" class="btn primary" type="button">
         <span class="gly">&#9654;</span> <span id="primary-label">Iniciar</span>
       </button>

@@ -1,8 +1,8 @@
 """WebSocket endpoint. See .claude/scratch/ws_protocol.md (v=1).
 
-Phase A: handles handshake (auth + version), heartbeat, start/stop ops.
-toggle_filter / set_param respond with `internal: not_implemented` until
-Phase B wires the registry.
+Phase B: toggle_filter and set_param are wired to the registry-backed
+EngineBridge. Filter mutations are sync microsecond ops and run inline on
+the event loop; only start/stop go through an executor.
 """
 from __future__ import annotations
 
@@ -13,14 +13,57 @@ from typing import Any
 
 from fastapi import WebSocket, WebSocketDisconnect
 
+from . import registry
 from .bridge import EngineBridge
-from .protocol import PROTOCOL_VERSION, is_allowed_op
+from .protocol import (
+    PROTOCOL_VERSION,
+    clamp_float,
+    clamp_int,
+    coerce_bool,
+    is_allowed_op,
+)
 
 logger = logging.getLogger("web_dashboard.ws")
 
 PING_INTERVAL_S = 15.0
 PONG_TIMEOUT_S = 30.0
 STATE_TICK_S = 1.0
+
+
+def _coerce_value(param: dict, raw: Any) -> Any:
+    """Clamp/coerce a raw client value against the registry param spec.
+
+    Out-of-range values are silently clamped (per ws_protocol §2.4). Bad
+    types fall back to the registry default. Selects validate against
+    ``options`` else default.
+    """
+    kind = param["kind"]
+    default = param["default"]
+    if kind == "select":
+        opts = param.get("options", [])
+        if isinstance(raw, str) and raw in opts:
+            return raw
+        return default
+    if kind == "switch":
+        return coerce_bool(raw)
+    if kind == "angle":
+        return clamp_float(raw, 0.0, 360.0, default=float(default))
+    lo = param.get("min")
+    hi = param.get("max")
+    step = param.get("step", 1)
+    # Stepper is always int; slider becomes int iff its step is integral.
+    is_int = kind == "stepper" or (
+        isinstance(step, int) and isinstance(default, int)
+    )
+    if is_int:
+        return clamp_int(
+            raw,
+            int(lo),
+            int(hi),
+            step=int(step) if step else 1,
+            default=int(default),
+        )
+    return clamp_float(raw, float(lo), float(hi), default=float(default))
 
 
 async def websocket_endpoint(socket: WebSocket, bridge: EngineBridge, auth_token: str) -> None:
@@ -106,9 +149,81 @@ async def websocket_endpoint(socket: WebSocket, bridge: EngineBridge, auth_token
                 await socket.send_json(bridge.snapshot())
                 continue
 
-            # toggle_filter / set_param land here in Phase A (not wired yet).
+            if op == "toggle_filter":
+                fid = payload.get("filter")
+                if not isinstance(fid, str):
+                    await socket.send_json(
+                        {"type": "error", "code": "bad_payload", "msg": "filter required"}
+                    )
+                    continue
+                spec = registry.find_filter(fid)
+                if spec is None:
+                    await socket.send_json(
+                        {"type": "error", "code": "unknown_filter", "msg": fid}
+                    )
+                    continue
+                if spec.get("wip"):
+                    await socket.send_json(
+                        {"type": "error", "code": "wip_filter", "msg": fid}
+                    )
+                    continue
+                if "on" not in payload:
+                    await socket.send_json(
+                        {"type": "error", "code": "bad_payload", "msg": "on required"}
+                    )
+                    continue
+                on = coerce_bool(payload.get("on"))
+                try:
+                    bridge.toggle_filter(fid, on)
+                except Exception:
+                    logger.exception("toggle_filter dispatch failed")
+                    await socket.send_json(
+                        {"type": "error", "code": "internal", "msg": "toggle_filter"}
+                    )
+                    continue
+                await socket.send_json(bridge.snapshot())
+                continue
+
+            if op == "set_param":
+                fid = payload.get("filter")
+                pid = payload.get("param")
+                if not isinstance(fid, str) or not isinstance(pid, str):
+                    await socket.send_json(
+                        {"type": "error", "code": "bad_payload", "msg": "filter+param required"}
+                    )
+                    continue
+                spec = registry.find_filter(fid)
+                if spec is None:
+                    await socket.send_json(
+                        {"type": "error", "code": "unknown_filter", "msg": fid}
+                    )
+                    continue
+                if spec.get("wip"):
+                    await socket.send_json(
+                        {"type": "error", "code": "wip_filter", "msg": fid}
+                    )
+                    continue
+                param = registry.find_param(fid, pid)
+                if param is None:
+                    await socket.send_json(
+                        {"type": "error", "code": "unknown_param", "msg": f"{fid}.{pid}"}
+                    )
+                    continue
+                clamped = _coerce_value(param, payload.get("value"))
+                try:
+                    bridge.set_param(fid, pid, clamped)
+                except Exception:
+                    logger.exception("set_param dispatch failed")
+                    await socket.send_json(
+                        {"type": "error", "code": "internal", "msg": "set_param"}
+                    )
+                    continue
+                await socket.send_json(bridge.snapshot())
+                continue
+
+            # Should be unreachable given is_allowed_op gate above.
             await socket.send_json(
-                {"type": "error", "code": "internal", "msg": f"{op} not implemented yet"}
+                {"type": "error", "code": "internal", "msg": f"{op} unhandled"}
             )
 
     except WebSocketDisconnect:

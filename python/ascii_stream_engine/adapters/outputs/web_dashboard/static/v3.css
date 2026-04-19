@@ -279,3 +279,431 @@ input, button, select, textarea { font-size: max(16px, 1em); font-family: inheri
   color: var(--accent);
   text-shadow: var(--glow-sm);
 }
+.cat.has-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: var(--sp-3);
+  bottom: var(--sp-3);
+  width: 2px;
+  background: var(--accent);
+  box-shadow: var(--glow-sm);
+}
+.meta-count.live {
+  color: var(--accent);
+  text-shadow: var(--glow-sm);
+}
+
+/* ─── View containers + drill-in nav ────────────────────────── */
+
+.view {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+.view.hidden { display: none; }
+
+/* Push/pop animation. Off-screen → on-screen, 180ms ease-out.
+   The .body is the scroll container; views slide horizontally
+   inside it. We use a single .enter class applied for one tick
+   on push so the user sees a real animation instead of a jump. */
+.view.enter {
+  animation: viewEnter 180ms ease-out;
+}
+@keyframes viewEnter {
+  from { transform: translateX(100%); opacity: 0.6; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+.view.exit {
+  animation: viewExit 180ms ease-out;
+}
+@keyframes viewExit {
+  from { transform: translateX(0);    opacity: 1; }
+  to   { transform: translateX(100%); opacity: 0.6; }
+}
+
+/* Header back button (only visible in cat / detail views) */
+.hd .back {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  cursor: pointer;
+  touch-action: manipulation;
+  padding: 0;
+  margin-right: var(--sp-1);
+}
+.hd .back .gly { font-size: 22px; line-height: 1; }
+.hd .back:active { background: var(--surface-high); }
+.hd .back.hidden { display: none; }
+
+/* ─── View 2: Category list (filter rows) ───────────────────── */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4) var(--sp-4);
+}
+
+.row {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  min-height: var(--hit);
+  padding: 0 var(--sp-3);
+  gap: var(--sp-3);
+  position: relative;
+  overflow: hidden;
+}
+.row.expanded { background: var(--surface-high); }
+.row.expanded::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--accent);
+  box-shadow: var(--glow-sm);
+}
+.row .name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tracking-tight);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text);
+}
+.row .chev {
+  width: 44px;
+  height: var(--hit);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-2);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+  border-left: 1px solid var(--line);
+  margin-right: calc(var(--sp-3) * -1);
+  user-select: none;
+}
+.row .chev:active { color: var(--accent); }
+.row.wip .chev,
+.row.wip .toggle { opacity: 0.4; pointer-events: none; }
+
+.badge-wip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin-left: var(--sp-1);
+}
+
+.empty {
+  margin: var(--sp-4) var(--sp-4);
+  padding: var(--sp-4);
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--text-3);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-sm);
+}
+
+/* ─── View 3: Filter detail ─────────────────────────────────── */
+
+.detail {
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-3) var(--sp-4) var(--sp-4);
+  gap: var(--sp-4);
+}
+.detail .head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding-bottom: var(--sp-2);
+  border-bottom: 1px solid var(--line);
+}
+.detail .head .ttl {
+  flex: 1;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tracking-tight);
+  margin: 0;
+}
+.detail .head .meta {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+.detail .params {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.detail .param-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.detail .param-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  min-height: var(--hit);
+}
+.detail .param-row .lbl {
+  font-size: var(--fs-md);
+  color: var(--text);
+}
+
+/* ─── Atom: toggle (52×30 pill) ─────────────────────────────── */
+
+.toggle {
+  width: 52px;
+  height: 30px;
+  border-radius: 999px;
+  background: transparent;
+  border: 1.5px solid var(--line-strong);
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  touch-action: manipulation;
+  user-select: none;
+  padding: 0;
+}
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  background: var(--text-3);
+  transition: transform 120ms ease, background 120ms ease;
+}
+.toggle.on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: var(--glow-sm);
+}
+.toggle.on::after {
+  transform: translateX(21px);
+  background: var(--accent);
+  box-shadow: var(--glow-sm);
+}
+
+/* ─── Atom: slider ──────────────────────────────────────────── */
+
+.slider {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  touch-action: none;
+  user-select: none;
+}
+.slider .top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.slider .lbl {
+  font-size: var(--fs-md);
+  color: var(--text);
+}
+.slider .val {
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  color: var(--accent);
+  text-shadow: var(--glow-sm);
+}
+.slider .track-wrap {
+  position: relative;
+  height: var(--hit);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+.slider .track {
+  position: relative;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--line-strong);
+}
+.slider .fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: var(--accent);
+  border-radius: 3px;
+  box-shadow: var(--glow-sm);
+}
+.slider .pin {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 2px solid var(--accent);
+  box-shadow: var(--glow-sm);
+}
+.slider .range {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+
+/* ─── Atom: dial ────────────────────────────────────────────── */
+
+.dial {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  touch-action: none;
+  user-select: none;
+}
+.dial .face {
+  position: relative;
+  width: 144px;
+  height: 144px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  cursor: grab;
+}
+.dial .face:active { cursor: grabbing; }
+.dial .needle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2px;
+  height: 60px;
+  background: var(--accent);
+  box-shadow: var(--glow-sm);
+  transform-origin: 1px 100%;
+  transform: translate(-50%, -100%) rotate(0deg);
+}
+.dial .cap {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  transform: translate(-50%, -50%);
+  box-shadow: var(--glow-sm);
+}
+.dial .read {
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  color: var(--accent);
+  text-shadow: var(--glow-sm);
+}
+
+/* ─── Atom: stepper ─────────────────────────────────────────── */
+
+.stepper {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  user-select: none;
+}
+.stepper button {
+  width: 48px;
+  height: 48px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 22px;
+  border: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  padding: 0;
+}
+.stepper button:active { background: var(--surface-high); }
+.stepper .v {
+  min-width: 64px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  color: var(--accent);
+  text-shadow: var(--glow-sm);
+  border-left: 1px solid var(--line-strong);
+  border-right: 1px solid var(--line-strong);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  background: var(--surface);
+}
+
+/* ─── Atom: select (segmented pill list) ────────────────────── */
+
+.select {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  user-select: none;
+}
+.select button {
+  flex: 1;
+  min-height: 48px;
+  padding: 12px 14px;
+  background: var(--surface);
+  color: var(--text-2);
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: none;
+  border-right: 1px solid var(--line-strong);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.select button:last-child { border-right: none; }
+.select button.on {
+  background: var(--accent-soft);
+  color: var(--accent);
+  text-shadow: var(--glow-sm);
+}
+
+/* ─── Generic helper ─────────────────────────────────────────── */
+.hidden { display: none !important; }
