@@ -91,9 +91,17 @@
   const QS = new URLSearchParams(location.search);
   // Prefer the server-injected token (always present, survives reloads
   // and lost query strings). Fall back to ?t=… if a tester opens the
-  // page directly, then to the empty string (which the WS will reject
-  // and the pill will show AUTH).
+  // page directly.
   const TOKEN = window.SIE_TOKEN || QS.get("t") || "";
+
+  // If we have no token at all, the served HTML must be a stale cache
+  // from a build before the token-injection fix. Force a one-shot
+  // cache-bust reload so the phone re-fetches `/` and gets the script
+  // tag with the current token.
+  if (!TOKEN && !QS.get("_cb")) {
+    location.replace(location.pathname + "?_cb=" + Date.now());
+    return;
+  }
 
   const els = {
     hd:           document.getElementById("hd"),
