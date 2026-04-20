@@ -67,21 +67,58 @@ def _print_qr(url: str) -> None:
     qr.print_ascii(invert=True)
 
 
-def _build_engine() -> StreamEngine:
-    """Build StreamEngine with the real camera and a single PreviewSink.
+class StickyPreviewSink(PreviewSink):
+    """PreviewSink that survives engine start→stop→start cycles.
 
-    Filters are attached lazily by Phase B (registry / bridge). For now
-    the engine processes the raw camera frame and shows it via cv2.
+    The base PreviewSink:
+      - open()  → calls self.close() then cv2.namedWindow() etc.
+      - close() → cv2.destroyWindow + cv2.destroyAllWindows().
+    Re-creating the cv2 window from a new engine worker thread on the
+    second start deadlocks Qt (the second `_run` thread opens the camera
+    but never returns from `cv2.namedWindow`).
+
+    Fix: the cv2 window is created exactly ONCE on the very first open.
+    Subsequent open/close calls only flip the `_is_open` flag, leaving
+    the window alive on the desktop. `write()` already short-circuits
+    when `_is_open` is False, so during a "stopped" cycle the window
+    just freezes on the last frame.
+
+    v1 / v2 dashboards keep the base PreviewSink behaviour, so this is
+    a v3-only fix.
+    """
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._window_created = False
+
+    def open(self, config, output_size) -> None:
+        # First time: create the window. After that: just flip the flag.
+        self._output_size = output_size
+        self._is_open = True
+        if not self._window_created:
+            self._is_fullscreen = False
+            self._ensure_window()
+            self._window_created = True
+
+    def close(self) -> None:
+        # Do NOT touch cv2 — keep the window alive between cycles.
+        self._is_open = False
+
+
+def _build_engine() -> StreamEngine:
+    """Build StreamEngine with the real camera and a sticky PreviewSink.
+
+    Filters are attached lazily by the bridge on first toggle.
     """
     config = EngineConfig(
         fps=30,
         enable_temporal=True,
         enable_events=True,
-        enable_audio_reactive=False,  # Phase A keeps the audio thread off.
+        enable_audio_reactive=False,
     )
     source = OpenCVCameraSource(camera_index=CAMERA_INDEX)
     renderer = PassthroughRenderer()
-    sink = PreviewSink(
+    sink = StickyPreviewSink(
         window_name="Spatial-Iteration-Engine v3 — f=fullscreen · ESC=exit"
     )
     return StreamEngine(
@@ -98,6 +135,12 @@ def main() -> int:
         level=logging.INFO,
         format="%(asctime)s [%(name)s] %(levelname)s %(message)s",
     )
+
+    # Boot a dedicated Qt event-pump thread BEFORE any other cv2 calls.
+    # Without this, cv2.namedWindow on the second engine start (from a
+    # new worker thread) deadlocks waiting for events. With this, the
+    # cv2 window can be created/destroyed from any worker thread safely.
+    cv2.startWindowThread()
 
     print("[v3] building engine (camera not opened yet)...", flush=True)
     engine = _build_engine()

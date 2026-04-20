@@ -43,24 +43,59 @@ class EngineBridge:
 
     @property
     def running(self) -> bool:
+        # "Running" from the UI's POV = preview is live. The engine itself
+        # may stay alive even between UI cycles — see start()/stop() docs.
         try:
-            return bool(self._engine.is_running)
+            if not bool(self._engine.is_running):
+                return False
         except Exception:
             return False
+        # If the sink supports the _is_open flag (StickyPreviewSink), use
+        # it so the UI flips OFFLINE the moment the user taps Detener.
+        sink = getattr(self._engine, "_sink", None)
+        if sink is not None and hasattr(sink, "_is_open"):
+            try:
+                return bool(sink._is_open)
+            except Exception:
+                pass
+        return True
 
     def start(self) -> None:
+        """Start (or resume) the preview.
+
+        Cold path (first call): boot the engine — opens the camera and
+        creates the cv2 window. Hot path (subsequent toggles): just
+        unmute the sink. The engine itself stays running across cycles
+        because StreamEngine.start/stop is racy when called in a tight
+        loop (Qt namedWindow deadlocks, source.read blocks past
+        stop_event, etc.). Keeping the engine warm sidesteps all of it.
+        """
         with self._lock:
             try:
-                self._engine.start(blocking=False)
+                if not self._engine.is_running:
+                    self._engine.start(blocking=False)
+                # Re-arm the sink even if the engine was already alive.
+                sink = getattr(self._engine, "_sink", None)
+                if sink is not None and hasattr(sink, "_is_open"):
+                    sink._is_open = True
             except Exception:
-                logger.exception("engine.start failed")
+                logger.exception("bridge.start failed")
 
     def stop(self) -> None:
+        """Pause the preview without tearing the engine down.
+
+        Mutes the sink (write() short-circuits) so the cv2 window
+        freezes on the last frame and the FPS reading drops. The camera
+        keeps capturing in the background — re-arming via start() is
+        instant.
+        """
         with self._lock:
             try:
-                self._engine.stop()
+                sink = getattr(self._engine, "_sink", None)
+                if sink is not None and hasattr(sink, "_is_open"):
+                    sink._is_open = False
             except Exception:
-                logger.exception("engine.stop failed")
+                logger.exception("bridge.stop failed")
 
     # --- filter mutation -------------------------------------------------
 
@@ -222,16 +257,20 @@ class EngineBridge:
             running = self.running
             fps = 0.0
             lat_ms = 0.0
-            metrics = getattr(self._engine, "_metrics", None)
-            if metrics is not None:
-                try:
-                    fps = float(metrics.get_fps())
-                except Exception:
-                    fps = 0.0
-                try:
-                    lat_ms = float(metrics.get_latency_avg()) * 1000.0
-                except Exception:
-                    lat_ms = 0.0
+            # When the UI is "stopped" we want fps/lat to read 0 even
+            # though the engine thread keeps spinning. Metrics keep
+            # counting; we just hide them.
+            if running:
+                metrics = getattr(self._engine, "_metrics", None)
+                if metrics is not None:
+                    try:
+                        fps = float(metrics.get_fps())
+                    except Exception:
+                        fps = 0.0
+                    try:
+                        lat_ms = float(metrics.get_latency_avg()) * 1000.0
+                    except Exception:
+                        lat_ms = 0.0
             return {
                 "type": "state",
                 "running": running,
