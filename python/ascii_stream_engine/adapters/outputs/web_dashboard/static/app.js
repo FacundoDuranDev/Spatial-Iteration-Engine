@@ -89,7 +89,11 @@
   const PARAM_DEBOUNCE_MS = 50;
 
   const QS = new URLSearchParams(location.search);
-  const TOKEN = QS.get("t") || window.SIE_TOKEN || "";
+  // Prefer the server-injected token (always present, survives reloads
+  // and lost query strings). Fall back to ?t=… if a tester opens the
+  // page directly, then to the empty string (which the WS will reject
+  // and the pill will show AUTH).
+  const TOKEN = window.SIE_TOKEN || QS.get("t") || "";
 
   const els = {
     hd:           document.getElementById("hd"),

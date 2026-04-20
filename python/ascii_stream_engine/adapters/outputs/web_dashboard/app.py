@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, WebSocket
-from fastapi.responses import FileResponse
+from fastapi.responses import HTMLResponse
 
 from .bridge import EngineBridge
 from .ws import websocket_endpoint
@@ -50,8 +50,19 @@ def create_app(engine, auth_token: Optional[str] = None) -> tuple[FastAPI, str, 
         }
 
     @app.get("/")
-    async def index() -> FileResponse:
-        return FileResponse(STATIC_DIR / "index.html")
+    async def index() -> HTMLResponse:
+        # Inject the auth token into the served HTML so the client never
+        # depends on `?t=…` surviving the URL bar / QR / share sheet.
+        # Cache-busting query on app.js + no-store on the HTML so token
+        # rotations on every server boot are picked up by phones that
+        # already had the page open.
+        html = (STATIC_DIR / "index.html").read_text(encoding="utf-8")
+        injected = (
+            f'<script>window.SIE_TOKEN="{auth_token}";</script>\n'
+            f'<script src="/static/app.js?v={auth_token[:6]}"></script>'
+        )
+        html = html.replace('<script src="/static/app.js"></script>', injected)
+        return HTMLResponse(html, headers={"Cache-Control": "no-store"})
 
     @app.websocket("/ws")
     async def ws(socket: WebSocket) -> None:
