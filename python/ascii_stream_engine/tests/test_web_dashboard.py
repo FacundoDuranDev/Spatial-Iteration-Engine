@@ -99,9 +99,21 @@ def test_coerce_bool(raw, expected):
 # ── registry helpers ──────────────────────────────────────────────────
 
 
-def test_registry_has_5_filters():
+def test_registry_has_at_least_44_filters():
+    # The original 5 + the rest of the catalogue we wired in. Update this
+    # number when adding/removing filters; do not remove the test.
+    assert len(registry.FILTERS) >= 44
+
+
+def test_registry_core_filters_still_present():
     ids = {f["id"] for f in registry.FILTERS}
-    assert ids == {"temporal_scan", "bc_cpp", "bloom", "chroma", "invert"}
+    for required in ("temporal_scan", "bc_cpp", "bloom", "chroma", "invert"):
+        assert required in ids, f"core filter {required} missing"
+
+
+def test_registry_ids_unique():
+    ids = [f["id"] for f in registry.FILTERS]
+    assert len(ids) == len(set(ids)), "duplicate filter ids in FILTERS"
 
 
 def test_registry_has_4_categories():

@@ -78,6 +78,193 @@
       wip: false,
       params: [],
     },
+    // ─── DISTORT extras ───────────────────────────────────────────────
+    { id: "channel_swap_cpp", name: "Swap canales", cat: "DISTORT", wip: false, params: [] },
+    { id: "hand_frame", name: "Marco entre manos", cat: "DISTORT", wip: false, params: [
+      { id: "effect",   kind: "select", options: ["invert","blur","pixelate","edge","tint","ascii"], default: "invert", label: "Efecto" },
+      { id: "strength", kind: "slider", min: 0.0, max: 1.0, step: 0.05, default: 1.0, label: "Intensidad" },
+      { id: "border",   kind: "stepper", min: 0, max: 10, step: 1, default: 2, label: "Borde" },
+      { id: "hold",     kind: "stepper", min: 0, max: 60, step: 1, default: 15, label: "Hold (frames)" },
+    ]},
+    { id: "hand_warp", name: "Warp entre manos", cat: "DISTORT", wip: false, params: [
+      { id: "strength",  kind: "slider", min: 0.0, max: 1000.0, step: 10.0, default: 300.0, label: "Fuerza" },
+      { id: "falloff",   kind: "slider", min: 0.05, max: 1.0, step: 0.05, default: 0.35, label: "Ancho banda" },
+      { id: "mode",      kind: "select", options: ["stretch","compress","twist"], default: "stretch", label: "Modo" },
+      { id: "smoothing", kind: "slider", min: 0.0, max: 1.0, step: 0.05, default: 0.3, label: "Suavizado" },
+    ]},
+    { id: "kaleidoscope", name: "Caleidoscopio", cat: "DISTORT", wip: false, params: [
+      { id: "segments", kind: "stepper", min: 2, max: 24, step: 1, default: 6, label: "Segmentos" },
+      { id: "rotation", kind: "angle",   min: 0.0, max: 360.0, step: 1.0, default: 0.0, label: "Rotaci\u00f3n" },
+      { id: "center_x", kind: "slider",  min: 0.0, max: 1.0, step: 0.05, default: 0.5, label: "Centro X" },
+      { id: "center_y", kind: "slider",  min: 0.0, max: 1.0, step: 0.05, default: 0.5, label: "Centro Y" },
+    ]},
+    { id: "mosaic", name: "Mosaico", cat: "DISTORT", wip: false, params: [] },
+    { id: "radial_collapse", name: "Colapso radial", cat: "DISTORT", wip: false, params: [
+      { id: "strength", kind: "slider", min: 0.0, max: 1.0, step: 0.05, default: 0.5, label: "Fuerza" },
+      { id: "falloff",  kind: "slider", min: 0.05, max: 1.0, step: 0.05, default: 0.3, label: "Ca\u00edda" },
+      { id: "mode",     kind: "select", options: ["collapse","expand"], default: "collapse", label: "Modo" },
+      { id: "center_x", kind: "slider", min: 0.0, max: 1.0, step: 0.05, default: 0.5, label: "Centro X" },
+    ]},
+    { id: "uv_displacement", name: "Despl. UV param.", cat: "DISTORT", wip: false, params: [
+      { id: "function",    kind: "select", options: ["sin","cos","spiral","noise"], default: "sin", label: "Funci\u00f3n" },
+      { id: "amplitude",   kind: "slider", min: 0.0, max: 60.0, step: 1.0, default: 10.0, label: "Amplitud" },
+      { id: "frequency",   kind: "slider", min: 0.1, max: 10.0, step: 0.1, default: 2.0, label: "Frecuencia" },
+      { id: "phase_speed", kind: "slider", min: 0.0, max: 0.5, step: 0.01, default: 0.05, label: "Velocidad fase" },
+    ]},
+    // ─── COLOR extras ─────────────────────────────────────────────────
+    { id: "bloom_cinematic", name: "Bloom cinem\u00e1tico", cat: "COLOR", wip: false, params: [
+      { id: "intensity",  kind: "slider", min: 0.0, max: 2.0, step: 0.05, default: 0.5, label: "Intensidad" },
+      { id: "threshold",  kind: "slider", min: 100, max: 255, step: 5, default: 200, label: "Umbral" },
+      { id: "anamorphic", kind: "slider", min: 1.0, max: 8.0, step: 0.5, default: 1.0, label: "Anam\u00f3rfico" },
+      { id: "light_leak", kind: "slider", min: 0.0, max: 1.0, step: 0.05, default: 0.0, label: "Light leak" },
+    ]},
+    { id: "brightness_cfg", name: "Brillo (config)", cat: "COLOR", wip: false, params: [] },
+    { id: "color_grading", name: "Color grading", cat: "COLOR", wip: false, params: [
+      { id: "saturation",         kind: "slider", min: 0.0, max: 2.0, step: 0.05, default: 1.0, label: "Saturaci\u00f3n" },
+      { id: "shadow_strength",    kind: "slider", min: 0.0, max: 1.0, step: 0.05, default: 0.3, label: "Sombras" },
+      { id: "highlight_strength", kind: "slider", min: 0.0, max: 1.0, step: 0.05, default: 0.3, label: "Luces" },
+      { id: "gain_r",             kind: "slider", min: 0.0, max: 2.0, step: 0.05, default: 1.0, label: "Gain R" },
+    ]},
+    { id: "grayscale_cpp", name: "Escala de grises", cat: "COLOR", wip: false, params: [] },
+    { id: "infrared", name: "Infrarrojo", cat: "COLOR", wip: false, params: [
+      { id: "colormap",  kind: "select", options: ["inferno","magma","plasma","viridis","jet","turbo","hot","cool","bone"], default: "inferno", label: "Paleta" },
+      { id: "intensity", kind: "slider", min: 0.0, max: 1.0, step: 0.05, default: 1.0, label: "Intensidad" },
+      { id: "contrast",  kind: "slider", min: 0.5, max: 3.0, step: 0.1, default: 1.2, label: "Contraste" },
+    ]},
+    { id: "invert_py", name: "Invertir (config)", cat: "COLOR", wip: false, params: [] },
+    { id: "lens_flare", name: "Lens flare", cat: "COLOR", wip: false, params: [
+      { id: "intensity",     kind: "slider",  min: 0.0, max: 2.0, step: 0.05, default: 0.5, label: "Intensidad" },
+      { id: "threshold",     kind: "slider",  min: 150, max: 255, step: 5, default: 240, label: "Umbral" },
+      { id: "streak_length", kind: "slider",  min: 0.0, max: 1.0, step: 0.05, default: 0.3, label: "Longitud streak" },
+      { id: "ghost_count",   kind: "stepper", min: 0, max: 7, step: 1, default: 3, label: "Ghosts" },
+    ]},
+    { id: "vignette", name: "Vi\u00f1eta", cat: "COLOR", wip: false, params: [
+      { id: "intensity",    kind: "slider", min: 0.0, max: 1.0, step: 0.05, default: 0.6, label: "Intensidad" },
+      { id: "inner_radius", kind: "slider", min: 0.0, max: 1.0, step: 0.05, default: 0.4, label: "Radio interno" },
+      { id: "outer_radius", kind: "slider", min: 0.1, max: 1.5, step: 0.05, default: 1.0, label: "Radio externo" },
+    ]},
+    // ─── GLITCH extras ────────────────────────────────────────────────
+    { id: "chromatic_trails", name: "Estelas crom\u00e1ticas", cat: "GLITCH", wip: false, params: [
+      { id: "r_delay", kind: "stepper", min: 0, max: 30, step: 1, default: 0, label: "Delay R" },
+      { id: "g_delay", kind: "stepper", min: 0, max: 30, step: 1, default: 3, label: "Delay G" },
+      { id: "b_delay", kind: "stepper", min: 0, max: 30, step: 1, default: 8, label: "Delay B" },
+    ]},
+    { id: "chrono_scan", name: "Chrono-scan", cat: "GLITCH", wip: false, params: [
+      { id: "max_delay", kind: "stepper", min: 2, max: 60, step: 1, default: 20, label: "Delay m\u00e1x (frames)" },
+      { id: "axis",      kind: "select",  options: ["rows","cols"], default: "rows", label: "Eje" },
+    ]},
+    { id: "crt_glitch", name: "CRT glitch", cat: "GLITCH", wip: false, params: [
+      { id: "scanlines",  kind: "slider", min: 0.0, max: 1.0, step: 0.05, default: 0.3, label: "Scanlines" },
+      { id: "aberration", kind: "slider", min: 0.0, max: 15.0, step: 0.5, default: 3.0, label: "Aberraci\u00f3n" },
+      { id: "noise",      kind: "slider", min: 0.0, max: 0.5, step: 0.01, default: 0.05, label: "Ruido" },
+      { id: "tear",       kind: "slider", min: 0.0, max: 1.0, step: 0.05, default: 0.1, label: "Tear prob." },
+    ]},
+    { id: "double_vision", name: "Doble visi\u00f3n", cat: "GLITCH", wip: false, params: [
+      { id: "offset_x",    kind: "slider",  min: 0.0, max: 60.0, step: 1.0, default: 10.0, label: "Offset X" },
+      { id: "offset_y",    kind: "slider",  min: 0.0, max: 60.0, step: 1.0, default: 5.0, label: "Offset Y" },
+      { id: "ghost_alpha", kind: "slider",  min: 0.0, max: 1.0, step: 0.05, default: 0.3, label: "Alpha fantasma" },
+      { id: "copies",      kind: "stepper", min: 2, max: 4, step: 1, default: 2, label: "Copias" },
+    ]},
+    { id: "glitch_block", name: "Bloques glitch", cat: "GLITCH", wip: false, params: [
+      { id: "block_size",   kind: "stepper", min: 4, max: 64, step: 2, default: 16, label: "Tama\u00f1o bloque" },
+      { id: "corruption",   kind: "slider",  min: 0.0, max: 0.5, step: 0.01, default: 0.05, label: "Corrupci\u00f3n" },
+      { id: "rgb_split",    kind: "stepper", min: 0, max: 30, step: 1, default: 3, label: "RGB split" },
+      { id: "static_bands", kind: "stepper", min: 0, max: 10, step: 1, default: 2, label: "Bandas est\u00e1ticas" },
+    ]},
+    { id: "motion_blur", name: "Motion blur", cat: "GLITCH", wip: false, params: [
+      { id: "strength", kind: "slider",  min: 0.0, max: 5.0, step: 0.1, default: 1.0, label: "Fuerza" },
+      { id: "samples",  kind: "stepper", min: 2, max: 16, step: 1, default: 5, label: "Muestras" },
+      { id: "scale",    kind: "slider",  min: 0.1, max: 5.0, step: 0.1, default: 1.0, label: "Escala flujo" },
+      { id: "quality",  kind: "slider",  min: 0.25, max: 1.0, step: 0.05, default: 1.0, label: "Calidad" },
+    ]},
+    { id: "radial_blur", name: "Radial blur", cat: "GLITCH", wip: false, params: [
+      { id: "strength", kind: "slider",  min: 0.0, max: 2.0, step: 0.05, default: 0.3, label: "Fuerza" },
+      { id: "samples",  kind: "stepper", min: 2, max: 32, step: 1, default: 8, label: "Muestras" },
+      { id: "falloff",  kind: "slider",  min: 0.0, max: 1.0, step: 0.05, default: 0.5, label: "Ca\u00edda" },
+      { id: "center_x", kind: "slider",  min: 0.0, max: 1.0, step: 0.05, default: 0.5, label: "Centro X" },
+    ]},
+    { id: "slit_scan", name: "Slit-scan", cat: "GLITCH", wip: false, params: [
+      { id: "buffer_size", kind: "stepper", min: 2, max: 60, step: 2, default: 30, label: "Buffer (frames)" },
+      { id: "direction",   kind: "select",  options: ["horizontal","vertical"], default: "horizontal", label: "Direcci\u00f3n" },
+      { id: "reverse",     kind: "switch",  default: false, label: "Invertir" },
+    ]},
+    // ─── STYLIZE extras ───────────────────────────────────────────────
+    { id: "ascii", name: "ASCII", cat: "STYLIZE", wip: false, params: [
+      { id: "font_size", kind: "stepper", min: 6, max: 24, step: 1, default: 10, label: "Tama\u00f1o de fuente" },
+    ]},
+    { id: "boids", name: "Boids", cat: "STYLIZE", wip: false, params: [
+      { id: "num_boids",         kind: "stepper", min: 50, max: 600, step: 50, default: 200, label: "Agentes" },
+      { id: "max_speed",         kind: "slider",  min: 1.0, max: 10.0, step: 0.5, default: 4.0, label: "Velocidad" },
+      { id: "separation_radius", kind: "slider",  min: 5.0, max: 60.0, step: 1.0, default: 15.0, label: "Separaci\u00f3n" },
+    ]},
+    { id: "cpp_physarum", name: "Physarum (C++)", cat: "STYLIZE", wip: false, params: [
+      { id: "num_agents",     kind: "stepper", min: 1000, max: 30000, step: 1000, default: 10000, label: "Agentes" },
+      { id: "sensor_angle",   kind: "slider",  min: 0.05, max: 1.5, step: 0.05, default: 0.4, label: "\u00c1ngulo sensor" },
+      { id: "deposit_amount", kind: "slider",  min: 0.5, max: 20.0, step: 0.5, default: 5.0, label: "Dep\u00f3sito" },
+      { id: "opacity",        kind: "slider",  min: 0.0, max: 1.0, step: 0.05, default: 0.5, label: "Opacidad" },
+    ]},
+    { id: "depth_of_field", name: "Profundidad de campo", cat: "STYLIZE", wip: false, params: [
+      { id: "focal_y",          kind: "slider",  min: 0.0, max: 1.0, step: 0.05, default: 0.5, label: "Foco vertical" },
+      { id: "focal_range",      kind: "slider",  min: 0.02, max: 0.5, step: 0.02, default: 0.15, label: "Rango focal" },
+      { id: "blur_radius",      kind: "stepper", min: 3, max: 51, step: 2, default: 15, label: "Radio desenfoque" },
+      { id: "use_segmentation", kind: "switch",  default: false, label: "Usar segmentaci\u00f3n" },
+    ]},
+    { id: "detail_boost", name: "Realce de detalle", cat: "STYLIZE", wip: false, params: [
+      { id: "clip_limit", kind: "slider", min: 0.5, max: 8.0, step: 0.5, default: 2.0, label: "CLAHE clip" },
+      { id: "sharpness",  kind: "slider", min: 0.0, max: 2.0, step: 0.1, default: 0.6, label: "Nitidez" },
+    ]},
+    { id: "edges", name: "Bordes (Canny)", cat: "STYLIZE", wip: false, params: [
+      { id: "low",  kind: "stepper", min: 0, max: 255, step: 5, default: 80, label: "Umbral bajo" },
+      { id: "high", kind: "stepper", min: 0, max: 255, step: 5, default: 160, label: "Umbral alto" },
+    ]},
+    { id: "edge_smooth", name: "Suavizado de bordes", cat: "STYLIZE", wip: false, params: [
+      { id: "diameter",    kind: "stepper", min: 3, max: 21, step: 2, default: 9, label: "Di\u00e1metro" },
+      { id: "sigma_color", kind: "slider",  min: 10.0, max: 200.0, step: 5.0, default: 75.0, label: "Sigma color" },
+      { id: "sigma_space", kind: "slider",  min: 10.0, max: 200.0, step: 5.0, default: 75.0, label: "Sigma espacio" },
+      { id: "strength",    kind: "slider",  min: 0.0, max: 1.0, step: 0.05, default: 1.0, label: "Mezcla" },
+    ]},
+    { id: "film_grain", name: "Grano de pel\u00edcula", cat: "STYLIZE", wip: false, params: [
+      { id: "intensity",       kind: "slider",  min: 0.0, max: 1.0, step: 0.02, default: 0.15, label: "Intensidad" },
+      { id: "grain_size",      kind: "stepper", min: 1, max: 8, step: 1, default: 1, label: "Tama\u00f1o grano" },
+      { id: "color_variation", kind: "slider",  min: 0.0, max: 1.0, step: 0.05, default: 0.1, label: "Variaci\u00f3n color" },
+    ]},
+    { id: "geometric_patterns", name: "Patrones geom\u00e9tricos", cat: "STYLIZE", wip: false, params: [
+      { id: "pattern_mode", kind: "select", options: ["sacred_geometry","voronoi","delaunay","lissajous","strange_attractor"], default: "sacred_geometry", label: "Patr\u00f3n" },
+      { id: "opacity",      kind: "slider", min: 0.0, max: 1.0, step: 0.05, default: 0.4, label: "Opacidad" },
+      { id: "scale",        kind: "slider", min: 0.2, max: 3.0, step: 0.1, default: 1.0, label: "Escala" },
+      { id: "animate",      kind: "switch", default: true, label: "Animar" },
+    ]},
+    { id: "kinetic_typography", name: "Tipograf\u00eda cin\u00e9tica", cat: "STYLIZE", wip: false, params: [
+      { id: "font_size",       kind: "stepper", min: 12, max: 200, step: 4, default: 48, label: "Tama\u00f1o de fuente" },
+      { id: "animation",       kind: "select",  options: ["scale_in","fade_in","hard_cut"], default: "scale_in", label: "Animaci\u00f3n" },
+      { id: "duration_frames", kind: "stepper", min: 5, max: 240, step: 5, default: 30, label: "Duraci\u00f3n (frames)" },
+      { id: "opacity",         kind: "slider",  min: 0.0, max: 1.0, step: 0.05, default: 0.85, label: "Opacidad" },
+    ]},
+    { id: "kuwahara", name: "Kuwahara \u00b7 \u00f3leo", cat: "STYLIZE", wip: false, params: [
+      { id: "radius", kind: "stepper", min: 2, max: 8, step: 1, default: 4, label: "Radio" },
+    ]},
+    { id: "optical_flow_particles", name: "Part\u00edculas (flujo)", cat: "STYLIZE", wip: false, params: [
+      { id: "max_particles",     kind: "stepper", min: 200, max: 8000, step: 200, default: 2000, label: "M\u00e1x. part\u00edculas" },
+      { id: "particle_lifetime", kind: "stepper", min: 5, max: 120, step: 5, default: 30, label: "Vida (frames)" },
+      { id: "spawn_threshold",   kind: "slider",  min: 0.5, max: 10.0, step: 0.5, default: 2.0, label: "Umbral movimiento" },
+      { id: "color_mode",        kind: "select",  options: ["flow","frame"], default: "flow", label: "Color" },
+    ]},
+    { id: "panel_compositor", name: "Compositor de paneles", cat: "STYLIZE", wip: false, params: [
+      { id: "layout", kind: "select", options: ["1x1","2x1","1x2","2x2","3x1","1x3","3x2"], default: "2x1", label: "Disposici\u00f3n" },
+    ]},
+    { id: "physarum", name: "Physarum (Python)", cat: "STYLIZE", wip: false, params: [
+      { id: "num_agents",     kind: "stepper", min: 500, max: 8000, step: 500, default: 4000, label: "Agentes" },
+      { id: "sensor_angle",   kind: "slider",  min: 0.05, max: 1.5, step: 0.05, default: 0.4, label: "\u00c1ngulo sensor" },
+      { id: "deposit_amount", kind: "slider",  min: 0.5, max: 30.0, step: 0.5, default: 10.0, label: "Dep\u00f3sito" },
+      { id: "opacity",        kind: "slider",  min: 0.0, max: 1.0, step: 0.05, default: 0.7, label: "Opacidad" },
+    ]},
+    { id: "stippling", name: "Puntillismo", cat: "STYLIZE", wip: false, params: [
+      { id: "density",      kind: "slider",  min: 0.05, max: 1.0, step: 0.05, default: 0.5, label: "Densidad" },
+      { id: "min_dot_size", kind: "stepper", min: 1, max: 10, step: 1, default: 1, label: "Punto m\u00ednimo" },
+      { id: "max_dot_size", kind: "stepper", min: 1, max: 12, step: 1, default: 4, label: "Punto m\u00e1ximo" },
+      { id: "invert_size",  kind: "switch",  default: false, label: "Invertir tama\u00f1o" },
+    ]},
+    { id: "toon_shading", name: "Toon shading", cat: "STYLIZE", wip: false, params: [] },
   ];
 
   const FILTERS_BY_ID = {};
