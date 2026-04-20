@@ -21,7 +21,9 @@ from typing import Any, Callable, Dict, List, Optional
 
 from ascii_stream_engine.adapters.processors.filters import (
     BloomFilter,
+    ChromaticAberrationFilter,
     CppBrightnessContrastFilter,
+    CppInvertFilter,
     CppTemporalScanFilter,
 )
 
@@ -171,18 +173,58 @@ FILTERS: List[Dict[str, Any]] = [
         "id": "chroma",
         "name": "Aberración cromática",
         "cat": "GLITCH",
-        "wip": True,
-        "factory": None,
-        "params": [],
+        "wip": False,
+        "factory": lambda: ChromaticAberrationFilter(
+            strength=3.0, center_x=0.5, center_y=0.5, radial=True
+        ),
+        "params": [
+            {
+                "id": "strength",
+                "kind": "slider",
+                "min": 0.0,
+                "max": 15.0,
+                "step": 0.5,
+                "default": 3.0,
+                "label": "Fuerza",
+                "apply": lambda f, v: setattr(f, "strength", float(v)),
+            },
+            {
+                "id": "center_x",
+                "kind": "slider",
+                "min": 0.0,
+                "max": 1.0,
+                "step": 0.05,
+                "default": 0.5,
+                "label": "Centro X",
+                "apply": lambda f, v: setattr(f, "center_x", float(v)),
+            },
+            {
+                "id": "center_y",
+                "kind": "slider",
+                "min": 0.0,
+                "max": 1.0,
+                "step": 0.05,
+                "default": 0.5,
+                "label": "Centro Y",
+                "apply": lambda f, v: setattr(f, "center_y", float(v)),
+            },
+            {
+                "id": "radial",
+                "kind": "switch",
+                "default": True,
+                "label": "Radial",
+                "apply": lambda f, v: setattr(f, "radial", bool(v)),
+            },
+        ],
     },
     # ── STYLIZE ────────────────────────────────────────────────────────────
     {
         "id": "invert",
         "name": "Invertir",
         "cat": "STYLIZE",
-        "wip": True,
-        "factory": None,
-        "params": [],
+        "wip": False,
+        "factory": lambda: CppInvertFilter(),
+        "params": [],  # only the enabled toggle (managed in cat list / detail)
     },
 ]
 

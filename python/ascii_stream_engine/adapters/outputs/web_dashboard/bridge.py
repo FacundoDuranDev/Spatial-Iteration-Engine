@@ -202,6 +202,16 @@ class EngineBridge:
                     return int(getattr(inst, "_threshold", fallback))
                 if pid == "audio_react":
                     return float(getattr(inst, "_audio_reactive", fallback))
+            elif fid == "chroma":
+                if pid == "strength":
+                    return float(getattr(inst, "_strength", fallback))
+                if pid == "center_x":
+                    return float(getattr(inst, "_center_x", fallback))
+                if pid == "center_y":
+                    return float(getattr(inst, "_center_y", fallback))
+                if pid == "radial":
+                    return bool(getattr(inst, "_radial", fallback))
+            # invert has no params; nothing to read.
         except Exception:
             return fallback
         return fallback

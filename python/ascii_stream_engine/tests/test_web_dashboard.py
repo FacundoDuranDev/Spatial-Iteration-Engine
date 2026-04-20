@@ -110,20 +110,18 @@ def test_registry_has_4_categories():
 
 
 def test_wired_filters_have_factory():
-    for fid in ("temporal_scan", "bc_cpp", "bloom"):
+    # All 5 filters are now wired (chroma + invert promoted out of WIP).
+    for fid in ("temporal_scan", "bc_cpp", "bloom", "chroma", "invert"):
         spec = registry.find_filter(fid)
         assert spec is not None
         assert spec.get("wip") is False
         assert callable(spec.get("factory"))
 
 
-def test_wip_filters_have_no_factory():
-    for fid in ("chroma", "invert"):
-        spec = registry.find_filter(fid)
-        assert spec is not None
-        assert spec.get("wip") is True
-        assert spec.get("factory") is None
-        assert spec.get("params") == []
+def test_no_filters_left_as_wip():
+    # If you re-introduce a WIP stub, update this test consciously.
+    wip = [f["id"] for f in registry.FILTERS if f.get("wip")]
+    assert wip == [], f"unexpected WIP filters: {wip}"
 
 
 def test_find_filter_unknown_returns_none():
@@ -148,8 +146,13 @@ def test_default_params_returns_id_to_default_map():
     assert defaults == {"intensity": 0.6, "threshold": 200, "audio_react": 1.0}
 
 
-def test_default_params_wip_returns_empty():
-    assert registry.default_params("chroma") == {}
+def test_default_params_invert_returns_empty():
+    # Invert is wired but parameter-less (only the enabled toggle).
+    assert registry.default_params("invert") == {}
+
+
+def test_default_params_unknown_returns_empty():
+    assert registry.default_params("ghost") == {}
 
 
 # ── registry param spec sanity ────────────────────────────────────────

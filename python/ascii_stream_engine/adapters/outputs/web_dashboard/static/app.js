@@ -62,14 +62,19 @@
       id: "chroma",
       name: "Aberraci\u00f3n crom\u00e1tica",
       cat: "GLITCH",
-      wip: true,
-      params: [],
+      wip: false,
+      params: [
+        { id: "strength", kind: "slider", min: 0.0, max: 15.0, step: 0.5, default: 3.0, label: "Fuerza" },
+        { id: "center_x", kind: "slider", min: 0.0, max: 1.0,  step: 0.05, default: 0.5, label: "Centro X" },
+        { id: "center_y", kind: "slider", min: 0.0, max: 1.0,  step: 0.05, default: 0.5, label: "Centro Y" },
+        { id: "radial",   kind: "switch", default: true, label: "Radial" },
+      ],
     },
     {
       id: "invert",
       name: "Invertir",
       cat: "STYLIZE",
-      wip: true,
+      wip: false,
       params: [],
     },
   ];
