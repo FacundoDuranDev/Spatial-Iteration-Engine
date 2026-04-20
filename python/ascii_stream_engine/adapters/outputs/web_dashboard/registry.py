@@ -63,7 +63,9 @@ FILTERS: List[Dict[str, Any]] = [
         "name": "TemporalScan",
         "cat": "DISTORT",
         "wip": False,
-        "factory": lambda: CppTemporalScanFilter(angle_deg=0.0, max_frames=30),
+        "factory": lambda: CppTemporalScanFilter(
+            angle_deg=0.0, max_frames=30, bands=0
+        ),
         "params": [
             {
                 "id": "angle",
@@ -84,6 +86,16 @@ FILTERS: List[Dict[str, Any]] = [
                 "default": 30,
                 "label": "Buffer (frames)",
                 "apply": lambda f, v: setattr(f, "max_frames", int(v)),
+            },
+            {
+                "id": "bands",
+                "kind": "stepper",
+                "min": 0,
+                "max": 60,
+                "step": 1,
+                "default": 0,
+                "label": "Bandas (0=auto)",
+                "apply": lambda f, v: setattr(f, "bands", int(v)),
             },
             {
                 "id": "curve",

@@ -221,6 +221,8 @@ class EngineBridge:
                     return float(getattr(inst, "angle_deg", fallback))
                 if pid == "buffer":
                     return int(getattr(inst, "max_frames", fallback))
+                if pid == "bands":
+                    return int(getattr(inst, "bands", fallback))
                 if pid == "curve":
                     return getattr(inst, "curve", fallback)
             elif fid == "bc_cpp":

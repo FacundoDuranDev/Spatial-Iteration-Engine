@@ -68,6 +68,14 @@ void TemporalScan::apply(const std::uint8_t* input, std::uint8_t* output,
   const int denom_w = std::max(1, w - 1);
   const int max_t = n_frames_ - 1;
 
+  // Resolve effective band count: 0 means "one band per stored frame"
+  // (legacy). Otherwise clamp into [2, n_frames_]. Each band maps to a
+  // single frame in the buffer; band_idx -> t = round(band_idx * max_t /
+  // max_band) so the extreme bands always hit the newest and the oldest.
+  int band_count = (bands_ > 0) ? std::min(bands_, n_frames_) : n_frames_;
+  if (band_count < 2) band_count = std::max(2, n_frames_);
+  const int max_band = band_count - 1;
+
   // For each row, precompute the y contribution (cheap win).
   for (int y = 0; y < h; ++y) {
     const double yn = static_cast<double>(y) / denom_h * 2.0 - 1.0;
@@ -77,10 +85,13 @@ void TemporalScan::apply(const std::uint8_t* input, std::uint8_t* output,
       // Range of (xn*cos + yn*sin) is [-proj_max, proj_max]; map to [0,1].
       double t_norm = (xn * cos_a + y_proj + proj_max) * proj_norm;
       if (curve_ == CURVE_EASE) t_norm = smoothstep(t_norm);
-      int t = static_cast<int>(t_norm * max_t + 0.5);
-      if (t < 0) t = 0;
-      else if (t > max_t) t = max_t;
-      // t = 0 -> newest frame (just written), t = max_t -> oldest.
+      int band_idx = static_cast<int>(t_norm * max_band + 0.5);
+      if (band_idx < 0) band_idx = 0;
+      else if (band_idx > max_band) band_idx = max_band;
+      // Strided lookup into the ring buffer: band 0 -> newest, band
+      // max_band -> oldest. Integer math with rounding keeps the extreme
+      // bands locked to t=0 and t=max_t exactly.
+      const int t = (band_idx * max_t + max_band / 2) / max_band;
       int slot = current_slot - t;
       if (slot < 0) slot += max_frames_;
       const std::uint8_t* src = frames_[slot].data() + (y * w + x) * c;

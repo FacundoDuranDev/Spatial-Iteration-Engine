@@ -34,6 +34,7 @@
       params: [
         { id: "angle",  kind: "angle",   min: 0,   max: 360, step: 1,   default: 0,        label: "\u00c1ngulo de scan" },
         { id: "buffer", kind: "stepper", min: 2,   max: 60,  step: 2,   default: 30,       label: "Buffer (frames)" },
+        { id: "bands",  kind: "stepper", min: 0,   max: 60,  step: 1,   default: 0,        label: "Bandas (0=auto)" },
         { id: "curve",  kind: "select",  options: ["linear", "ease"],   default: "linear", label: "Curva" },
       ],
     },

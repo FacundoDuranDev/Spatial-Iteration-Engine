@@ -35,6 +35,15 @@ class TemporalScan {
   void set_curve(int c) { curve_ = c; }
   int curve() const { return curve_; }
 
+  // Visual band count. Decoupled from max_frames_: max_frames_ controls how
+  // many past frames are stored (the temporal depth of the scan), while
+  // bands_ controls how many distinct visual stripes the screen is divided
+  // into. When bands_ <= 0, bands == stored_frames (legacy behaviour);
+  // otherwise the screen is split into `bands_` stripes that each pick a
+  // single frame from the buffer at a strided offset.
+  void set_bands(int b) { bands_ = b; }
+  int bands() const { return bands_; }
+
   int max_frames() const { return max_frames_; }
   int stored_frames() const { return n_frames_; }
 
@@ -42,6 +51,7 @@ class TemporalScan {
   int max_frames_;
   double angle_deg_;
   int curve_ = CURVE_LINEAR;
+  int bands_ = 0;  // 0 => use stored_frames as the band count.
 
   // Ring buffer of flattened frames; allocated lazily on first apply with the
   // actual resolution, and reallocated if the resolution changes.

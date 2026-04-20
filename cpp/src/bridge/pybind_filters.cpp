@@ -148,6 +148,14 @@ PYBIND11_MODULE(filters_cpp, m) {
                     &filters::TemporalScan::set_angle_deg,
                     "Scan direction in degrees (0 = right-to-left, 90 = top-to-bottom, "
                     "arbitrary values produce diagonal scans).")
+      .def_property("bands",
+                    &filters::TemporalScan::bands,
+                    &filters::TemporalScan::set_bands,
+                    "Visual band count. 0 (default) means \"one band per "
+                    "stored frame\" (legacy behaviour); a positive value "
+                    "decouples band width from buffer depth so you can have "
+                    "wide bands with deep temporal lookup or vice versa. "
+                    "Clamped to [2, stored_frames] at apply time.")
       .def_property("curve",
                     &filters::TemporalScan::curve,
                     &filters::TemporalScan::set_curve,

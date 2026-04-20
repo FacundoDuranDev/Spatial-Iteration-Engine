@@ -45,12 +45,17 @@ class CppTemporalScanFilter(BaseFilter):
         angle_deg: float = 0.0,
         max_frames: int = 30,
         curve: str = "linear",
+        bands: int = 0,
         enabled: bool = True,
     ) -> None:
         super().__init__(enabled=enabled)
         self._angle_deg = float(angle_deg)
         self._max_frames = max(2, int(max_frames))
         self._curve_name = curve if curve in _CURVES else "linear"
+        # 0 means "one band per stored frame" (legacy). Otherwise the screen
+        # is split into `bands` stripes that pick from the buffer at strided
+        # offsets — wide bands + deep buffer become independently tunable.
+        self._bands = max(0, int(bands))
         # C++ instance (lazy init on first apply so construction never fails)
         self._cpp: Optional[object] = None
         # Python fallback state (ring buffer + write index)
@@ -101,6 +106,17 @@ class CppTemporalScanFilter(BaseFilter):
         if self._cpp is not None:
             self._cpp.curve = _CURVES[value]
 
+    @property
+    def bands(self) -> int:
+        return self._bands
+
+    @bands.setter
+    def bands(self, value: int) -> None:
+        new_bands = max(0, int(value))
+        self._bands = new_bands
+        if self._cpp is not None:
+            self._cpp.bands = new_bands
+
     def reset(self) -> None:
         if self._cpp is not None:
             self._cpp.reset()
@@ -125,6 +141,10 @@ class CppTemporalScanFilter(BaseFilter):
         if self._cpp is None:
             self._cpp = _filters_cpp.TemporalScan(self._max_frames, self._angle_deg)
             self._cpp.curve = _CURVES[self._curve_name]
+            # `bands` may not exist on older compiled bindings — guard so we
+            # still run on a stale .so until cpp/build is refreshed.
+            if hasattr(self._cpp, "bands"):
+                self._cpp.bands = self._bands
         # Ensure C-contiguous uint8 input (the binding requires it).
         arr = np.ascontiguousarray(frame, dtype=np.uint8)
         return self._cpp.apply(arr)
@@ -163,7 +183,21 @@ class CppTemporalScanFilter(BaseFilter):
             t_norm = t_norm * t_norm * (3.0 - 2.0 * t_norm)
 
         max_t = self._py_n_frames - 1
-        t_idx = np.clip(np.rint(t_norm * max_t).astype(np.int32), 0, max_t)
+        # Effective band count mirrors the C++ logic.
+        if self._bands > 0:
+            band_count = min(self._bands, self._py_n_frames)
+            if band_count < 2:
+                band_count = max(2, self._py_n_frames)
+        else:
+            band_count = self._py_n_frames
+        max_band = band_count - 1
+
+        band_idx = np.clip(np.rint(t_norm * max_band).astype(np.int32), 0, max_band)
+        # band_idx -> t with rounding so band 0 hits newest, band max_band hits oldest.
+        if max_band > 0:
+            t_idx = ((band_idx * max_t) + (max_band // 2)) // max_band
+        else:
+            t_idx = np.zeros_like(band_idx)
 
         out = np.empty_like(frame)
         # Loop bound ≤ max_frames (≤ 30 in practice), not per-pixel.
