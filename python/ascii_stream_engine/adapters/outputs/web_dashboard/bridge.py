@@ -342,11 +342,6 @@ class EngineBridge:
                     return int(getattr(inst, "_g_delay", fallback))
                 if pid == "b_delay":
                     return int(getattr(inst, "_b_delay", fallback))
-            elif fid == "chrono_scan":
-                if pid == "max_delay":
-                    return int(getattr(inst, "_max_delay", fallback))
-                if pid == "axis":
-                    return getattr(inst, "_axis", fallback)
             elif fid == "crt_glitch":
                 if pid == "scanlines":
                     return float(getattr(inst, "_scanline_intensity", fallback))
@@ -392,13 +387,6 @@ class EngineBridge:
                     return float(getattr(inst, "_falloff", fallback))
                 if pid == "center_x":
                     return float(getattr(inst, "_center_x", fallback))
-            elif fid == "slit_scan":
-                if pid == "buffer_size":
-                    return int(getattr(inst, "_buffer_size", fallback))
-                if pid == "direction":
-                    return getattr(inst, "_direction", fallback)
-                if pid == "reverse":
-                    return bool(getattr(inst, "_reverse", fallback))
             elif fid == "ascii":
                 if pid == "font_size":
                     val = getattr(inst, "_font_size_pending", None)

@@ -29,7 +29,7 @@
     {
       id: "temporal_scan",
       name: "TemporalScan",
-      cat: "DISTORT",
+      cat: "GLITCH",
       wip: false,
       params: [
         { id: "angle",  kind: "angle",   min: 0,   max: 360, step: 1,   default: 0,        label: "\u00c1ngulo de scan" },
@@ -149,10 +149,7 @@
       { id: "g_delay", kind: "stepper", min: 0, max: 30, step: 1, default: 3, label: "Delay G" },
       { id: "b_delay", kind: "stepper", min: 0, max: 30, step: 1, default: 8, label: "Delay B" },
     ]},
-    { id: "chrono_scan", name: "Chrono-scan", cat: "GLITCH", wip: false, params: [
-      { id: "max_delay", kind: "stepper", min: 2, max: 60, step: 1, default: 20, label: "Delay m\u00e1x (frames)" },
-      { id: "axis",      kind: "select",  options: ["rows","cols"], default: "rows", label: "Eje" },
-    ]},
+    // chrono_scan + slit_scan removed — TemporalScan unifies them.
     { id: "crt_glitch", name: "CRT glitch", cat: "GLITCH", wip: false, params: [
       { id: "scanlines",  kind: "slider", min: 0.0, max: 1.0, step: 0.05, default: 0.3, label: "Scanlines" },
       { id: "aberration", kind: "slider", min: 0.0, max: 15.0, step: 0.5, default: 3.0, label: "Aberraci\u00f3n" },
@@ -182,11 +179,6 @@
       { id: "samples",  kind: "stepper", min: 2, max: 32, step: 1, default: 8, label: "Muestras" },
       { id: "falloff",  kind: "slider",  min: 0.0, max: 1.0, step: 0.05, default: 0.5, label: "Ca\u00edda" },
       { id: "center_x", kind: "slider",  min: 0.0, max: 1.0, step: 0.05, default: 0.5, label: "Centro X" },
-    ]},
-    { id: "slit_scan", name: "Slit-scan", cat: "GLITCH", wip: false, params: [
-      { id: "buffer_size", kind: "stepper", min: 2, max: 60, step: 2, default: 30, label: "Buffer (frames)" },
-      { id: "direction",   kind: "select",  options: ["horizontal","vertical"], default: "horizontal", label: "Direcci\u00f3n" },
-      { id: "reverse",     kind: "switch",  default: false, label: "Invertir" },
     ]},
     // ─── STYLIZE extras ───────────────────────────────────────────────
     { id: "ascii", name: "ASCII", cat: "STYLIZE", wip: false, params: [

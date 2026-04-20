@@ -99,10 +99,20 @@ def test_coerce_bool(raw, expected):
 # ── registry helpers ──────────────────────────────────────────────────
 
 
-def test_registry_has_at_least_44_filters():
-    # The original 5 + the rest of the catalogue we wired in. Update this
-    # number when adding/removing filters; do not remove the test.
-    assert len(registry.FILTERS) >= 44
+def test_registry_has_at_least_42_filters():
+    # 44 wired minus the 2 redundant slit/chrono filters that were
+    # collapsed into TemporalScan. Update this number consciously
+    # when adding or removing filters; do not remove the test.
+    assert len(registry.FILTERS) >= 42
+
+
+def test_redundant_scan_filters_unregistered():
+    # ChronoScanFilter + SlitScanFilter are explicitly NOT in the v3
+    # registry — they were folded into TemporalScan. If you add them
+    # back, justify it in the registry comment block.
+    ids = {f["id"] for f in registry.FILTERS}
+    assert "chrono_scan" not in ids
+    assert "slit_scan" not in ids
 
 
 def test_registry_core_filters_still_present():

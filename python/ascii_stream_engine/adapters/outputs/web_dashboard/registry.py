@@ -100,7 +100,7 @@ FILTERS: List[Dict[str, Any]] = [
     {
         "id": "temporal_scan",
         "name": "TemporalScan",
-        "cat": "DISTORT",
+        "cat": "GLITCH",  # unified slit/chrono scan — naturally lives in GLITCH
         "wip": False,
         "factory": lambda: CppTemporalScanFilter(
             angle_deg=0.0, max_frames=30, bands=0
@@ -603,23 +603,10 @@ FILTERS: List[Dict[str, Any]] = [
              "apply": lambda f, v: setattr(f, "_b_delay", int(v))},
         ],
     },
-    {
-        "id": "chrono_scan",
-        "name": "Chrono-scan",
-        "cat": "GLITCH",
-        "wip": False,
-        "factory": lambda: ChronoScanFilter(max_delay=20, axis="rows"),
-        "params": [
-            {"id": "max_delay", "kind": "stepper",
-             "min": 2, "max": 60, "step": 1, "default": 20,
-             "label": "Delay máx (frames)",
-             "apply": lambda f, v: setattr(f, "max_delay", int(v))},
-            {"id": "axis", "kind": "select",
-             "options": ["rows", "cols"], "default": "rows",
-             "label": "Eje",
-             "apply": lambda f, v: setattr(f, "axis", str(v))},
-        ],
-    },
+    # NOTE: ChronoScanFilter and SlitScanFilter are intentionally NOT
+    # registered — TemporalScan is their unified replacement (see the
+    # docstring at the top of cpp_temporal_scan.py). The classes stay in
+    # adapters/processors/filters/ for historical/library use.
     {
         "id": "crt_glitch",
         "name": "CRT glitch",
@@ -758,28 +745,7 @@ FILTERS: List[Dict[str, Any]] = [
              "apply": lambda f, v: setattr(f, "_center_x", float(v))},
         ],
     },
-    {
-        "id": "slit_scan",
-        "name": "Slit-scan",
-        "cat": "GLITCH",
-        "wip": False,
-        "factory": lambda: SlitScanFilter(
-            buffer_size=30, direction="horizontal", reverse=False,
-        ),
-        "params": [
-            {"id": "buffer_size", "kind": "stepper",
-             "min": 2, "max": 60, "step": 2, "default": 30,
-             "label": "Buffer (frames)",
-             "apply": lambda f, v: setattr(f, "_buffer_size", max(2, int(v)))},
-            {"id": "direction", "kind": "select",
-             "options": ["horizontal", "vertical"], "default": "horizontal",
-             "label": "Dirección",
-             "apply": lambda f, v: setattr(f, "_direction", str(v))},
-            {"id": "reverse", "kind": "switch",
-             "default": False, "label": "Invertir",
-             "apply": lambda f, v: setattr(f, "_reverse", bool(v))},
-        ],
-    },
+    # SlitScanFilter intentionally not registered — see TemporalScan note above.
     # ─── STYLIZE extras ───────────────────────────────────────────────────
     {
         "id": "ascii",
