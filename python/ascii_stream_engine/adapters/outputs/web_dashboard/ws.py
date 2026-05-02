@@ -278,6 +278,79 @@ async def websocket_endpoint(socket: WebSocket, bridge: EngineBridge, auth_token
                 await socket.send_json(bridge.snapshot())
                 continue
 
+            if op == "toggle_projection":
+                if "on" not in payload:
+                    await socket.send_json(
+                        {"type": "error", "code": "bad_payload", "msg": "on required"}
+                    )
+                    continue
+                on = coerce_bool(payload.get("on"))
+                try:
+                    bridge.toggle_projection(on)
+                except Exception:
+                    logger.exception("toggle_projection dispatch failed")
+                    await socket.send_json(
+                        {"type": "error", "code": "internal", "msg": "toggle_projection"}
+                    )
+                    continue
+                await socket.send_json(bridge.snapshot())
+                continue
+
+            if op == "set_projection_corners":
+                corners = payload.get("corners")
+                if not isinstance(corners, list) or len(corners) != 4:
+                    await socket.send_json(
+                        {"type": "error", "code": "bad_payload", "msg": "corners must be 4 [x,y]"}
+                    )
+                    continue
+                try:
+                    bridge.set_projection_corners(corners)
+                except Exception:
+                    logger.exception("set_projection_corners dispatch failed")
+                    await socket.send_json(
+                        {"type": "error", "code": "internal", "msg": "set_projection_corners"}
+                    )
+                    continue
+                await socket.send_json(bridge.snapshot())
+                continue
+
+            if op == "set_projection_corner":
+                idx = payload.get("idx")
+                x = payload.get("x")
+                y = payload.get("y")
+                if not isinstance(idx, int) or not (0 <= idx < 4):
+                    await socket.send_json(
+                        {"type": "error", "code": "bad_payload", "msg": "idx in [0,3]"}
+                    )
+                    continue
+                try:
+                    bridge.set_projection_corner(idx, float(x), float(y))
+                except (TypeError, ValueError):
+                    await socket.send_json(
+                        {"type": "error", "code": "bad_payload", "msg": "x,y must be numeric"}
+                    )
+                    continue
+                except Exception:
+                    logger.exception("set_projection_corner dispatch failed")
+                    await socket.send_json(
+                        {"type": "error", "code": "internal", "msg": "set_projection_corner"}
+                    )
+                    continue
+                await socket.send_json(bridge.snapshot())
+                continue
+
+            if op == "reset_projection":
+                try:
+                    bridge.reset_projection()
+                except Exception:
+                    logger.exception("reset_projection dispatch failed")
+                    await socket.send_json(
+                        {"type": "error", "code": "internal", "msg": "reset_projection"}
+                    )
+                    continue
+                await socket.send_json(bridge.snapshot())
+                continue
+
             if op == "set_param":
                 fid = payload.get("filter")
                 pid = payload.get("param")

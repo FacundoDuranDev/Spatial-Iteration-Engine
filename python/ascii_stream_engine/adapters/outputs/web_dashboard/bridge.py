@@ -22,6 +22,10 @@ logger = logging.getLogger("web_dashboard.bridge")
 MODULATIONS_FILE = Path.home() / ".ascii_stream_engine" / "modulations.json"
 MODULATIONS_SCHEMA_VERSION = 1
 
+# Projection mapping (4-corner perspective warp). Misma carpeta, schema v1.
+PROJECTION_FILE = Path.home() / ".ascii_stream_engine" / "projection.json"
+PROJECTION_SCHEMA_VERSION = 1
+
 
 class EngineBridge:
     """Thread-safe wrapper around StreamEngine for the web dashboard.
@@ -73,6 +77,11 @@ class EngineBridge:
         # run) o está corrupto, arrancamos vacío sin tirar — el usuario
         # vuelve a crearlos desde la UI.
         self._load_modulations()
+
+        # Projection mapping calibration: lee corners + enabled del último
+        # ajuste guardado y los aplica al renderer si hay uno presente. Si
+        # el chain no tiene ProjectionMappingRenderer, el load es no-op.
+        self._load_projection()
 
     @property
     def engine(self):
@@ -290,6 +299,165 @@ class EngineBridge:
             "face_count": face_count,
             "hands_count": hands_count,
         }
+
+    # --- projection mapping --------------------------------------------
+
+    def _find_projection_renderer(self):
+        """Walk the renderer chain looking for a ProjectionMappingRenderer.
+
+        Camina por `inner` igual que `_find_overlay_renderer` pero busca la
+        clase concreta — el OverlayCapable Protocol también lo cumple este
+        renderer, así que para evitar ambigüedad acá comparamos por tipo.
+        """
+        from ...renderers.projection_mapping_renderer import (
+            ProjectionMappingRenderer,
+        )
+
+        r = getattr(self._engine, "get_renderer", lambda: None)()
+        seen = set()
+        while r is not None and id(r) not in seen:
+            seen.add(id(r))
+            if isinstance(r, ProjectionMappingRenderer):
+                return r
+            r = getattr(r, "inner", None)
+        return None
+
+    def projection_state(self) -> Dict[str, Any]:
+        """Snapshot del estado de projection mapping para la UI."""
+        pm = self._find_projection_renderer()
+        if pm is None:
+            return {
+                "available": False,
+                "enabled": False,
+                "corners": [list(c) for c in (
+                    (0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0),
+                )],
+            }
+        return {
+            "available": True,
+            "enabled": bool(pm.enabled),
+            "corners": [list(c) for c in pm.corners_norm],
+        }
+
+    def toggle_projection(self, on: bool) -> bool:
+        """Activa/desactiva el warp. Persiste el flag para la próxima run."""
+        with self._lock:
+            pm = self._find_projection_renderer()
+            if pm is None:
+                return False
+            try:
+                pm.enabled = bool(on)
+                self._save_projection_quiet()
+                return True
+            except Exception:
+                logger.exception("toggle_projection failed")
+                return False
+
+    def set_projection_corners(self, corners) -> bool:
+        """Reescribe los 4 corners. `corners` = [[x,y]*4] en [0,1]."""
+        with self._lock:
+            pm = self._find_projection_renderer()
+            if pm is None:
+                return False
+            try:
+                pm.set_corners(corners)
+                self._save_projection_quiet()
+                return True
+            except Exception:
+                logger.exception("set_projection_corners failed (%r)", corners)
+                return False
+
+    def set_projection_corner(self, idx: int, x: float, y: float) -> bool:
+        """Mueve un solo corner. Útil para drag fino sin reenviar los 4."""
+        with self._lock:
+            pm = self._find_projection_renderer()
+            if pm is None:
+                return False
+            try:
+                pm.set_corner(int(idx), float(x), float(y))
+                self._save_projection_quiet()
+                return True
+            except Exception:
+                logger.exception(
+                    "set_projection_corner(%s,%s,%s) failed", idx, x, y
+                )
+                return False
+
+    def reset_projection(self) -> bool:
+        """Vuelve a corners identity (sin warp). No cambia el flag enabled."""
+        with self._lock:
+            pm = self._find_projection_renderer()
+            if pm is None:
+                return False
+            try:
+                pm.reset()
+                self._save_projection_quiet()
+                return True
+            except Exception:
+                logger.exception("reset_projection failed")
+                return False
+
+    def _save_projection_quiet(self) -> None:
+        try:
+            self._save_projection()
+        except Exception:
+            logger.exception("save projection failed (in-memory state intact)")
+
+    def _save_projection(self) -> None:
+        pm = self._find_projection_renderer()
+        if pm is None:
+            return
+        PROJECTION_FILE.parent.mkdir(parents=True, exist_ok=True)
+        data = {
+            "version": PROJECTION_SCHEMA_VERSION,
+            "enabled": bool(pm.enabled),
+            "corners": [list(c) for c in pm.corners_norm],
+        }
+        tmp = tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8",
+            dir=str(PROJECTION_FILE.parent),
+            prefix=".projection.", suffix=".tmp",
+            delete=False,
+        )
+        try:
+            json.dump(data, tmp, indent=2)
+            tmp.flush()
+            os.fsync(tmp.fileno())
+            tmp.close()
+            os.replace(tmp.name, str(PROJECTION_FILE))
+        except Exception:
+            try:
+                os.unlink(tmp.name)
+            except Exception:
+                pass
+            raise
+
+    def _load_projection(self) -> None:
+        if not PROJECTION_FILE.is_file():
+            return
+        pm = self._find_projection_renderer()
+        if pm is None:
+            return
+        try:
+            with PROJECTION_FILE.open("r", encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception:
+            logger.exception("load projection: parse failed; starting identity")
+            return
+        version = data.get("version") if isinstance(data, dict) else None
+        if version != PROJECTION_SCHEMA_VERSION:
+            logger.warning(
+                "projection.json schema v=%s, expected v=%s — ignoring",
+                version, PROJECTION_SCHEMA_VERSION,
+            )
+            return
+        try:
+            corners = data.get("corners")
+            if corners:
+                pm.set_corners(corners)
+            pm.enabled = bool(data.get("enabled", False))
+        except Exception:
+            logger.exception("load projection: apply failed; starting identity")
 
     # --- modulation ----------------------------------------------------
 
@@ -832,6 +1000,7 @@ class EngineBridge:
                 "tracking": self._tracking_state(),
                 "modulations": self.list_modulations(),
                 "signals": self.list_signals(),
+                "projection": self.projection_state(),
             }
 
     def add_listener(self, fn: Callable[[dict], None]) -> None:

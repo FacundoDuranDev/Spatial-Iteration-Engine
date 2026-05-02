@@ -37,6 +37,9 @@ from ascii_stream_engine.adapters.renderers.passthrough_renderer import (
 from ascii_stream_engine.adapters.renderers.landmarks_overlay_renderer import (
     LandmarksOverlayRenderer,
 )
+from ascii_stream_engine.adapters.renderers.projection_mapping_renderer import (
+    ProjectionMappingRenderer,
+)
 from ascii_stream_engine.adapters.perception.face import FaceLandmarkAnalyzer
 from ascii_stream_engine.adapters.perception.hands import HandLandmarkAnalyzer
 from ascii_stream_engine.adapters.outputs.preview_sink import PreviewSink
@@ -104,7 +107,7 @@ class StickyPreviewSink(PreviewSink):
         self._output_size = output_size
         self._is_open = True
         if not self._window_created:
-            self._is_fullscreen = False
+            self._is_fullscreen = self._fullscreen_default
             self._ensure_window()
             self._window_created = True
 
@@ -125,7 +128,14 @@ def _build_engine() -> StreamEngine:
         enable_audio_reactive=False,
     )
     source = OpenCVCameraSource(camera_index=CAMERA_INDEX)
-    renderer = LandmarksOverlayRenderer(inner=PassthroughRenderer())
+    # Order (innermost → outermost):
+    #   passthrough → landmarks overlay → projection mapping warp
+    # Projection es la capa más externa: warpea el frame ya compuesto con
+    # overlay para que aterrice físicamente donde apunta el proyector.
+    renderer = ProjectionMappingRenderer(
+        inner=LandmarksOverlayRenderer(inner=PassthroughRenderer()),
+        enabled=False,  # apagado hasta que el usuario calibre los corners
+    )
     sink = StickyPreviewSink(
         window_name="Spatial-Iteration-Engine v3 — f=fullscreen · ESC=exit"
     )

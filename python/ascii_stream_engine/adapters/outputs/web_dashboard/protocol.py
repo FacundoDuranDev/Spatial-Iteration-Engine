@@ -12,6 +12,8 @@ ALLOWED_OPS = frozenset({
     "start", "stop", "toggle_filter", "set_param", "clear_filters",
     "toggle_analyzer", "toggle_overlay",
     "add_modulation", "remove_modulation", "clear_modulations",
+    "toggle_projection", "set_projection_corners",
+    "set_projection_corner", "reset_projection",
     "pong",
 })
 
