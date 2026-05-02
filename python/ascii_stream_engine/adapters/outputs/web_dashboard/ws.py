@@ -414,6 +414,98 @@ async def websocket_endpoint(socket: WebSocket, bridge: EngineBridge, auth_token
                 await socket.send_json(bridge.snapshot())
                 continue
 
+            if op == "add_projection_region":
+                name = payload.get("name")
+                if name is not None and not isinstance(name, str):
+                    await socket.send_json(
+                        {"type": "error", "code": "bad_payload", "msg": "name must be string"}
+                    )
+                    continue
+                try:
+                    bridge.add_projection_region(name)
+                except Exception:
+                    logger.exception("add_projection_region dispatch failed")
+                    await socket.send_json(
+                        {"type": "error", "code": "internal", "msg": "add_projection_region"}
+                    )
+                    continue
+                await socket.send_json(bridge.snapshot())
+                continue
+
+            if op == "remove_projection_region":
+                idx = payload.get("idx")
+                if not isinstance(idx, int):
+                    await socket.send_json(
+                        {"type": "error", "code": "bad_payload", "msg": "idx required (int)"}
+                    )
+                    continue
+                try:
+                    bridge.remove_projection_region(idx)
+                except Exception:
+                    logger.exception("remove_projection_region dispatch failed")
+                    await socket.send_json(
+                        {"type": "error", "code": "internal", "msg": "remove_projection_region"}
+                    )
+                    continue
+                await socket.send_json(bridge.snapshot())
+                continue
+
+            if op == "set_projection_active_region":
+                idx = payload.get("idx")
+                if not isinstance(idx, int):
+                    await socket.send_json(
+                        {"type": "error", "code": "bad_payload", "msg": "idx required (int)"}
+                    )
+                    continue
+                try:
+                    bridge.set_projection_active_region(idx)
+                except Exception:
+                    logger.exception("set_projection_active_region dispatch failed")
+                    await socket.send_json(
+                        {"type": "error", "code": "internal", "msg": "set_projection_active_region"}
+                    )
+                    continue
+                await socket.send_json(bridge.snapshot())
+                continue
+
+            if op == "set_projection_region_enabled":
+                idx = payload.get("idx")
+                if not isinstance(idx, int) or "on" not in payload:
+                    await socket.send_json(
+                        {"type": "error", "code": "bad_payload", "msg": "idx (int) + on required"}
+                    )
+                    continue
+                on = coerce_bool(payload.get("on"))
+                try:
+                    bridge.set_projection_region_enabled(idx, on)
+                except Exception:
+                    logger.exception("set_projection_region_enabled dispatch failed")
+                    await socket.send_json(
+                        {"type": "error", "code": "internal", "msg": "set_projection_region_enabled"}
+                    )
+                    continue
+                await socket.send_json(bridge.snapshot())
+                continue
+
+            if op == "rename_projection_region":
+                idx = payload.get("idx")
+                name = payload.get("name")
+                if not isinstance(idx, int) or not isinstance(name, str) or not name.strip():
+                    await socket.send_json(
+                        {"type": "error", "code": "bad_payload", "msg": "idx (int) + name (non-empty str)"}
+                    )
+                    continue
+                try:
+                    bridge.rename_projection_region(idx, name.strip())
+                except Exception:
+                    logger.exception("rename_projection_region dispatch failed")
+                    await socket.send_json(
+                        {"type": "error", "code": "internal", "msg": "rename_projection_region"}
+                    )
+                    continue
+                await socket.send_json(bridge.snapshot())
+                continue
+
             if op == "set_param":
                 fid = payload.get("filter")
                 pid = payload.get("param")

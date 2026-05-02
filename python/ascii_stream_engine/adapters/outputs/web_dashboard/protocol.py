@@ -16,6 +16,9 @@ ALLOWED_OPS = frozenset({
     "set_projection_corner", "reset_projection",
     "set_projection_mesh_size", "set_projection_mesh_points",
     "set_projection_mesh_point",
+    "add_projection_region", "remove_projection_region",
+    "set_projection_active_region", "set_projection_region_enabled",
+    "rename_projection_region",
     "pong",
 })
 

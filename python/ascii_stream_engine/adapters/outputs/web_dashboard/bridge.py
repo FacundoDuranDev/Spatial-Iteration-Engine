@@ -22,10 +22,10 @@ logger = logging.getLogger("web_dashboard.bridge")
 MODULATIONS_FILE = Path.home() / ".ascii_stream_engine" / "modulations.json"
 MODULATIONS_SCHEMA_VERSION = 1
 
-# Projection mapping (mesh warp). Misma carpeta, schema v2.
-# v1 (4 corners) se auto-migra a v2 (mesh 2x2) en _load_projection.
+# Projection mapping (mesh warp + regiones). Misma carpeta, schema v3.
+# v1 (4 corners) y v2 (single mesh) se auto-migran a v3 (lista de regiones).
 PROJECTION_FILE = Path.home() / ".ascii_stream_engine" / "projection.json"
-PROJECTION_SCHEMA_VERSION = 2
+PROJECTION_SCHEMA_VERSION = 3
 
 
 class EngineBridge:
@@ -326,10 +326,10 @@ class EngineBridge:
     def projection_state(self) -> Dict[str, Any]:
         """Snapshot del estado de projection mapping para la UI.
 
-        Incluye `mesh_size` (rows, cols), `mesh_points` (NxMx2 normalizados)
-        y `corners` (los 4 extremos como compat para clientes legacy). El UI
-        moderno lee `mesh_*`; el viejo (4-corner) sigue funcionando con
-        `corners` mientras la migración no esté completa en todos lados.
+        Incluye lista de regiones (cada una con name, enabled, mesh_size,
+        mesh_points), índice de active region, y los aliases legacy
+        (mesh_size / mesh_points / corners) que reflejan la active region —
+        clientes viejos siguen funcionando.
         """
         from ...renderers.projection_mapping_renderer import SUPPORTED_MESH_SIZES
 
@@ -338,6 +338,19 @@ class EngineBridge:
             return {
                 "available": False,
                 "enabled": False,
+                "active_region": 0,
+                "regions": [
+                    {
+                        "name": "Región 1",
+                        "enabled": True,
+                        "mesh_size": [2, 2],
+                        "mesh_points": [
+                            [[0.0, 0.0], [1.0, 0.0]],
+                            [[0.0, 1.0], [1.0, 1.0]],
+                        ],
+                    }
+                ],
+                # Aliases legacy — reflejan la region 0 / única.
                 "mesh_size": [2, 2],
                 "mesh_points": [[[0.0, 0.0], [1.0, 0.0]], [[0.0, 1.0], [1.0, 1.0]]],
                 "corners": [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]],
@@ -347,11 +360,90 @@ class EngineBridge:
         return {
             "available": True,
             "enabled": bool(pm.enabled),
+            "active_region": int(pm.active_region_index),
+            "regions": [r.to_dict() for r in pm.regions],
             "mesh_size": [rows, cols],
             "mesh_points": pm.mesh_points,
             "corners": [list(c) for c in pm.corners_norm],
             "supported_sizes": list(SUPPORTED_MESH_SIZES),
         }
+
+    # --- regiones (multi-region) -----------------------------------
+
+    def add_projection_region(self, name: Optional[str] = None) -> int:
+        """Agrega una nueva región identidad y la deja como active. Devuelve idx."""
+        with self._lock:
+            pm = self._find_projection_renderer()
+            if pm is None:
+                return -1
+            try:
+                idx = pm.add_region(name)
+                self._save_projection_quiet()
+                return idx
+            except Exception:
+                logger.exception("add_projection_region failed")
+                return -1
+
+    def remove_projection_region(self, idx: int) -> bool:
+        """Borra la región. Falla si es la única (al menos 1 siempre)."""
+        with self._lock:
+            pm = self._find_projection_renderer()
+            if pm is None:
+                return False
+            try:
+                pm.remove_region(int(idx))
+                self._save_projection_quiet()
+                return True
+            except Exception:
+                logger.exception("remove_projection_region(%s) failed", idx)
+                return False
+
+    def set_projection_active_region(self, idx: int) -> bool:
+        """Cambia qué región es la "active" — los métodos legacy actúan sobre ella."""
+        with self._lock:
+            pm = self._find_projection_renderer()
+            if pm is None:
+                return False
+            try:
+                pm.set_active_region(int(idx))
+                # No hace falta persistir — el active idx es estado de UI,
+                # no de calibración.
+                return True
+            except Exception:
+                logger.exception("set_projection_active_region(%s) failed", idx)
+                return False
+
+    def set_projection_region_enabled(self, idx: int, on: bool) -> bool:
+        """Toggle de una región puntual. Persiste."""
+        with self._lock:
+            pm = self._find_projection_renderer()
+            if pm is None:
+                return False
+            try:
+                pm.set_region_enabled(int(idx), bool(on))
+                self._save_projection_quiet()
+                return True
+            except Exception:
+                logger.exception(
+                    "set_projection_region_enabled(%s,%s) failed", idx, on
+                )
+                return False
+
+    def rename_projection_region(self, idx: int, name: str) -> bool:
+        """Cambia el nombre de una región."""
+        with self._lock:
+            pm = self._find_projection_renderer()
+            if pm is None:
+                return False
+            try:
+                pm.rename_region(int(idx), str(name))
+                self._save_projection_quiet()
+                return True
+            except Exception:
+                logger.exception(
+                    "rename_projection_region(%s,%r) failed", idx, name
+                )
+                return False
 
     def toggle_projection(self, on: bool) -> bool:
         """Activa/desactiva el warp. Persiste el flag para la próxima run."""
@@ -473,12 +565,11 @@ class EngineBridge:
         if pm is None:
             return
         PROJECTION_FILE.parent.mkdir(parents=True, exist_ok=True)
-        rows, cols = pm.mesh_size
         data = {
             "version": PROJECTION_SCHEMA_VERSION,
             "enabled": bool(pm.enabled),
-            "mesh_size": [rows, cols],
-            "mesh_points": pm.mesh_points,
+            "active_region": int(pm.active_region_index),
+            "regions": [r.to_dict() for r in pm.regions],
         }
         tmp = tempfile.NamedTemporaryFile(
             mode="w", encoding="utf-8",
@@ -514,14 +605,23 @@ class EngineBridge:
         version = data.get("version") if isinstance(data, dict) else None
         try:
             if version == 1:
-                # Migración v1 → v2: 4-corner se mete como mesh 2x2.
-                # Los corners viejos (TL,TR,BR,BL) se mapean al nuevo grid.
+                # v1 (4 corners) → migrar como única región mesh 2x2.
                 corners = data.get("corners")
                 if corners:
-                    pm.set_corners(corners)  # internamente ya construye 2x2
+                    pm.set_corners(corners)
                 pm.enabled = bool(data.get("enabled", False))
-                # Reescribir el archivo en v2 para que la próxima boot no
-                # tenga que migrar de nuevo.
+                self._save_projection_quiet()
+                return
+            if version == 2:
+                # v2 (single mesh) → migrar como única región con ese mesh.
+                mesh_size = data.get("mesh_size", [2, 2])
+                rows = int(mesh_size[0]); cols = int(mesh_size[1])
+                mesh_points = data.get("mesh_points")
+                if rows != pm.mesh_size[0] or cols != pm.mesh_size[1]:
+                    pm.set_mesh_size(rows, cols)
+                if mesh_points is not None:
+                    pm.set_mesh_points(mesh_points)
+                pm.enabled = bool(data.get("enabled", False))
                 self._save_projection_quiet()
                 return
             if version != PROJECTION_SCHEMA_VERSION:
@@ -530,17 +630,45 @@ class EngineBridge:
                     version, PROJECTION_SCHEMA_VERSION,
                 )
                 return
-            # v2 path
-            mesh_size = data.get("mesh_size", [2, 2])
-            rows = int(mesh_size[0]); cols = int(mesh_size[1])
-            mesh_points = data.get("mesh_points")
-            if rows != pm.mesh_size[0] or cols != pm.mesh_size[1]:
-                pm.set_mesh_size(rows, cols)
-            if mesh_points is not None:
-                pm.set_mesh_points(mesh_points)
+            # v3 path: lista de regiones.
+            regions_data = data.get("regions") or []
+            if not regions_data:
+                pm.enabled = bool(data.get("enabled", False))
+                return
+            # Reset al estado fresco — borramos las regiones default y
+            # reconstruimos desde el archivo.
+            while len(pm.regions) > 1:
+                pm.remove_region(len(pm.regions) - 1)
+            # Sobreescribir la primera región con los datos de la primera.
+            first = regions_data[0]
+            pm.set_active_region(0)
+            self._apply_region_data(pm, 0, first)
+            # Sumar el resto.
+            for rd in regions_data[1:]:
+                idx = pm.add_region(rd.get("name"))
+                self._apply_region_data(pm, idx, rd)
+            # Active region — clampeado por seguridad.
+            active = int(data.get("active_region", 0))
+            if 0 <= active < len(pm.regions):
+                pm.set_active_region(active)
             pm.enabled = bool(data.get("enabled", False))
         except Exception:
             logger.exception("load projection: apply failed; starting identity")
+
+    def _apply_region_data(self, pm, idx: int, rd: Dict[str, Any]) -> None:
+        """Aplica un dict de region (del JSON) a la region `idx` del renderer."""
+        pm.set_active_region(idx)
+        name = rd.get("name")
+        if isinstance(name, str) and name:
+            pm.rename_region(idx, name)
+        ms = rd.get("mesh_size", [2, 2])
+        rows = int(ms[0]); cols = int(ms[1])
+        if (rows, cols) != pm.mesh_size:
+            pm.set_mesh_size(rows, cols)
+        mp = rd.get("mesh_points")
+        if mp is not None:
+            pm.set_mesh_points(mp)
+        pm.set_region_enabled(idx, bool(rd.get("enabled", True)))
 
     # --- modulation ----------------------------------------------------
 

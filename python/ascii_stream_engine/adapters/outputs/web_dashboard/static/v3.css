@@ -1088,6 +1088,91 @@ input, button, select, textarea { font-size: max(16px, 1em); font-family: inheri
   filter: drop-shadow(0 0 0.6px var(--accent));
 }
 
+/* Region selector — chips horizontales con scroll, un chip por región.
+   Tap para activar, doble-tap para renombrar, ● para toggle on/off,
+   ✕ para borrar (oculto cuando hay 1 sola). */
+.proj-regions-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.proj-region-chips {
+  display: flex;
+  gap: var(--sp-1);
+  overflow-x: auto;
+  padding-bottom: 4px;
+  /* Scroll suave con momentum en iOS sin barra visible. */
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.proj-region-chips::-webkit-scrollbar { display: none; }
+
+.proj-region-chip {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 48px;
+  padding: 0 var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  background: transparent;
+  color: var(--text-2);
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+}
+.proj-region-chip.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  text-shadow: var(--glow-sm);
+}
+.proj-region-chip.disabled .proj-region-name {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+.proj-region-name {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  padding: 0 4px;
+  min-height: 44px;
+  text-align: left;
+  white-space: nowrap;
+}
+.proj-region-toggle,
+.proj-region-del {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.proj-region-toggle.on { color: var(--accent); }
+.proj-region-del { color: var(--danger); font-size: 13px; }
+.proj-region-add {
+  flex: 0 0 auto;
+  min-height: 48px;
+  min-width: 48px;
+  font-size: 22px;
+  font-weight: 300;
+  background: transparent;
+  color: var(--accent);
+  border: 1px dashed var(--accent);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
 /* Density picker (2x2 / 3x3 / 5x5 / 9x9). Botones tipo segmented control
    horizontal — un toque por densidad. Mantener hit area amplia. */
 .proj-density-row {

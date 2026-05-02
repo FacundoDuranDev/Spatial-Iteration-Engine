@@ -1210,6 +1210,93 @@
       return;
     }
 
+    // ── Regions row (chips + "+ Nueva") ───────────────────────────
+    const regions = Array.isArray(proj.regions) && proj.regions.length
+      ? proj.regions : [{ name: "Región 1", enabled: true }];
+    const activeIdx = Number.isInteger(proj.active_region) ? proj.active_region : 0;
+
+    const regRow = document.createElement("div");
+    regRow.className = "proj-regions-row";
+    const regLbl = document.createElement("span");
+    regLbl.className = "proj-density-label";
+    regLbl.textContent = "Regiones";
+    regRow.appendChild(regLbl);
+    const regChips = document.createElement("div");
+    regChips.className = "proj-region-chips";
+
+    regions.forEach((r, i) => {
+      const chip = document.createElement("div");
+      chip.className = "proj-region-chip" + (i === activeIdx ? " active" : "")
+        + (r.enabled === false ? " disabled" : "");
+
+      const nameBtn = document.createElement("button");
+      nameBtn.type = "button";
+      nameBtn.className = "proj-region-name";
+      nameBtn.textContent = r.name || ("Región " + (i + 1));
+      nameBtn.setAttribute("aria-label", "Editar " + (r.name || ("Región " + (i + 1))));
+      nameBtn.addEventListener("click", () => {
+        if (i !== activeIdx) {
+          send({ op: "set_projection_active_region", idx: i });
+        }
+      });
+      // Doble-tap sobre el chip activo abre rename.
+      nameBtn.addEventListener("dblclick", () => {
+        const next = window.prompt("Nuevo nombre", r.name || "");
+        if (next && next.trim()) {
+          send({ op: "rename_projection_region", idx: i, name: next.trim() });
+        }
+      });
+      chip.appendChild(nameBtn);
+
+      const tgl = document.createElement("button");
+      tgl.type = "button";
+      tgl.className = "proj-region-toggle" + (r.enabled !== false ? " on" : "");
+      tgl.setAttribute("aria-label", (r.enabled !== false ? "Apagar " : "Encender ") +
+        (r.name || ("Región " + (i + 1))));
+      tgl.textContent = r.enabled !== false ? "●" : "○";
+      tgl.addEventListener("click", (e) => {
+        e.stopPropagation();
+        send({
+          op: "set_projection_region_enabled",
+          idx: i, on: r.enabled === false,
+        });
+      });
+      chip.appendChild(tgl);
+
+      // Borrar — solo si hay más de 1 región.
+      if (regions.length > 1) {
+        const del = document.createElement("button");
+        del.type = "button";
+        del.className = "proj-region-del";
+        del.textContent = "✕";
+        del.setAttribute("aria-label", "Borrar " + (r.name || ("Región " + (i + 1))));
+        del.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (window.confirm("¿Borrar " + (r.name || ("Región " + (i + 1))) + "?")) {
+            send({ op: "remove_projection_region", idx: i });
+          }
+        });
+        chip.appendChild(del);
+      }
+      regChips.appendChild(chip);
+    });
+
+    // Botón "+ Nueva"
+    const addBtn = document.createElement("button");
+    addBtn.type = "button";
+    addBtn.className = "proj-region-add";
+    addBtn.textContent = "+";
+    addBtn.setAttribute("aria-label", "Sumar nueva región");
+    addBtn.addEventListener("click", () => {
+      const name = window.prompt("Nombre de la nueva región", "Región " + (regions.length + 1));
+      if (name === null) return;  // cancel
+      const trimmed = (name || "").trim();
+      send({ op: "add_projection_region", name: trimmed || null });
+    });
+    regChips.appendChild(addBtn);
+    regRow.appendChild(regChips);
+    body.appendChild(regRow);
+
     // ── Density picker (2x2 / 3x3 / 5x5 / 9x9) ────────────────────
     // Cambiar densidad borra calibración previa — avisar antes de
     // cambiar SI hay un mesh ya tocado.
@@ -1327,7 +1414,13 @@
     // Pintar la posición inicial.
     _paintProjMesh(meshEdges, handleEls, state.projMesh, VBW, VBH);
 
-    state.projUI = { svg, meshEdges, handleEls, vbw: VBW, vbh: VBH, rows, cols };
+    state.projUI = {
+      svg, meshEdges, handleEls,
+      vbw: VBW, vbh: VBH,
+      rows, cols,
+      regionsCount: regions.length,
+      activeIdx: activeIdx,
+    };
 
     // ── Action row (Reset + Encoger) ──────────────────────────────
     const actions = document.createElement("div");
@@ -1388,11 +1481,16 @@
       renderProjection();
       return;
     }
-    // Si cambió la densidad del mesh (otro cliente, o auto-load al boot),
-    // hay que reconstruir el SVG entero — ya no caben los mismos handles.
     const ui = state.projUI;
+    // Si cambió la cantidad de regiones, o el active, o la densidad del
+    // mesh (todo cambia el layout del SVG), full re-render.
     const newSize = Array.isArray(proj.mesh_size) ? proj.mesh_size : null;
-    if (ui && newSize && (ui.rows !== newSize[0] || ui.cols !== newSize[1])) {
+    const newRegions = Array.isArray(proj.regions) ? proj.regions.length : 1;
+    const newActive = Number.isInteger(proj.active_region) ? proj.active_region : 0;
+    if (ui && (
+      ui.rows !== newSize[0] || ui.cols !== newSize[1] ||
+      ui.regionsCount !== newRegions || ui.activeIdx !== newActive
+    )) {
       renderProjection();
       return;
     }

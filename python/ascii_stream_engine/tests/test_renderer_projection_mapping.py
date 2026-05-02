@@ -148,8 +148,8 @@ class TestProjectionMappingRenderer(unittest.TestCase):
         r.set_mesh_point(1, 1, -0.2, 1.5)
         pts = r.mesh_points
         self.assertEqual(pts[1][1], [0.0, 1.0])
-        # LUT se invalida en cada cambio — al renderear se reconstruye.
-        self.assertIsNone(r._lut_cache)
+        # LUT se invalida en cada cambio — el slot de la active region.
+        self.assertIsNone(r._lut_caches[r.active_region_index])
 
     def test_mesh_warp_renders_through_remap_path(self) -> None:
         import numpy as np
@@ -181,9 +181,10 @@ class TestProjectionMappingRenderer(unittest.TestCase):
         # Centro del frame conserva intensidad alta (el contenido se metió ahí).
         self.assertGreater(arr[18:22, 28:32, :].mean(), 150.0)
         self.assertEqual(out.metadata.get("projection"), "warped")
-        self.assertEqual(out.metadata.get("projection_mesh_size"), [3, 3])
+        self.assertEqual(out.metadata.get("projection_regions_total"), 1)
+        self.assertEqual(out.metadata.get("projection_regions_active"), 1)
         # LUT cacheado tras el primer render.
-        self.assertIsNotNone(renderer._lut_cache)
+        self.assertIsNotNone(renderer._lut_caches[0])
 
     def test_mesh_lut_cache_invalidates_when_mesh_changes(self) -> None:
         import numpy as np
@@ -201,10 +202,10 @@ class TestProjectionMappingRenderer(unittest.TestCase):
         frame = np.full((30, 40, 3), 128, dtype=np.uint8)
         config = EngineConfig(raw_width=40, raw_height=30)
         renderer.render(frame, config)
-        first_sig = renderer._lut_cache[4]
+        first_sig = renderer._lut_caches[0][4]
         renderer.set_mesh_point(1, 1, 0.6, 0.6)
         renderer.render(frame, config)
-        self.assertNotEqual(renderer._lut_cache[4], first_sig)
+        self.assertNotEqual(renderer._lut_caches[0][4], first_sig)
 
     def test_legacy_corner_api_still_works_on_2x2(self) -> None:
         from ascii_stream_engine.adapters.renderers import ProjectionMappingRenderer
@@ -218,6 +219,106 @@ class TestProjectionMappingRenderer(unittest.TestCase):
         self.assertAlmostEqual(c[3][0], 0.1)
         r.set_corner(2, 0.95, 0.95)
         self.assertAlmostEqual(r.corners_norm[2][0], 0.95)
+
+    # ── Multi-region ──────────────────────────────────────────────
+
+    def test_default_renderer_has_one_region(self) -> None:
+        from ascii_stream_engine.adapters.renderers import ProjectionMappingRenderer
+
+        r = ProjectionMappingRenderer()
+        self.assertEqual(len(r.regions), 1)
+        self.assertEqual(r.active_region_index, 0)
+        self.assertEqual(r.active_region.name, "Región 1")
+
+    def test_add_region_increments_active(self) -> None:
+        from ascii_stream_engine.adapters.renderers import ProjectionMappingRenderer
+
+        r = ProjectionMappingRenderer()
+        idx = r.add_region("Pared izquierda")
+        self.assertEqual(idx, 1)
+        self.assertEqual(len(r.regions), 2)
+        self.assertEqual(r.active_region_index, 1)
+        self.assertEqual(r.active_region.name, "Pared izquierda")
+
+    def test_remove_region_keeps_at_least_one(self) -> None:
+        from ascii_stream_engine.adapters.renderers import ProjectionMappingRenderer
+
+        r = ProjectionMappingRenderer()
+        r.add_region()
+        r.add_region()
+        self.assertEqual(len(r.regions), 3)
+        r.remove_region(1)
+        self.assertEqual(len(r.regions), 2)
+        with self.assertRaises(ValueError):
+            r.remove_region(0)
+            r.remove_region(0)  # Aquí debería tirar — ya queda solo 1.
+
+    def test_legacy_proxies_target_active_region(self) -> None:
+        from ascii_stream_engine.adapters.renderers import ProjectionMappingRenderer
+
+        r = ProjectionMappingRenderer()
+        r.add_region()
+        r.set_active_region(1)
+        r.set_mesh_point(0, 0, 0.2, 0.2)
+        # Solo la active (la 1) debe estar fuera de identidad.
+        self.assertFalse(r.regions[1].is_identity())
+        self.assertTrue(r.regions[0].is_identity())
+
+    def test_composite_render_with_two_regions(self) -> None:
+        import numpy as np
+
+        from ascii_stream_engine.adapters.renderers import (
+            PassthroughRenderer,
+            ProjectionMappingRenderer,
+        )
+        from ascii_stream_engine.domain.config import EngineConfig
+
+        renderer = ProjectionMappingRenderer(
+            inner=PassthroughRenderer(), enabled=True,
+        )
+        # Región 0 (active): cuadrante superior izquierdo
+        renderer.set_corners([
+            (0.0, 0.0), (0.5, 0.0), (0.5, 0.5), (0.0, 0.5),
+        ])
+        # Región 1: cuadrante inferior derecho
+        renderer.add_region("Bottom right")
+        renderer.set_corners([
+            (0.5, 0.5), (1.0, 0.5), (1.0, 1.0), (0.5, 1.0),
+        ])
+        frame = np.full((40, 60, 3), 220, dtype=np.uint8)
+        out = renderer.render(frame, EngineConfig(raw_width=60, raw_height=40))
+        arr = np.asarray(out.image)
+        # Cuadrantes opuestos vacíos (negro): el TR y el BL.
+        self.assertLess(arr[0:18, 32:60, :].mean(), 30.0)
+        self.assertLess(arr[22:40, 0:28, :].mean(), 30.0)
+        # Cuadrantes con regiones tienen contenido (no son negros).
+        self.assertGreater(arr[0:18, 0:28, :].mean(), 100.0)
+        self.assertGreater(arr[22:40, 32:60, :].mean(), 100.0)
+        self.assertEqual(out.metadata.get("projection_regions_active"), 2)
+
+    def test_disabled_region_not_rendered(self) -> None:
+        import numpy as np
+
+        from ascii_stream_engine.adapters.renderers import (
+            PassthroughRenderer,
+            ProjectionMappingRenderer,
+        )
+        from ascii_stream_engine.domain.config import EngineConfig
+
+        renderer = ProjectionMappingRenderer(
+            inner=PassthroughRenderer(), enabled=True,
+        )
+        renderer.set_corners([(0.0, 0.0), (0.5, 0.0), (0.5, 0.5), (0.0, 0.5)])
+        renderer.add_region()
+        renderer.set_corners([(0.5, 0.5), (1.0, 0.5), (1.0, 1.0), (0.5, 1.0)])
+        renderer.set_region_enabled(1, False)
+        frame = np.full((40, 60, 3), 220, dtype=np.uint8)
+        out = renderer.render(frame, EngineConfig(raw_width=60, raw_height=40))
+        # Solo region 0 (TL) renderiza; el cuadrante BR queda vacío.
+        arr = np.asarray(out.image)
+        self.assertGreater(arr[0:18, 0:28, :].mean(), 100.0)
+        self.assertLess(arr[22:40, 32:60, :].mean(), 30.0)
+        self.assertEqual(out.metadata.get("projection_regions_active"), 1)
 
 
 if __name__ == "__main__":
