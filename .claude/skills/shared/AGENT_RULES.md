@@ -294,3 +294,47 @@ Know what already exists before building:
 
 All code, comments, docstrings, commit messages, and documentation in **English**.
 The project has some Spanish in existing docs — new work should be in English.
+**Exception:** the mobile dashboard (`run_dashboard_mobile.py` and any UI copy
+that ships to the phone) stays in **Spanish** — it matches the rest of the
+product surface. Code/comments around it remain English.
+
+---
+
+## Mobile Surface
+
+The Gradio mobile dashboard (`run_dashboard_mobile.py` + `presentation/widgets/`)
+is the primary live-performance control surface — phone over LAN, no preview
+embedded, one finger in motion. Treat it as a first-class product, not a
+debug tool.
+
+**Always invoke the `mobile-web-first` skill when touching:**
+- `run_dashboard_mobile.py`
+- Anything under `python/ascii_stream_engine/presentation/widgets/`
+- Files under `design/ui_kits/gradio_remote/` (when porting design tokens)
+
+**Hard rules — do not violate without asking:**
+
+1. **Hit targets ≥ 48 CSS px.** Stage theme bumps to 64. Never rely on a 24px
+   icon being tappable on its own; wrap it.
+2. **Every visual primitive lives under `.sie-root`.** Tokens are CSS custom
+   properties prefixed `--sie-*`. Themes (`paper`, `industrial`, `stage`)
+   override tokens, never structure.
+3. **Page width is locked to 440 px.** One column. Don't design wider layouts.
+4. **Spanish UI copy.** Code/comments English (see Language section above).
+5. **Drill-in nav uses nested `gr.Accordion`** by default — outer per category,
+   inner per filter. Tap to expand in place. Reserve JS-driven swap for cases
+   where Accordion's UX feels wrong, and justify in the PR.
+6. **Less scrolling > more density.** A flat list of 27 filters is wrong;
+   group by category, expand on demand, collapse the rest.
+7. **No live preview during iteration.** State assumptions, ask the user to
+   verify on their phone, wait for one specific observation before iterating
+   again. Don't speculatively rebuild after a single tap.
+8. **Pointer events + `touch-action: none/manipulation` + `setPointerCapture`**
+   for any draggable. Reference: `static/angle_dial.js`.
+9. **Inputs ≥ 16px font-size on iOS** (otherwise auto-zoom on focus).
+10. **Mirror the Python class's actual constructor defaults** when exposing
+    "no-param" filters — `data.js` is incomplete; the Python source is truth.
+
+The full reference (iOS quirks, perf rules, viewport, drill-in patterns) lives
+in `.claude/skills/mobile-web-first/SKILL.md`. Read it before editing the
+mobile surface — don't reinvent the wheel.
