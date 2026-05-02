@@ -1067,13 +1067,65 @@ input, button, select, textarea { font-size: max(16px, 1em); font-family: inheri
   opacity: 0.35;
 }
 
-/* Polígono que une los 4 corners actuales — el warp visible. */
+/* Polígono que une los 4 corners actuales — el warp visible.
+   Backwards-compat con mesh 2x2 que pintaba un <polygon> "proj-quad".
+   El renderer moderno usa <line>s individuales en .proj-mesh-edges. */
 .proj-quad {
   fill: var(--accent-soft);
   stroke: var(--accent);
   stroke-width: 0.35;
   stroke-linejoin: round;
   filter: drop-shadow(0 0 1px var(--accent));
+}
+
+/* Mesh edges — líneas conectando puntos vecinos del grid. Para 2x2 son
+   los 4 lados del quad; para 5x5 son la cuadrícula deformada visible. */
+.proj-mesh-edges line.proj-mesh-edge {
+  stroke: var(--accent);
+  stroke-width: 0.25;
+  stroke-linecap: round;
+  opacity: 0.85;
+  filter: drop-shadow(0 0 0.6px var(--accent));
+}
+
+/* Density picker (2x2 / 3x3 / 5x5 / 9x9). Botones tipo segmented control
+   horizontal — un toque por densidad. Mantener hit area amplia. */
+.proj-density-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.proj-density-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
+  color: var(--text-2);
+  text-transform: uppercase;
+}
+.proj-density-btns {
+  display: flex;
+  gap: var(--sp-1);
+}
+.proj-density-btn {
+  flex: 1 1 0;
+  min-height: 48px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  letter-spacing: 0.06em;
+  background: transparent;
+  color: var(--text-2);
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.proj-density-btn:active {
+  background: var(--surface-high);
+}
+.proj-density-btn.on {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  text-shadow: var(--glow-sm);
 }
 
 /* Handles — el `hit` es transparente y grande (≥ 48 CSS px equivalentes

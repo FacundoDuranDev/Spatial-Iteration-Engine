@@ -22,9 +22,10 @@ logger = logging.getLogger("web_dashboard.bridge")
 MODULATIONS_FILE = Path.home() / ".ascii_stream_engine" / "modulations.json"
 MODULATIONS_SCHEMA_VERSION = 1
 
-# Projection mapping (4-corner perspective warp). Misma carpeta, schema v1.
+# Projection mapping (mesh warp). Misma carpeta, schema v2.
+# v1 (4 corners) se auto-migra a v2 (mesh 2x2) en _load_projection.
 PROJECTION_FILE = Path.home() / ".ascii_stream_engine" / "projection.json"
-PROJECTION_SCHEMA_VERSION = 1
+PROJECTION_SCHEMA_VERSION = 2
 
 
 class EngineBridge:
@@ -323,20 +324,33 @@ class EngineBridge:
         return None
 
     def projection_state(self) -> Dict[str, Any]:
-        """Snapshot del estado de projection mapping para la UI."""
+        """Snapshot del estado de projection mapping para la UI.
+
+        Incluye `mesh_size` (rows, cols), `mesh_points` (NxMx2 normalizados)
+        y `corners` (los 4 extremos como compat para clientes legacy). El UI
+        moderno lee `mesh_*`; el viejo (4-corner) sigue funcionando con
+        `corners` mientras la migración no esté completa en todos lados.
+        """
+        from ...renderers.projection_mapping_renderer import SUPPORTED_MESH_SIZES
+
         pm = self._find_projection_renderer()
         if pm is None:
             return {
                 "available": False,
                 "enabled": False,
-                "corners": [list(c) for c in (
-                    (0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0),
-                )],
+                "mesh_size": [2, 2],
+                "mesh_points": [[[0.0, 0.0], [1.0, 0.0]], [[0.0, 1.0], [1.0, 1.0]]],
+                "corners": [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]],
+                "supported_sizes": list(SUPPORTED_MESH_SIZES),
             }
+        rows, cols = pm.mesh_size
         return {
             "available": True,
             "enabled": bool(pm.enabled),
+            "mesh_size": [rows, cols],
+            "mesh_points": pm.mesh_points,
             "corners": [list(c) for c in pm.corners_norm],
+            "supported_sizes": list(SUPPORTED_MESH_SIZES),
         }
 
     def toggle_projection(self, on: bool) -> bool:
@@ -384,7 +398,7 @@ class EngineBridge:
                 return False
 
     def reset_projection(self) -> bool:
-        """Vuelve a corners identity (sin warp). No cambia el flag enabled."""
+        """Vuelve a mesh identidad de la densidad actual. No cambia enabled."""
         with self._lock:
             pm = self._find_projection_renderer()
             if pm is None:
@@ -395,6 +409,57 @@ class EngineBridge:
                 return True
             except Exception:
                 logger.exception("reset_projection failed")
+                return False
+
+    # --- mesh-aware methods (delegan al renderer) ----------------------
+
+    def set_projection_mesh_size(self, rows: int, cols: int) -> bool:
+        """Cambia la densidad del mesh. Borra calibración previa (esto es a propósito)."""
+        with self._lock:
+            pm = self._find_projection_renderer()
+            if pm is None:
+                return False
+            try:
+                pm.set_mesh_size(int(rows), int(cols))
+                self._save_projection_quiet()
+                return True
+            except Exception:
+                logger.exception(
+                    "set_projection_mesh_size(%s,%s) failed", rows, cols
+                )
+                return False
+
+    def set_projection_mesh_points(self, points) -> bool:
+        """Reescribe todo el mesh. Shape debe matchear el mesh_size actual."""
+        with self._lock:
+            pm = self._find_projection_renderer()
+            if pm is None:
+                return False
+            try:
+                pm.set_mesh_points(points)
+                self._save_projection_quiet()
+                return True
+            except Exception:
+                logger.exception("set_projection_mesh_points failed")
+                return False
+
+    def set_projection_mesh_point(
+        self, row: int, col: int, x: float, y: float
+    ) -> bool:
+        """Mueve un solo punto del mesh — el equivalente NxM de set_corner."""
+        with self._lock:
+            pm = self._find_projection_renderer()
+            if pm is None:
+                return False
+            try:
+                pm.set_mesh_point(int(row), int(col), float(x), float(y))
+                self._save_projection_quiet()
+                return True
+            except Exception:
+                logger.exception(
+                    "set_projection_mesh_point(%s,%s,%s,%s) failed",
+                    row, col, x, y,
+                )
                 return False
 
     def _save_projection_quiet(self) -> None:
@@ -408,10 +473,12 @@ class EngineBridge:
         if pm is None:
             return
         PROJECTION_FILE.parent.mkdir(parents=True, exist_ok=True)
+        rows, cols = pm.mesh_size
         data = {
             "version": PROJECTION_SCHEMA_VERSION,
             "enabled": bool(pm.enabled),
-            "corners": [list(c) for c in pm.corners_norm],
+            "mesh_size": [rows, cols],
+            "mesh_points": pm.mesh_points,
         }
         tmp = tempfile.NamedTemporaryFile(
             mode="w", encoding="utf-8",
@@ -445,16 +512,32 @@ class EngineBridge:
             logger.exception("load projection: parse failed; starting identity")
             return
         version = data.get("version") if isinstance(data, dict) else None
-        if version != PROJECTION_SCHEMA_VERSION:
-            logger.warning(
-                "projection.json schema v=%s, expected v=%s — ignoring",
-                version, PROJECTION_SCHEMA_VERSION,
-            )
-            return
         try:
-            corners = data.get("corners")
-            if corners:
-                pm.set_corners(corners)
+            if version == 1:
+                # Migración v1 → v2: 4-corner se mete como mesh 2x2.
+                # Los corners viejos (TL,TR,BR,BL) se mapean al nuevo grid.
+                corners = data.get("corners")
+                if corners:
+                    pm.set_corners(corners)  # internamente ya construye 2x2
+                pm.enabled = bool(data.get("enabled", False))
+                # Reescribir el archivo en v2 para que la próxima boot no
+                # tenga que migrar de nuevo.
+                self._save_projection_quiet()
+                return
+            if version != PROJECTION_SCHEMA_VERSION:
+                logger.warning(
+                    "projection.json schema v=%s, expected v=%s — ignoring",
+                    version, PROJECTION_SCHEMA_VERSION,
+                )
+                return
+            # v2 path
+            mesh_size = data.get("mesh_size", [2, 2])
+            rows = int(mesh_size[0]); cols = int(mesh_size[1])
+            mesh_points = data.get("mesh_points")
+            if rows != pm.mesh_size[0] or cols != pm.mesh_size[1]:
+                pm.set_mesh_size(rows, cols)
+            if mesh_points is not None:
+                pm.set_mesh_points(mesh_points)
             pm.enabled = bool(data.get("enabled", False))
         except Exception:
             logger.exception("load projection: apply failed; starting identity")

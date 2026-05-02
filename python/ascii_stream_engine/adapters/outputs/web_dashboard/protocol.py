@@ -14,6 +14,8 @@ ALLOWED_OPS = frozenset({
     "add_modulation", "remove_modulation", "clear_modulations",
     "toggle_projection", "set_projection_corners",
     "set_projection_corner", "reset_projection",
+    "set_projection_mesh_size", "set_projection_mesh_points",
+    "set_projection_mesh_point",
     "pong",
 })
 

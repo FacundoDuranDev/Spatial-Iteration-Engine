@@ -111,6 +111,114 @@ class TestProjectionMappingRenderer(unittest.TestCase):
         r.overlay_enabled = False
         self.assertFalse(r.enabled)
 
+    # ── Mesh ───────────────────────────────────────────────────────
+
+    def test_default_mesh_size_is_2x2(self) -> None:
+        from ascii_stream_engine.adapters.renderers import ProjectionMappingRenderer
+
+        r = ProjectionMappingRenderer()
+        self.assertEqual(r.mesh_size, (2, 2))
+        self.assertTrue(r.is_identity())
+
+    def test_set_mesh_size_supported_density_resets_to_identity(self) -> None:
+        from ascii_stream_engine.adapters.renderers import ProjectionMappingRenderer
+
+        r = ProjectionMappingRenderer()
+        r.set_mesh_size(5, 5)
+        self.assertEqual(r.mesh_size, (5, 5))
+        self.assertTrue(r.is_identity())
+        # Cambio de densidad ⇒ se pierde calibración previa (esto es a propósito).
+        r.set_mesh_point(2, 2, 0.4, 0.4)
+        self.assertFalse(r.is_identity())
+        r.set_mesh_size(3, 3)
+        self.assertTrue(r.is_identity())
+
+    def test_set_mesh_size_invalid_density_raises(self) -> None:
+        from ascii_stream_engine.adapters.renderers import ProjectionMappingRenderer
+
+        r = ProjectionMappingRenderer()
+        with self.assertRaises(ValueError):
+            r.set_mesh_size(7, 7)  # No está en SUPPORTED_MESH_SIZES.
+
+    def test_set_mesh_point_clamps_and_invalidates_lut(self) -> None:
+        from ascii_stream_engine.adapters.renderers import ProjectionMappingRenderer
+
+        r = ProjectionMappingRenderer()
+        r.set_mesh_size(3, 3)
+        r.set_mesh_point(1, 1, -0.2, 1.5)
+        pts = r.mesh_points
+        self.assertEqual(pts[1][1], [0.0, 1.0])
+        # LUT se invalida en cada cambio — al renderear se reconstruye.
+        self.assertIsNone(r._lut_cache)
+
+    def test_mesh_warp_renders_through_remap_path(self) -> None:
+        import numpy as np
+
+        from ascii_stream_engine.adapters.renderers import (
+            PassthroughRenderer,
+            ProjectionMappingRenderer,
+        )
+        from ascii_stream_engine.domain.config import EngineConfig
+
+        renderer = ProjectionMappingRenderer(
+            inner=PassthroughRenderer(), mesh_size=(3, 3), enabled=True,
+        )
+        # Encoger todo el mesh 20% hacia el centro — 9 puntos movidos.
+        for i in range(3):
+            for j in range(3):
+                base_x = j * 0.5
+                base_y = i * 0.5
+                cx = 0.5 + (base_x - 0.5) * 0.6
+                cy = 0.5 + (base_y - 0.5) * 0.6
+                renderer.set_mesh_point(i, j, cx, cy)
+        frame = np.full((40, 60, 3), 200, dtype=np.uint8)
+        config = EngineConfig(raw_width=60, raw_height=40)
+        out = renderer.render(frame, config)
+        arr = np.asarray(out.image)
+        # Bordes del frame quedan en negro (fuera de los triángulos rasterizados).
+        self.assertLess(arr[0:3, :, :].mean(), 30.0)
+        self.assertLess(arr[-3:, :, :].mean(), 30.0)
+        # Centro del frame conserva intensidad alta (el contenido se metió ahí).
+        self.assertGreater(arr[18:22, 28:32, :].mean(), 150.0)
+        self.assertEqual(out.metadata.get("projection"), "warped")
+        self.assertEqual(out.metadata.get("projection_mesh_size"), [3, 3])
+        # LUT cacheado tras el primer render.
+        self.assertIsNotNone(renderer._lut_cache)
+
+    def test_mesh_lut_cache_invalidates_when_mesh_changes(self) -> None:
+        import numpy as np
+
+        from ascii_stream_engine.adapters.renderers import (
+            PassthroughRenderer,
+            ProjectionMappingRenderer,
+        )
+        from ascii_stream_engine.domain.config import EngineConfig
+
+        renderer = ProjectionMappingRenderer(
+            inner=PassthroughRenderer(), mesh_size=(3, 3), enabled=True,
+        )
+        renderer.set_mesh_point(1, 1, 0.4, 0.4)
+        frame = np.full((30, 40, 3), 128, dtype=np.uint8)
+        config = EngineConfig(raw_width=40, raw_height=30)
+        renderer.render(frame, config)
+        first_sig = renderer._lut_cache[4]
+        renderer.set_mesh_point(1, 1, 0.6, 0.6)
+        renderer.render(frame, config)
+        self.assertNotEqual(renderer._lut_cache[4], first_sig)
+
+    def test_legacy_corner_api_still_works_on_2x2(self) -> None:
+        from ascii_stream_engine.adapters.renderers import ProjectionMappingRenderer
+
+        r = ProjectionMappingRenderer(
+            corners=[(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.1, 0.95)],
+            enabled=True,
+        )
+        self.assertEqual(r.mesh_size, (2, 2))
+        c = r.corners_norm
+        self.assertAlmostEqual(c[3][0], 0.1)
+        r.set_corner(2, 0.95, 0.95)
+        self.assertAlmostEqual(r.corners_norm[2][0], 0.95)
+
 
 if __name__ == "__main__":
     unittest.main()

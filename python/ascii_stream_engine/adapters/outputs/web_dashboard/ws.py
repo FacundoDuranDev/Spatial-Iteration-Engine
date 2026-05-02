@@ -351,6 +351,69 @@ async def websocket_endpoint(socket: WebSocket, bridge: EngineBridge, auth_token
                 await socket.send_json(bridge.snapshot())
                 continue
 
+            if op == "set_projection_mesh_size":
+                rows = payload.get("rows")
+                cols = payload.get("cols")
+                if not isinstance(rows, int) or not isinstance(cols, int):
+                    await socket.send_json(
+                        {"type": "error", "code": "bad_payload", "msg": "rows,cols required (int)"}
+                    )
+                    continue
+                try:
+                    bridge.set_projection_mesh_size(rows, cols)
+                except Exception:
+                    logger.exception("set_projection_mesh_size dispatch failed")
+                    await socket.send_json(
+                        {"type": "error", "code": "internal", "msg": "set_projection_mesh_size"}
+                    )
+                    continue
+                await socket.send_json(bridge.snapshot())
+                continue
+
+            if op == "set_projection_mesh_points":
+                points = payload.get("points")
+                if not isinstance(points, list):
+                    await socket.send_json(
+                        {"type": "error", "code": "bad_payload", "msg": "points must be list"}
+                    )
+                    continue
+                try:
+                    bridge.set_projection_mesh_points(points)
+                except Exception:
+                    logger.exception("set_projection_mesh_points dispatch failed")
+                    await socket.send_json(
+                        {"type": "error", "code": "internal", "msg": "set_projection_mesh_points"}
+                    )
+                    continue
+                await socket.send_json(bridge.snapshot())
+                continue
+
+            if op == "set_projection_mesh_point":
+                row = payload.get("row")
+                col = payload.get("col")
+                x = payload.get("x")
+                y = payload.get("y")
+                if not isinstance(row, int) or not isinstance(col, int):
+                    await socket.send_json(
+                        {"type": "error", "code": "bad_payload", "msg": "row,col required (int)"}
+                    )
+                    continue
+                try:
+                    bridge.set_projection_mesh_point(row, col, float(x), float(y))
+                except (TypeError, ValueError):
+                    await socket.send_json(
+                        {"type": "error", "code": "bad_payload", "msg": "x,y must be numeric"}
+                    )
+                    continue
+                except Exception:
+                    logger.exception("set_projection_mesh_point dispatch failed")
+                    await socket.send_json(
+                        {"type": "error", "code": "internal", "msg": "set_projection_mesh_point"}
+                    )
+                    continue
+                await socket.send_json(bridge.snapshot())
+                continue
+
             if op == "set_param":
                 fid = payload.get("filter")
                 pid = payload.get("param")

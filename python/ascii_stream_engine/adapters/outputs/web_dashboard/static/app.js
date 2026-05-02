@@ -597,10 +597,10 @@
     // Mapeos: contador del N de modulations activas en el snapshot.
     const mods = state.snapshot.modulations || [];
     const modActive = mods.filter((m) => m.enabled !== false).length;
-    // Proyección: el meta-count es ON/OFF + si los corners están desplazados.
+    // Proyección: el meta-count es ON/OFF + si el mesh está desplazado.
     const proj = state.snapshot.projection || {};
     const projOn = !!proj.enabled;
-    const projWarped = projOn && !_isIdentityCorners(proj.corners);
+    const projWarped = projOn && !_isIdentityMesh(_projMeshFromSnap());
     document.querySelectorAll(".meta-count").forEach((el) => {
       const cat = el.dataset.cat;
       if (cat === "PROJ") {
@@ -1124,30 +1124,56 @@
   }
 
   // ── Projection mapping ─────────────────────────────────────────
-  // Identidad de los 4 corners: TL, TR, BR, BL.
-  const PROJ_IDENTITY = [[0, 0], [1, 0], [1, 1], [0, 1]];
   // Throttle de WS dispatch en ms — 50ms = 20Hz, smooth en mobile sin
   // saturar. El último valor del drag se manda igual en pointerup.
   const PROJ_DISPATCH_MS = 50;
-  // Etiquetas de los 4 corners para la UI.
-  const PROJ_CORNER_LABELS = ["TL", "TR", "BR", "BL"];
+  // Densidades cuadradas soportadas por el backend (espejado de
+  // SUPPORTED_MESH_SIZES en projection_mapping_renderer.py).
+  const PROJ_MESH_SIZES = [2, 3, 5, 9];
 
-  function _isIdentityCorners(corners) {
-    if (!corners || corners.length !== 4) return true;
-    for (let i = 0; i < 4; i++) {
-      const c = corners[i] || [];
-      const id = PROJ_IDENTITY[i];
-      if (Math.abs((c[0] || 0) - id[0]) > 1e-3) return false;
-      if (Math.abs((c[1] || 0) - id[1]) > 1e-3) return false;
+  function _identityMesh(rows, cols) {
+    const out = [];
+    for (let i = 0; i < rows; i++) {
+      const row = [];
+      for (let j = 0; j < cols; j++) {
+        row.push([rows > 1 ? j / (cols - 1) : 0, rows > 1 ? i / (rows - 1) : 0]);
+      }
+      out.push(row);
+    }
+    return out;
+  }
+
+  function _isIdentityMesh(mesh) {
+    if (!mesh || !mesh.length) return true;
+    const rows = mesh.length, cols = mesh[0].length;
+    const ident = _identityMesh(rows, cols);
+    for (let i = 0; i < rows; i++) {
+      for (let j = 0; j < cols; j++) {
+        if (Math.abs(mesh[i][j][0] - ident[i][j][0]) > 1e-3) return false;
+        if (Math.abs(mesh[i][j][1] - ident[i][j][1]) > 1e-3) return false;
+      }
     }
     return true;
   }
 
-  function _projCornersFromSnap() {
+  // Compat: clientes viejos pueden seguir consultando los 4 corners.
+  function _isIdentityCorners(corners) {
+    return _isIdentityMesh([
+      [corners[0], corners[1]],
+      [corners[3], corners[2]],
+    ]);
+  }
+
+  function _projMeshFromSnap() {
     const proj = state.snapshot.projection || {};
-    const c = proj.corners;
-    if (!c || c.length !== 4) return PROJ_IDENTITY.map((p) => p.slice());
-    return c.map((p) => [Number(p[0]) || 0, Number(p[1]) || 0]);
+    const mp = proj.mesh_points;
+    const ms = proj.mesh_size;
+    if (Array.isArray(mp) && Array.isArray(ms) && ms.length === 2) {
+      // Deep copy para no mutar el snapshot al draggear.
+      return mp.map((row) => row.map((p) => [Number(p[0]) || 0, Number(p[1]) || 0]));
+    }
+    // Fallback: sin snapshot todavía → 2x2 identidad.
+    return _identityMesh(2, 2);
   }
 
   function renderProjection() {
@@ -1155,6 +1181,9 @@
     body.innerHTML = "";
     const proj = state.snapshot.projection || {};
     const available = proj.available !== false;
+    const meshSize = Array.isArray(proj.mesh_size) ? proj.mesh_size : [2, 2];
+    const supported = Array.isArray(proj.supported_sizes) && proj.supported_sizes.length
+      ? proj.supported_sizes : PROJ_MESH_SIZES;
 
     // ── Toggle row (Activar warp) ─────────────────────────────────
     const togRow = document.createElement("div");
@@ -1181,10 +1210,37 @@
       return;
     }
 
+    // ── Density picker (2x2 / 3x3 / 5x5 / 9x9) ────────────────────
+    // Cambiar densidad borra calibración previa — avisar antes de
+    // cambiar SI hay un mesh ya tocado.
+    const densRow = document.createElement("div");
+    densRow.className = "proj-density-row";
+    const densLbl = document.createElement("span");
+    densLbl.className = "proj-density-label";
+    densLbl.textContent = "Densidad del mesh";
+    densRow.appendChild(densLbl);
+    const densBtns = document.createElement("div");
+    densBtns.className = "proj-density-btns";
+    supported.forEach((n) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "proj-density-btn" + (n === meshSize[0] ? " on" : "");
+      btn.textContent = n + "x" + n;
+      btn.setAttribute("aria-label", "Densidad " + n + " por " + n);
+      btn.addEventListener("click", () => {
+        if (n === meshSize[0] && n === meshSize[1]) return;
+        const dirty = !_isIdentityMesh(_projMeshFromSnap());
+        if (dirty && !window.confirm(
+          "Cambiar la densidad del mesh borra los corners actuales. ¿Seguir?"
+        )) return;
+        send({ op: "set_projection_mesh_size", rows: n, cols: n });
+      });
+      densBtns.appendChild(btn);
+    });
+    densRow.appendChild(densBtns);
+    body.appendChild(densRow);
+
     // ── Calibration canvas (16:9) ─────────────────────────────────
-    // Usamos SVG para los 4 handles + el quad, dentro de un wrap con
-    // aspect-ratio fijo. Las coords del SVG son [0..100] x [0..56.25] —
-    // así pasar a normalizado [0..1] es trivial (dividir).
     const wrap = document.createElement("div");
     wrap.className = "proj-canvas-wrap";
     const VBW = 100;
@@ -1196,12 +1252,12 @@
     wrap.appendChild(svg);
     body.appendChild(wrap);
 
-    // Inicializar corners locales si no estamos draggeando.
+    // Inicializar mesh local si no estamos draggeando.
     if (!state.projDrag) {
-      state.projCorners = _projCornersFromSnap();
+      state.projMesh = _projMeshFromSnap();
     }
 
-    // Background grid + ghost source rect — referencias visuales.
+    // Grid de tercios — referencia visual.
     const grid = document.createElementNS("http://www.w3.org/2000/svg", "g");
     grid.setAttribute("class", "proj-grid");
     [0.25, 0.5, 0.75].forEach((t) => {
@@ -1216,56 +1272,64 @@
     });
     svg.appendChild(grid);
 
-    // Borde del canvas (rectángulo source = "lo que el render produce").
+    // Source rect (sin warp, para referencia).
     const ghost = document.createElementNS("http://www.w3.org/2000/svg", "rect");
     ghost.setAttribute("x", "0"); ghost.setAttribute("y", "0");
     ghost.setAttribute("width", String(VBW)); ghost.setAttribute("height", String(VBH));
     ghost.setAttribute("class", "proj-ghost");
     svg.appendChild(ghost);
 
-    // Polígono que conecta los 4 corners actuales — el "warp visible".
-    const quad = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-    quad.setAttribute("class", "proj-quad");
-    svg.appendChild(quad);
+    // Mesh edges: lineas horizontales + verticales conectando los puntos.
+    // Una <g> con muchas <line>; las refrescamos por modificación de attrs.
+    const meshEdges = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    meshEdges.setAttribute("class", "proj-mesh-edges");
+    svg.appendChild(meshEdges);
 
-    // Handles — uno por corner. Cada uno es un <g> con dos circles:
-    // el de afuera transparente con radio grande (hit area ≥ 48 CSS px),
-    // el de adentro visible. Eso cumple la regla mobile de 48px tap.
+    // Handles — un <g> por punto del mesh. Más densidad = handles más chicos
+    // visualmente pero el hit area se mantiene grande.
+    const [rows, cols] = [state.projMesh.length, state.projMesh[0].length];
     const handleEls = [];
-    for (let i = 0; i < 4; i++) {
-      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-      g.setAttribute("class", "proj-handle");
-      g.setAttribute("data-idx", String(i));
-      const hit = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-      hit.setAttribute("class", "proj-handle-hit");
-      // r=6 en viewBox de 100 ancho ≈ 26 px sobre pantalla de 440 px →
-      // 52 px de diámetro. Cumple la regla de mobile-web-first ≥ 48 CSS px.
-      hit.setAttribute("r", "6");
-      g.appendChild(hit);
-      const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-      dot.setAttribute("class", "proj-handle-dot");
-      dot.setAttribute("r", "2");
-      g.appendChild(dot);
-      const lbl = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      lbl.setAttribute("class", "proj-handle-label");
-      lbl.setAttribute("dy", "-3.5");
-      lbl.setAttribute("text-anchor", "middle");
-      lbl.textContent = PROJ_CORNER_LABELS[i];
-      g.appendChild(lbl);
-      svg.appendChild(g);
-      handleEls.push(g);
-
-      _attachProjPointer(g, i, svg, VBW, VBH);
+    for (let i = 0; i < rows; i++) {
+      const handleRow = [];
+      for (let j = 0; j < cols; j++) {
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        g.setAttribute("class", "proj-handle");
+        g.setAttribute("data-row", String(i));
+        g.setAttribute("data-col", String(j));
+        const hit = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        hit.setAttribute("class", "proj-handle-hit");
+        // Hit area constante r=6 → 48+ CSS px sin importar la densidad.
+        hit.setAttribute("r", "6");
+        g.appendChild(hit);
+        const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        dot.setAttribute("class", "proj-handle-dot");
+        // Dot visible más chico cuando hay más puntos para no taparse.
+        dot.setAttribute("r", String(rows >= 5 ? 1.2 : 2));
+        g.appendChild(dot);
+        // Label solo para los corners — más puntos saturarían visualmente.
+        const isCorner = (i === 0 || i === rows - 1) && (j === 0 || j === cols - 1);
+        if (isCorner && rows === 2 && cols === 2) {
+          const lbl = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          lbl.setAttribute("class", "proj-handle-label");
+          lbl.setAttribute("dy", "-3.5");
+          lbl.setAttribute("text-anchor", "middle");
+          const labels = [["TL", "TR"], ["BL", "BR"]];
+          lbl.textContent = labels[i][j];
+          g.appendChild(lbl);
+        }
+        svg.appendChild(g);
+        handleRow.push(g);
+        _attachProjPointer(g, i, j, svg, VBW, VBH);
+      }
+      handleEls.push(handleRow);
     }
 
     // Pintar la posición inicial.
-    _paintProjCorners(quad, handleEls, state.projCorners, VBW, VBH);
+    _paintProjMesh(meshEdges, handleEls, state.projMesh, VBW, VBH);
 
-    // Guardamos refs para que refreshProjectionState pueda repintar sin
-    // reconstruir el SVG entero en cada tick del server.
-    state.projUI = { svg, quad, handleEls, vbw: VBW, vbh: VBH };
+    state.projUI = { svg, meshEdges, handleEls, vbw: VBW, vbh: VBH, rows, cols };
 
-    // ── Action row (Reset + Centrar) ──────────────────────────────
+    // ── Action row (Reset + Encoger) ──────────────────────────────
     const actions = document.createElement("div");
     actions.className = "proj-actions";
 
@@ -1282,14 +1346,19 @@
     centerBtn.type = "button";
     centerBtn.className = "btn ghost";
     centerBtn.textContent = "Encoger 10%";
-    centerBtn.setAttribute("aria-label", "Encoger los corners 10% hacia el centro — quick test del warp");
+    centerBtn.setAttribute("aria-label", "Encoger los puntos del mesh 10% hacia el centro — quick test del warp");
     centerBtn.addEventListener("click", () => {
-      // Inset 10% — útil para verificar al toque que el warp anda sin
-      // tener que dragear cada esquina manualmente.
-      send({
-        op: "set_projection_corners",
-        corners: [[0.1, 0.1], [0.9, 0.1], [0.9, 0.9], [0.1, 0.9]],
-      });
+      // Encogemos PROPORCIONALMENTE todos los puntos del mesh hacia (0.5, 0.5).
+      // En 2x2 esto coincide con set_projection_corners; para mesh denso es
+      // un test rápido de que el warp se aplica end-to-end.
+      const ident = _identityMesh(rows, cols);
+      const points = ident.map((row) =>
+        row.map(([x, y]) => [
+          0.5 + (x - 0.5) * 0.8,
+          0.5 + (y - 0.5) * 0.8,
+        ])
+      );
+      send({ op: "set_projection_mesh_points", points: points });
     });
     actions.appendChild(centerBtn);
 
@@ -1298,19 +1367,32 @@
     // ── Hint ──────────────────────────────────────────────────────
     const hint = document.createElement("div");
     hint.className = "empty proj-hint";
-    hint.innerHTML = "Arrastr&aacute; cada <b>esquina</b> hasta hacer encajar la imagen sobre la superficie f&iacute;sica del proyector. " +
-                     "El warp se aplica en el render output, no en el preview de la c&aacute;mara.";
+    if (rows === 2 && cols === 2) {
+      hint.innerHTML = "Arrastr&aacute; cada <b>esquina</b> hasta hacer encajar la imagen sobre la superficie f&iacute;sica del proyector. " +
+                       "Si la superficie no es plana, sub&iacute; la densidad del mesh.";
+    } else {
+      hint.innerHTML = "Arrastr&aacute; los <b>" + (rows * cols) +
+                       " puntos del mesh</b> para ajustar el warp por celdas. " +
+                       "Densidad alta = m&aacute;s control pero LUT m&aacute;s caro de recalcular.";
+    }
     body.appendChild(hint);
   }
 
   function refreshProjectionState() {
     // Re-renderizamos solo si NO estamos draggeando — si el usuario está
-    // tocando un corner, el snapshot del server lo va a echo back y no
+    // tocando un punto, el snapshot del server lo va a echo back y no
     // queremos que la UI le pelee a su propio drag.
     if (state.projDrag) return;
     const proj = state.snapshot.projection || {};
     if (proj.available === false) {
-      // El renderer desapareció (improbable pero defensivo) — full re-render.
+      renderProjection();
+      return;
+    }
+    // Si cambió la densidad del mesh (otro cliente, o auto-load al boot),
+    // hay que reconstruir el SVG entero — ya no caben los mismos handles.
+    const ui = state.projUI;
+    const newSize = Array.isArray(proj.mesh_size) ? proj.mesh_size : null;
+    if (ui && newSize && (ui.rows !== newSize[0] || ui.cols !== newSize[1])) {
       renderProjection();
       return;
     }
@@ -1321,44 +1403,67 @@
       const isOn = !!proj.enabled;
       if (wasOn !== isOn) togBtn.classList.toggle("on", isOn);
     }
-    // Refrescar los corners pintados (si cambió desde el server, ej. otra
-    // sesión hizo reset). Sin reconstruir el SVG.
-    const ui = state.projUI;
+    // Refrescar el mesh pintado (cambió desde el server, ej. otra sesión
+    // hizo reset). Sin reconstruir el SVG.
     if (ui) {
-      state.projCorners = _projCornersFromSnap();
-      _paintProjCorners(ui.quad, ui.handleEls, state.projCorners, ui.vbw, ui.vbh);
+      state.projMesh = _projMeshFromSnap();
+      _paintProjMesh(ui.meshEdges, ui.handleEls, state.projMesh, ui.vbw, ui.vbh);
     }
   }
 
-  function _paintProjCorners(quad, handleEls, corners, vbw, vbh) {
-    const pts = corners.map(([nx, ny]) => (nx * vbw) + "," + (ny * vbh)).join(" ");
-    quad.setAttribute("points", pts);
-    handleEls.forEach((g, i) => {
-      const [nx, ny] = corners[i];
-      const x = nx * vbw, y = ny * vbh;
-      g.setAttribute("transform", "translate(" + x + " " + y + ")");
-    });
+  function _paintProjMesh(edgesGroup, handleEls, mesh, vbw, vbh) {
+    const rows = mesh.length, cols = mesh[0].length;
+    // Repintar handles — translate transform por punto.
+    for (let i = 0; i < rows; i++) {
+      for (let j = 0; j < cols; j++) {
+        const [nx, ny] = mesh[i][j];
+        handleEls[i][j].setAttribute(
+          "transform", "translate(" + (nx * vbw) + " " + (ny * vbh) + ")"
+        );
+      }
+    }
+    // Reconstruir las líneas del mesh — N líneas horizontales (cols-1 segm
+    // por fila) y M líneas verticales (rows-1 segm por col). En 2x2 son
+    // 4 segmentos = el quad clásico.
+    edgesGroup.innerHTML = "";
+    function line(x1, y1, x2, y2) {
+      const ln = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      ln.setAttribute("x1", String(x1)); ln.setAttribute("y1", String(y1));
+      ln.setAttribute("x2", String(x2)); ln.setAttribute("y2", String(y2));
+      ln.setAttribute("class", "proj-mesh-edge");
+      edgesGroup.appendChild(ln);
+    }
+    for (let i = 0; i < rows; i++) {
+      for (let j = 0; j < cols - 1; j++) {
+        const a = mesh[i][j], b = mesh[i][j + 1];
+        line(a[0] * vbw, a[1] * vbh, b[0] * vbw, b[1] * vbh);
+      }
+    }
+    for (let j = 0; j < cols; j++) {
+      for (let i = 0; i < rows - 1; i++) {
+        const a = mesh[i][j], b = mesh[i + 1][j];
+        line(a[0] * vbw, a[1] * vbh, b[0] * vbw, b[1] * vbh);
+      }
+    }
   }
 
-  function _attachProjPointer(handleEl, idx, svg, vbw, vbh) {
-    // Pointer events (no touchstart/mousedown crap) + setPointerCapture
-    // = drag fluido en mobile + desktop sin tener que dispatch dos veces.
+  function _attachProjPointer(handleEl, row, col, svg, vbw, vbh) {
+    // Pointer events + setPointerCapture: drag fluido en mobile y desktop
+    // con un solo path. Throttle a 20Hz para no saturar el WS.
     let throttleTimer = null;
     let pendingX = null, pendingY = null;
 
     function flush() {
       if (pendingX === null) return;
       send({
-        op: "set_projection_corner",
-        idx: idx,
-        x: pendingX,
-        y: pendingY,
+        op: "set_projection_mesh_point",
+        row: row, col: col,
+        x: pendingX, y: pendingY,
       });
       pendingX = pendingY = null;
     }
 
     function pointToNorm(ev) {
-      // Convertir client coords → SVG viewBox coords → normalizadas [0,1].
       const rect = svg.getBoundingClientRect();
       const sx = ((ev.clientX - rect.left) / rect.width) * vbw;
       const sy = ((ev.clientY - rect.top) / rect.height) * vbh;
@@ -1368,22 +1473,25 @@
       return [nx, ny];
     }
 
+    function isMine() {
+      return state.projDrag &&
+        state.projDrag.row === row && state.projDrag.col === col;
+    }
+
     handleEl.addEventListener("pointerdown", (ev) => {
       ev.preventDefault();
       handleEl.setPointerCapture(ev.pointerId);
       handleEl.classList.add("dragging");
-      state.projDrag = { idx: idx };
+      state.projDrag = { row: row, col: col };
     });
 
     handleEl.addEventListener("pointermove", (ev) => {
-      if (!state.projDrag || state.projDrag.idx !== idx) return;
+      if (!isMine()) return;
       ev.preventDefault();
       const [nx, ny] = pointToNorm(ev);
-      // Update local corner array + repaint SVG inmediato.
-      state.projCorners[idx] = [nx, ny];
+      state.projMesh[row][col] = [nx, ny];
       const ui = state.projUI;
-      if (ui) _paintProjCorners(ui.quad, ui.handleEls, state.projCorners, ui.vbw, ui.vbh);
-      // Throttled WS dispatch.
+      if (ui) _paintProjMesh(ui.meshEdges, ui.handleEls, state.projMesh, ui.vbw, ui.vbh);
       pendingX = nx; pendingY = ny;
       if (!throttleTimer) {
         throttleTimer = setTimeout(() => {
@@ -1394,10 +1502,9 @@
     });
 
     function endDrag(ev) {
-      if (!state.projDrag || state.projDrag.idx !== idx) return;
+      if (!isMine()) return;
       try { handleEl.releasePointerCapture(ev.pointerId); } catch (_) {}
       handleEl.classList.remove("dragging");
-      // Flush pending value y limpiar drag state.
       if (throttleTimer) { clearTimeout(throttleTimer); throttleTimer = null; }
       flush();
       state.projDrag = null;
