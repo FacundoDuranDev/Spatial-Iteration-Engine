@@ -21,6 +21,19 @@ class FilterContext:
         self._temporal = temporal
         self._audio_service = audio
 
+    def update(self, analysis: Optional[dict], temporal=None, audio=None) -> None:
+        """Mute in-place. Llamado por GraphScheduler una vez por frame para
+        evitar instanciar un FilterContext nuevo por cada ProcessorNode
+        (44 filtros activos = 44 instancias por frame antes de este cambio).
+
+        Safety: el FilterContext se pasa por referencia a `node.process` y
+        los filtros lo consumen sincrónicamente dentro del frame; no hay
+        riesgo de que un filtro de frame N+1 vea analysis del frame N.
+        """
+        self._analysis = analysis or {}
+        self._temporal = temporal
+        self._audio_service = audio
+
     # --- Dict protocol (backwards compatible) ---
 
     def __contains__(self, key: str) -> bool:

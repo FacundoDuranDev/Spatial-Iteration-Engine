@@ -8,7 +8,7 @@ import logging
 import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Any, Dict, FrozenSet, List, Optional, Set, Tuple
+from typing import Any, Callable, Dict, FrozenSet, List, Optional, Set, Tuple
 
 from ..core.base_node import BaseNode
 from ..core.graph import Graph
@@ -72,6 +72,10 @@ class GraphScheduler:
         metrics: Any = None,
         audio_analyzer: Any = None,
         parallel_analyzers: bool = False,
+        modulation_engine: Any = None,
+        signal_bus: Any = None,
+        signal_sources: Optional[List[Any]] = None,
+        modulation_setter: Optional[Callable[[str, str, Any], bool]] = None,
     ) -> None:
         self._graph = graph
         self._config = config
@@ -81,6 +85,12 @@ class GraphScheduler:
         self._metrics = metrics
         self._audio = audio_analyzer
         self._temporal_configured = False
+        # Modulation (opt-in). Si modulation_engine es None, este subsistema
+        # no se ejecuta — comportamiento idéntico al pre-Fase-2 para tests.
+        self._modulation_engine = modulation_engine
+        self._signal_bus = signal_bus
+        self._signal_sources: List[Any] = list(signal_sources) if signal_sources else []
+        self._modulation_setter = modulation_setter
 
         # Pre-compute execution order and input maps
         self._execution_order: List[BaseNode] = graph.get_execution_order()
@@ -106,6 +116,21 @@ class GraphScheduler:
         self._processor_nodes = [
             n for n in self._execution_order if isinstance(n, ProcessorNode)
         ]
+
+        # Modulation injection point: índice del primer ProcessorNode (los
+        # mappings se aplican entre AnalyzerNodes y ProcessorNodes). Si no
+        # hay processors, queda fuera del loop → tick() nunca corre.
+        self._modulation_inject_index: int = len(self._execution_order)
+        for i, _node in enumerate(self._execution_order):
+            if isinstance(_node, ProcessorNode):
+                self._modulation_inject_index = i
+                break
+
+        # Stable FilterContext — antes se creaba uno nuevo por cada
+        # ProcessorNode procesado (44 filtros activos = 44 instancias por
+        # frame). Con `update()` reusamos el mismo objeto; el frame es
+        # single-thread, no hay race con el frame siguiente.
+        self._filter_ctx: Optional[FilterContext] = None
 
         # Parallel analyzer execution (Step 5)
         self._parallel_analyzers = parallel_analyzers
@@ -162,6 +187,28 @@ class GraphScheduler:
             if (node_name, port_name) in self._fan_out_ports:
                 if isinstance(value, np.ndarray) and value.flags.writeable:
                     value.flags.writeable = False
+
+    def _modulation_tick(self, analysis: Dict[str, Any]) -> None:
+        """Publica analysis al SignalBus y aplica los mappings al engine.
+
+        Inline (sin event_bus async) — los filtros van a leer los params
+        modulados en este MISMO frame, dándole feel MIDI determinista.
+        Failures se logean y siguen — modulation no es fatal.
+        """
+        if self._signal_bus is not None and self._signal_sources:
+            for src in self._signal_sources:
+                try:
+                    src.publish(analysis, self._signal_bus)
+                except Exception:
+                    logger.exception("signal source publish failed")
+        if (
+            self._modulation_setter is not None
+            and self._modulation_engine.has_mappings()
+        ):
+            try:
+                self._modulation_engine.tick(self._modulation_setter)
+            except Exception:
+                logger.exception("modulation tick failed")
 
     def setup(self) -> None:
         """Initialize all nodes."""
@@ -246,6 +293,14 @@ class GraphScheduler:
                 self._profiler.start_phase(phase)
 
         for i, node in enumerate(self._execution_order):
+            # Modulation tick: una sola vez por frame, justo antes del
+            # primer ProcessorNode. En este punto los analyzers corrieron
+            # y el `analysis` dict tiene face/hands/etc., listo para que
+            # los SignalSources lo traduzcan a señales del bus y el
+            # ModulationEngine aplique mappings → bridge.set_param.
+            if i == self._modulation_inject_index and self._modulation_engine is not None:
+                self._modulation_tick(analysis)
+
             # Skip nodes that are part of a parallel group (handled when group leader hit)
             if i in self._parallel_node_indices:
                 group = self._find_group_for_index(i)
@@ -287,10 +342,17 @@ class GraphScheduler:
                     # Only push once per frame (before first processor)
                     if self._temporal and node is self._processor_nodes[0]:
                         self._temporal.push_input(video_in)
-                    # Wrap analysis as FilterContext for temporal + audio access
-                    inputs["analysis_in"] = FilterContext(
-                        analysis, self._temporal, self._audio
-                    )
+                    # Wrap analysis as FilterContext for temporal + audio access.
+                    # Reusamos una instancia cacheada — `update()` muta
+                    # in-place, evita 44 allocaciones/frame con todos los
+                    # filtros activos.
+                    if self._filter_ctx is None:
+                        self._filter_ctx = FilterContext(
+                            analysis, self._temporal, self._audio
+                        )
+                    else:
+                        self._filter_ctx.update(analysis, self._temporal, self._audio)
+                    inputs["analysis_in"] = self._filter_ctx
 
             # Execute node with timing
             node_start = time.perf_counter()

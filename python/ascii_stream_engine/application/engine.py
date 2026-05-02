@@ -3,7 +3,7 @@
 import logging
 import threading
 import time
-from typing import Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from ..domain.config import EngineConfig
 from ..domain.events import ConfigChangeEvent
@@ -121,6 +121,14 @@ class StreamEngine:
         # Scheduler del graph
         self._orchestrator: Optional[GraphScheduler] = None
         self._pipeline_version_snapshot: int = 0
+
+        # Modulation (opt-in, attach desde el bridge web). Si nadie llama
+        # `attach_modulation`, todos quedan None y el GraphScheduler corre
+        # sin overhead — comportamiento idéntico al pre-Fase-2.
+        self._modulation_engine: Optional[Any] = None
+        self._signal_bus: Optional[Any] = None
+        self._signal_sources: list = []
+        self._modulation_setter: Optional[Any] = None
 
         # Configurar sensores con event bus
         if self._sensors and self._event_bus:
@@ -316,7 +324,32 @@ class StreamEngine:
             profiler=self._profiler,
             metrics=self._metrics,
             audio_analyzer=self._audio_analyzer,
+            modulation_engine=self._modulation_engine,
+            signal_bus=self._signal_bus,
+            signal_sources=self._signal_sources,
+            modulation_setter=self._modulation_setter,
         )
+
+    def attach_modulation(
+        self,
+        modulation_engine: Any,
+        signal_bus: Any,
+        signal_sources: list,
+        setter: Any,
+    ) -> None:
+        """Wire el subsistema de modulation al engine.
+
+        Llamado típicamente por el web bridge en su `__init__`. Si el
+        scheduler ya estaba creado, se reconstruye para que tome los
+        nuevos refs (no rompe estado: el grafo se rebuilda a partir de
+        las pipelines actuales).
+        """
+        self._modulation_engine = modulation_engine
+        self._signal_bus = signal_bus
+        self._signal_sources = list(signal_sources or [])
+        self._modulation_setter = setter
+        if self._orchestrator is not None:
+            self._create_orchestrator()
 
     def start(self, blocking: bool = False) -> None:
         """Inicia el engine."""
