@@ -1,0 +1,12 @@
+{
+  "tag": "02-fastapi-shell",
+  "url": "http://127.0.0.1:7861/?t=fff90238a03f9ee1",
+  "viewport": "iPhone 14 (390x844, dpr 3, mobile)",
+  "shots": [
+    "01-hub.png",
+    "02-running.png",
+    "03-after-stop.png"
+  ],
+  "console_lines": 0,
+  "dom_size": 2233
+}

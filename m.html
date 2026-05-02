@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>SIE · m</title>
+<style>
+  html, body { background:#000; color:#22f1d0; margin:0;
+               font-family: ui-monospace, monospace; font-size: 13px;
+               display: flex; align-items: center; justify-content: center;
+               min-height: 100dvh; }
+</style>
+<script>
+  // Short-link launcher for the v2 design preview.
+  // Usage from the phone:
+  //   /m            -> hub, stage  (defaults)
+  //   /m?v=cat      -> category list, stage
+  //   /m?v=detail   -> filter detail, stage
+  //   /m?v=specs    -> specs sheet, stage
+  //   /m?t=paper    -> hub, paper
+  //   /m?v=cat&t=industrial
+  //
+  // (v ∈ hub|cat|detail|specs · t ∈ paper|industrial|stage)
+  (function () {
+    var p = new URLSearchParams(window.location.search);
+    var v = p.get('v') || 'hub';
+    var t = p.get('t') || 'stage';
+    var dest = '/design/ui_kits/gradio_remote/v2/?view=' + encodeURIComponent(v)
+             + '&theme=' + encodeURIComponent(t);
+    window.location.replace(dest);
+  })();
+</script>
+</head>
+<body>cargando…</body>
+</html>

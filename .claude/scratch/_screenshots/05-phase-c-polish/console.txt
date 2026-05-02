@@ -1,0 +1,17 @@
+[toggle-bloom] Locator.click: Timeout 2000ms exceeded.
+Call log:
+  - waiting for locator(".toggle, [data-act='toggle']").first
+    - locator resolved to <button type="button" class="toggle" aria-label="Activar Brillo / Contraste"></button>
+  - attempting click action
+    2 × waiting for element to be visible, enabled and stable
+      - element is not visible
+    - retrying click action
+    - waiting 20ms
+    2 × waiting for element to be visible, enabled and stable
+      - element is not visible
+    - retrying click action
+      - waiting 100ms
+    4 × waiting for element to be visible, enabled and stable
+      - element is not visible
+    - retrying click action
+      - waiting 500ms

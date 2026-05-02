@@ -1,0 +1,281 @@
+/* ════════════════════════════════════════════════════════════════
+   SIE · Web dashboard v3 — theme STAGE inlined
+   ────────────────────────────────────────────────────────────────
+   Tokens, layout y atoms en un solo archivo. Sin @import a otros
+   archivos del repo: el web_dashboard es self-contained.
+   Theme = stage (cyan + negro + Space Grotesk), validado por el
+   usuario en design/ui_kits/gradio_remote/v2/?theme=stage.
+   ════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* — Palette */
+  --bg:           #000000;
+  --surface:      #0a0a0a;
+  --surface-high: #141414;
+  --line:         #1c1c1c;
+  --line-strong:  #3f3f3f;
+  --hd-bg:        #050505;
+
+  --text:    #ffffff;
+  --text-2:  #c9c9c9;
+  --text-3:  #7a7a7a;
+
+  --accent:      #22f1d0;
+  --accent-soft: rgba(34, 241, 208, 0.12);
+  --on-accent:   #000000;
+  --danger:      #ff5a4e;
+  --glow-sm:     0 0 8px rgba(34, 241, 208, 0.5);
+  --glow-lg:     0 0 28px rgba(34, 241, 208, 0.65), 0 0 6px rgba(34, 241, 208, 1);
+
+  /* — Type */
+  --font-ui:    'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --font-mono:  'Space Mono', ui-monospace, monospace;
+  --fw-bold: 600;
+  --tracking-tight: -0.02em;
+
+  /* iPhone 14 mobile-first scale */
+  --fs-xs: 13px;
+  --fs-sm: 16px;
+  --fs-md: 19px;
+  --fs-lg: 26px;
+  --fs-xl: 36px;
+
+  /* — Spacing */
+  --sp-1: 6px;
+  --sp-2: 10px;
+  --sp-3: 16px;
+  --sp-4: 22px;
+  --sp-5: 28px;
+  --sp-6: 40px;
+
+  /* — Atoms */
+  --r-sm: 0;
+  --hit: 64px;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: var(--fs-md);
+  line-height: 1.25;
+  font-feature-settings: "ss01", "tnum";
+  height: 100%;
+  /* iOS Safari: 100dvh accounts for dynamic toolbars. */
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* iOS auto-zooms when input font-size < 16px. Force ≥16. */
+input, button, select, textarea { font-size: max(16px, 1em); font-family: inherit; }
+
+/* ─── Shell ─────────────────────────────────────────────────── */
+
+.screen {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Header — sticky top */
+.hd {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  padding-top: calc(var(--sp-3) + env(safe-area-inset-top, 0px));
+  background: var(--hd-bg);
+  border-bottom: 1px solid var(--line);
+  min-height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+.hd .ttl {
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tracking-tight);
+  flex: 1;
+  min-width: 0;
+}
+
+.kpis {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+}
+.kpis .kpi b {
+  color: var(--accent);
+  font-weight: 500;
+  text-shadow: var(--glow-sm);
+}
+.kpis .sep { color: var(--text-3); }
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid var(--line-strong);
+  color: var(--text-2);
+}
+.pill .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-3);
+}
+.pill.on {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.pill.on .dot {
+  background: var(--accent);
+  box-shadow: var(--glow-sm);
+}
+.pill.warn {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.pill.warn .dot { background: var(--danger); }
+
+/* Body — scrollable middle */
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.body::-webkit-scrollbar { width: 0; }
+
+/* Footer — sticky bottom */
+.ft {
+  flex: 0 0 auto;
+  padding: var(--sp-3) var(--sp-4) calc(var(--sp-4) + env(safe-area-inset-bottom, 0px));
+  background: var(--hd-bg);
+  border-top: 1px solid var(--line);
+  display: flex;
+  gap: var(--sp-3);
+  align-items: stretch;
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+}
+
+.btn {
+  flex: 1;
+  min-height: var(--hit);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 var(--sp-4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+}
+.btn:active { transform: translateY(1px); }
+.btn.primary {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+  box-shadow: var(--glow-lg);
+}
+.btn.danger {
+  background: transparent;
+  color: var(--danger);
+  border-color: var(--danger);
+  box-shadow: none;
+}
+.btn .gly { font-size: 14px; line-height: 1; }
+
+/* ─── Hub view ──────────────────────────────────────────────── */
+
+.hub-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: 1fr;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  height: 100%;
+  min-height: 360px;
+}
+
+.cat {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  touch-action: manipulation;
+  overflow: hidden;
+  min-height: 110px;
+}
+.cat:active { background: var(--surface-high); }
+.cat .cap {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-3);
+}
+.cat .name {
+  margin-top: auto;
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tracking-tight);
+  color: var(--text);
+}
+.cat .meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  margin-top: var(--sp-1);
+}
+.cat .meta .live {
+  color: var(--accent);
+  text-shadow: var(--glow-sm);
+}

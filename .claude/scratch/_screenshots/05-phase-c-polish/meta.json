@@ -1,0 +1,15 @@
+{
+  "tag": "05-phase-c-polish",
+  "url": "http://127.0.0.1:7861/?t=1706bed399a193b6",
+  "viewport": "iPhone 14 (390x844)",
+  "shots": [
+    "01-hub.png",
+    "02-cat-color.png",
+    "03-detail-bloom.png",
+    "05-slider-dragged.png",
+    "06-back-cat.png",
+    "07-back-hub.png",
+    "08-cat-glitch.png"
+  ],
+  "console_lines": 1
+}

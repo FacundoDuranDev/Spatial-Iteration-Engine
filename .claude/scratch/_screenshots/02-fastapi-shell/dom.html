@@ -1,0 +1,57 @@
+<!DOCTYPE html><html lang="es"><head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>SIE · Control</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Space+Mono:wght@400;700&amp;display=swap">
+  <link rel="stylesheet" href="/static/v3.css">
+</head>
+<body class="theme-stage">
+  <div id="app" class="screen">
+    <header class="hd">
+      <h1 class="ttl">SIE · Control</h1>
+      <div class="kpis">
+        <span class="kpi"><b id="fps">0.0</b> fps</span>
+        <span class="sep">·</span>
+        <span class="kpi"><b id="lat">0.0</b> ms</span>
+      </div>
+      <span id="pill" class="pill on"><span class="dot"></span><span id="pill-label">LIVE</span></span>
+    </header>
+
+    <main class="body" id="body">
+      <section class="hub-grid" id="hub">
+        <article class="cat" data-cat="DISTORT">
+          <span class="cap">DISTORT</span>
+          <span class="name">Distorsión</span>
+          <span class="meta"><span>Fase B</span></span>
+        </article>
+        <article class="cat" data-cat="COLOR">
+          <span class="cap">COLOR</span>
+          <span class="name">Color</span>
+          <span class="meta"><span>Fase B</span></span>
+        </article>
+        <article class="cat" data-cat="LIGHT">
+          <span class="cap">LIGHT</span>
+          <span class="name">Luz</span>
+          <span class="meta"><span>Fase B</span></span>
+        </article>
+        <article class="cat" data-cat="EFX">
+          <span class="cap">EFX</span>
+          <span class="name">Efectos</span>
+          <span class="meta"><span>Fase B</span></span>
+        </article>
+      </section>
+    </main>
+
+    <footer class="ft">
+      <button id="primary-btn" class="btn danger" type="button">
+        <span class="gly">■</span> <span id="primary-label">Detener</span>
+      </button>
+    </footer>
+  </div>
+  <script src="/static/app.js"></script>
+
+
+</body></html>

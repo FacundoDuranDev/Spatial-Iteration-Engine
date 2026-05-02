@@ -1,0 +1,70 @@
+<!DOCTYPE html><html lang="es"><head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>SIE · Control</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Space+Mono:wght@400;700&amp;display=swap">
+  <link rel="stylesheet" href="/static/v3.css">
+</head>
+<body class="theme-stage">
+  <div id="app" class="screen">
+    <header id="hd" class="hd" data-view="hub">
+      <button id="back-btn" class="back" type="button" aria-label="Atrás">
+        <span class="gly">‹</span>
+      </button>
+      <h1 id="hd-title" class="ttl">Glitch</h1>
+      <div id="kpis" class="kpis hidden">
+        <span class="kpi"><b id="fps">0.0</b> fps</span>
+        <span class="sep">·</span>
+        <span class="kpi"><b id="lat">0.0</b> ms</span>
+      </div>
+      <span id="pill" class="pill hidden"><span class="dot"></span><span id="pill-label">OFFLINE</span></span>
+    </header>
+
+    <main class="body" id="body">
+      <section id="view-hub" class="view view-hub enter hidden">
+        <div class="hub-grid" id="hub-grid">
+          <article class="cat" data-cat="DISTORT">
+            <span class="cap">DISTORT</span>
+            <span class="name">Distorsión</span>
+            <span class="meta"><span class="meta-count" data-cat="DISTORT">0 activos / 1 total</span></span>
+          </article>
+          <article class="cat" data-cat="COLOR">
+            <span class="cap">COLOR</span>
+            <span class="name">Color</span>
+            <span class="meta"><span class="meta-count" data-cat="COLOR">0 activos / 2 total</span></span>
+          </article>
+          <article class="cat" data-cat="GLITCH">
+            <span class="cap">GLITCH</span>
+            <span class="name">Glitch</span>
+            <span class="meta"><span class="meta-count" data-cat="GLITCH">0 activos / 1 total</span></span>
+          </article>
+          <article class="cat" data-cat="STYLIZE">
+            <span class="cap">STYLIZE</span>
+            <span class="name">Estilo</span>
+            <span class="meta"><span class="meta-count" data-cat="STYLIZE">0 activos / 1 total</span></span>
+          </article>
+        </div>
+      </section>
+
+      <section id="view-cat" class="view view-cat enter">
+        <div class="list" id="cat-list"><div class="row wip" data-filter="chroma"><button class="toggle" type="button" aria-label="Activar Aberración cromática"></button><span class="name">Aberración cromática<span class="badge-wip">WIP</span></span><span class="chev">›</span></div></div>
+      </section>
+
+      <section id="view-detail" class="view view-detail enter hidden">
+        <div class="detail" id="detail-body"><div class="head"><h2 class="ttl">Bloom · audio-reactivo</h2><span class="meta">COLOR</span></div><div class="param-block"><div class="param-row"><span class="lbl">Activo</span><button class="toggle" type="button"></button></div></div><div class="params"><div class="param-block" data-param="intensity"><div class="slider"><div class="top"><span class="lbl">Intensidad</span><span class="val">0.70</span></div><div class="track-wrap"><div class="track"><div class="fill" style="width: 70%;"></div><div class="pin" style="left: 70%;"></div></div></div><div class="range"><span class="min">0.00</span><span class="max">1.00</span></div></div></div><div class="param-block" data-param="threshold"><div class="slider"><div class="top"><span class="lbl">Umbral</span><span class="val">200</span></div><div class="track-wrap"><div class="track"><div class="fill" style="width: 64.5161%;"></div><div class="pin" style="left: 64.5161%;"></div></div></div><div class="range"><span class="min">100</span><span class="max">255</span></div></div></div><div class="param-block" data-param="audio_react"><div class="slider"><div class="top"><span class="lbl">Reactividad audio (Bass)</span><span class="val">1.0</span></div><div class="track-wrap"><div class="track"><div class="fill" style="width: 33.3333%;"></div><div class="pin" style="left: 33.3333%;"></div></div></div><div class="range"><span class="min">0.0</span><span class="max">3.0</span></div></div></div></div></div>
+      </section>
+    </main>
+
+    <footer id="ft" class="ft">
+      <button id="primary-btn" class="btn primary" type="button">
+        <span class="gly">▶</span> <span id="primary-label">Iniciar</span>
+      </button>
+    </footer>
+  </div>
+  <script src="/static/app.js"></script>
+
+
+</body></html>

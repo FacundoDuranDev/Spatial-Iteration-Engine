@@ -1,0 +1,15 @@
+{
+  "tag": "03-phase-b-nav",
+  "url": "http://127.0.0.1:7861/?t=3c1cd30cafa7ce23",
+  "viewport": "iPhone 14 (390x844)",
+  "shots": [
+    "01-hub.png",
+    "02-cat-color.png",
+    "03-detail-bloom.png",
+    "05-slider-dragged.png",
+    "06-back-cat.png",
+    "07-back-hub.png",
+    "08-cat-glitch.png"
+  ],
+  "console_lines": 1
+}

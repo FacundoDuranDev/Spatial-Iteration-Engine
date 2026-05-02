@@ -1,0 +1,13 @@
+{
+  "tag": "01-baseline",
+  "url": "http://127.0.0.1:7860/",
+  "viewport": "iPhone 14 (390x844)",
+  "shots": [
+    "01-hub.png",
+    "02-cat.png",
+    "03-detail.png",
+    "04-fullpage.png"
+  ],
+  "console_lines": 0,
+  "dom_size": 212383
+}
