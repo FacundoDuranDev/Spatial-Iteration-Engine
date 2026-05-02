@@ -1,0 +1,65 @@
+/* ============================================================
+   Industrial Minimal — theme overlay for the .sie-root widget kit
+   Source: design/ui_kits/gradio_remote/b_industrial/tokens.css
+   Concrete grays + cadmium-yellow accent + bevel shadows.
+   Inspired by mixers / eurorack panels. No phosphor glow.
+   Load AFTER widgets.css so these tokens win.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+.sie-root {
+  --sie-bg:           #1c1d1f;
+  --sie-surface:      #2a2b2e;
+  --sie-surface-high: #34363a;
+  --sie-line:         #44474c;
+  --sie-line-strong:  #52565c;
+  --sie-text:         #f1f2f4;
+  --sie-text-2:       #9ea3ab;
+  --sie-text-3:       #676c74;
+  --sie-disabled:     #4a4d52;
+
+  --sie-cyan:         #ffd400;
+  --sie-cyan-dim:     #b39800;
+  --sie-cyan-soft:    rgba(255, 212, 0, 0.12);
+  --sie-cyan-glow:    none;
+  --sie-cyan-glow-lg: none;
+
+  --sie-mag:          #ff3a2f;
+  --sie-mag-dim:      #b32820;
+  --sie-mag-soft:     rgba(255, 58, 47, 0.12);
+  --sie-mag-glow:     none;
+
+  --sie-font-sans: 'Archivo', system-ui, sans-serif;
+  --sie-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  background: var(--sie-bg);
+  color: var(--sie-text);
+}
+
+/* Cadmium accent reads cleaner without the cyan halo. */
+.sie-root .sie-pill-running { text-shadow: none; }
+.sie-root .sie-pill-running .sie-pill-dot { box-shadow: 0 0 4px var(--sie-cyan); }
+.sie-root .sie-slider-fill { box-shadow: none; }
+.sie-root .sie-slider-handle {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06),
+              inset 0 -1px 0 rgba(0,0,0,0.5),
+              0 1px 0 rgba(0,0,0,0.4);
+}
+.sie-root .sie-slider-val,
+.sie-root .sie-stepper-val,
+.sie-root .sie-dial-readout { text-shadow: none; }
+.sie-root .sie-toggle.sie-on { box-shadow: none; }
+.sie-root .sie-toggle.sie-on .sie-toggle-thumb { box-shadow: none; }
+.sie-root .sie-cat-card.sie-has-active::before,
+.sie-root .sie-row.sie-expanded::before { box-shadow: none; }
+.sie-root .sie-btn-primary {
+  color: var(--sie-bg);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.18),
+              inset 0 -1px 0 rgba(0,0,0,0.5),
+              0 4px 14px rgba(0,0,0,0.5);
+}
+.sie-root .sie-btn-stop { box-shadow: none; text-shadow: none; }
+
+.sie-root .sie-row,
+.sie-root .sie-cat-card { border-radius: 6px; }

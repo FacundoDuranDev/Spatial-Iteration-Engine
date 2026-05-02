@@ -82,19 +82,46 @@ HTML and wire the value component exactly like a stock Gradio control.
 
 ```
 widgets/
-├── __init__.py               # bundler + widget re-exports
+├── __init__.py               # bundler + widget re-exports + set_theme()
 ├── README.md                 # this file
 ├── angle_dial.py             # factory for the 140px rotation dial
 ├── slider_row.py             # factory for labeled float sliders
 ├── stepper.py                # factory for −/+ integer stepper
 ├── toggle.py                 # factory for on/off pill
 └── static/
-    ├── widgets.css           # shared tokens + component styles
+    ├── widgets.css           # shared tokens + component styles (default cyan)
     ├── angle_dial.js
     ├── slider_row.js
     ├── stepper.js
-    └── toggle.js
+    ├── toggle.js
+    └── themes/               # token overlays from design/ui_kits/gradio_remote/
+        ├── paper.css         # cream + sepia + bermellón, IBM Plex / Fraunces
+        ├── industrial.css    # concrete + cadmium yellow, Archivo / JetBrains
+        └── stage.css         # black + XL white + cyan glow, Space Grotesk
 ```
+
+## Themes
+
+The kit ships with three optional token overlays ported from
+`design/ui_kits/gradio_remote/`. Pick one with `set_theme()` before
+calling `bundle_css()`:
+
+```python
+from ascii_stream_engine.presentation.widgets import set_theme, bundle_css
+set_theme("paper")          # or "industrial" / "stage" / None for default
+gr.Blocks(css=bundle_css(), js=bundle_js())
+```
+
+The mobile dashboard reads `SIE_THEME`:
+
+```bash
+SIE_THEME=stage python run_dashboard_mobile.py
+```
+
+Each theme retokens the same `.sie-*` components — no parallel HTML.
+To add a new variant, drop a `static/themes/<name>.css` that overrides
+the `--sie-*` custom properties on `.sie-root`, then add `<name>` to
+`THEMES` in `__init__.py`.
 
 ## Design lineage
 

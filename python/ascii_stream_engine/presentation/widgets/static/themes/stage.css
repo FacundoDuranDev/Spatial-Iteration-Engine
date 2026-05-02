@@ -1,0 +1,70 @@
+/* ============================================================
+   High-Contrast Stage — theme overlay for the .sie-root widget kit
+   Source: design/ui_kits/gradio_remote/c_stage/tokens.css
+   Deep black + XL white type + phosphor cyan + giant hit targets.
+   For penumbra of theatre / club. Load AFTER widgets.css.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+.sie-root {
+  --sie-bg:           #000000;
+  --sie-surface:      #0a0a0a;
+  --sie-surface-high: #141414;
+  --sie-line:         #1c1c1c;
+  --sie-line-strong:  #3f3f3f;
+  --sie-text:         #ffffff;
+  --sie-text-2:       #c9c9c9;
+  --sie-text-3:       #7a7a7a;
+  --sie-disabled:     #2a2a2a;
+
+  --sie-cyan:         #22f1d0;
+  --sie-cyan-dim:     #14a890;
+  --sie-cyan-soft:    rgba(34, 241, 208, 0.12);
+  --sie-cyan-glow:    0 0 16px rgba(34, 241, 208, 0.55), 0 0 4px rgba(34, 241, 208, 0.95);
+  --sie-cyan-glow-lg: 0 0 28px rgba(34, 241, 208, 0.65), 0 0 6px rgba(34, 241, 208, 1);
+
+  --sie-mag:          #ff5a4e;
+  --sie-mag-dim:      #b13228;
+  --sie-mag-soft:     rgba(255, 90, 78, 0.12);
+  --sie-mag-glow:     0 0 18px rgba(255, 90, 78, 0.45);
+
+  --sie-font-sans: 'Space Grotesk', system-ui, sans-serif;
+  --sie-font-mono: 'Space Mono', ui-monospace, monospace;
+
+  /* Stage = bigger everything for low-light hands. */
+  --sie-fs-title:   24px;
+  --sie-fs-row:     19px;
+  --sie-fs-label:   16px;
+  --sie-fs-readout: 22px;
+  --sie-row-h:      72px;
+  --sie-r-s:  0;
+  --sie-r-m:  0;
+  --sie-r-l:  0;
+
+  background: var(--sie-bg);
+  color: var(--sie-text);
+}
+
+/* Sharp corners across the kit. */
+.sie-root .sie-row,
+.sie-root .sie-cat-card,
+.sie-root .sie-stepper,
+.sie-root .sie-seg,
+.sie-root .sie-btn-primary,
+.sie-root .sie-btn-stop,
+.sie-root .sie-btn-ghost { border-radius: 0; }
+
+/* Heavier glow on live signal. */
+.sie-root .sie-slider-fill { box-shadow: 0 0 10px rgba(34, 241, 208, 0.55); }
+.sie-root .sie-pill-running .sie-pill-dot { box-shadow: 0 0 10px var(--sie-cyan); }
+
+/* Bigger touch targets. */
+.sie-root .sie-toggle { width: 64px; height: 36px; }
+.sie-root .sie-toggle-thumb { width: 26px; height: 26px; }
+.sie-root .sie-toggle.sie-on .sie-toggle-thumb { transform: translateX(28px); }
+.sie-root .sie-stepper-btn { width: 56px; height: 52px; font-size: 24px; }
+.sie-root .sie-stepper-val { min-width: 72px; font-size: var(--sie-fs-readout); }
+.sie-root .sie-btn-primary,
+.sie-root .sie-btn-stop,
+.sie-root .sie-btn-ghost { height: 72px; font-size: 16px; }

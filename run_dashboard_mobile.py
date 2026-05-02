@@ -56,13 +56,37 @@ from ascii_stream_engine.adapters.processors.filters import (
 )
 from ascii_stream_engine.presentation.gradio_helpers import load_mp3_presets
 from ascii_stream_engine.presentation.widgets import (
+    THEMES,
     angle_dial,
     bundle_css,
     bundle_js,
+    set_theme,
     slider_row,
     stepper,
     toggle,
 )
+
+# Pick the visual variant of the widget kit. Any of THEMES + (None / "default")
+# for the original phosphor-cyan look. Source: design/ui_kits/gradio_remote/.
+_THEME_NAME = os.environ.get("SIE_THEME", "").strip().lower() or None
+if _THEME_NAME in (None, "default", "cyan", "stage-cyan"):
+    set_theme(None)
+    _THEME_NAME = None
+elif _THEME_NAME in THEMES:
+    set_theme(_THEME_NAME)
+else:
+    print(f"[warn] SIE_THEME={_THEME_NAME!r} unknown — using default cyan. "
+          f"Valid: {THEMES} or unset.", flush=True)
+    set_theme(None)
+    _THEME_NAME = None
+
+# Page background per theme so Gradio's chrome doesn't fight the widget kit.
+_THEME_PAGE_BG = {
+    None:          "#05060b",  # default phosphor-cyan
+    "paper":       "#f1e7d0",
+    "industrial":  "#1c1d1f",
+    "stage":       "#000000",
+}[_THEME_NAME]
 
 
 # ---------------------------------------------------------------------------
@@ -298,13 +322,13 @@ def clear_filters() -> str:
 # ---------------------------------------------------------------------------
 print("Building UI...", flush=True)
 
-extra_css = """
-body, .gradio-container { background: #05060b !important; }
-.gradio-container { max-width: 440px !important; padding-top: 0 !important; }
-.gradio-container .main { gap: 0 !important; }
-.sie-stats { font-family: 'JetBrains Mono', monospace; font-size: 13px;
-             color: #8891a6; letter-spacing: 0.02em; }
-.sie-stats b { color: #00fff2; font-weight: 400; }
+extra_css = f"""
+body, .gradio-container {{ background: {_THEME_PAGE_BG} !important; }}
+.gradio-container {{ max-width: 440px !important; padding-top: 0 !important; }}
+.gradio-container .main {{ gap: 0 !important; }}
+.sie-stats {{ font-family: 'JetBrains Mono', monospace; font-size: 13px;
+             color: var(--sie-text-2, #8891a6); letter-spacing: 0.02em; }}
+.sie-stats b {{ color: var(--sie-cyan, #00fff2); font-weight: 400; }}
 """
 
 head_tags = (

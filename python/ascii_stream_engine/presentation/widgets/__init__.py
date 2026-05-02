@@ -10,12 +10,20 @@ mobile control surface). See ``README.md`` for how to author new widgets.
 """
 
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 _STATIC_DIR = Path(__file__).parent / "static"
+_THEMES_DIR = _STATIC_DIR / "themes"
 
 _JS_FILES: List[str] = []
 _CSS_FILES: List[str] = []
+
+# Theme overlay loaded after the base widgets.css. None = phosphor cyan default.
+_THEME: Optional[str] = None
+
+# Variants from design/ui_kits/gradio_remote/. Add a tokens overlay here when
+# porting a new variant — the file lives in static/themes/<name>.css.
+THEMES = ("paper", "industrial", "stage")
 
 
 def register_assets(js: str = "", css: str = "") -> None:
@@ -24,6 +32,26 @@ def register_assets(js: str = "", css: str = "") -> None:
         _JS_FILES.append(js)
     if css and css not in _CSS_FILES:
         _CSS_FILES.append(css)
+
+
+def set_theme(name: Optional[str]) -> None:
+    """Pick a token overlay for the widget kit.
+
+    ``None`` (or any falsy value) keeps the default phosphor-cyan look from
+    ``widgets.css``. Otherwise the named theme from ``static/themes/`` is
+    loaded after the base stylesheet so its tokens override.
+    """
+    global _THEME
+    if not name:
+        _THEME = None
+        return
+    if name not in THEMES:
+        raise ValueError(f"Unknown widget theme {name!r}. Available: {THEMES}")
+    _THEME = name
+
+
+def get_theme() -> Optional[str]:
+    return _THEME
 
 
 def bundle_js() -> str:
@@ -35,10 +63,12 @@ def bundle_js() -> str:
 
 
 def bundle_css() -> str:
-    """Concatenate all registered CSS files. Pass to ``gr.Blocks(css=...)``."""
+    """Concatenate all registered CSS files plus the active theme overlay."""
     parts = []
     for name in _CSS_FILES:
         parts.append((_STATIC_DIR / name).read_text(encoding="utf-8"))
+    if _THEME:
+        parts.append((_THEMES_DIR / f"{_THEME}.css").read_text(encoding="utf-8"))
     return "\n".join(parts) or ""
 
 
@@ -59,4 +89,7 @@ __all__ = [
     "bundle_js",
     "bundle_css",
     "register_assets",
+    "set_theme",
+    "get_theme",
+    "THEMES",
 ]

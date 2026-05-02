@@ -1,0 +1,67 @@
+/* ============================================================
+   Paper Console — theme overlay for the .sie-root widget kit
+   Source: design/ui_kits/gradio_remote/a_paper/tokens.css
+   Cream paper + sepia ink + bermellón accent. No glow, no blur.
+   Load AFTER widgets.css so these tokens win.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap');
+
+.sie-root {
+  --sie-bg:           #f1e7d0;
+  --sie-surface:      #e6d8b7;
+  --sie-surface-high: #d9c9a3;
+  --sie-line:         #bfa57d;
+  --sie-line-strong:  #8a7448;
+  --sie-text:         #1a140c;
+  --sie-text-2:       #3a2a18;
+  --sie-text-3:       #6b5638;
+  --sie-disabled:     #9a8560;
+
+  --sie-cyan:         #b6371a;
+  --sie-cyan-dim:     #7a1f0c;
+  --sie-cyan-soft:    rgba(182, 55, 26, 0.10);
+  --sie-cyan-glow:    none;
+  --sie-cyan-glow-lg: none;
+
+  --sie-mag:          #2a5d4a;
+  --sie-mag-dim:      #174a3a;
+  --sie-mag-soft:     rgba(42, 93, 74, 0.10);
+  --sie-mag-glow:     none;
+
+  --sie-font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --sie-font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  background: var(--sie-bg);
+  color: var(--sie-text);
+}
+
+/* Drop the phosphor glow that doesn't fit ink-on-paper. */
+.sie-root .sie-pill-running { text-shadow: none; }
+.sie-root .sie-pill-running .sie-pill-dot { box-shadow: none; }
+.sie-root .sie-slider-fill,
+.sie-root .sie-slider-handle { box-shadow: none; }
+.sie-root .sie-slider-val,
+.sie-root .sie-stepper-val,
+.sie-root .sie-dial-readout { text-shadow: none; }
+.sie-root .sie-toggle.sie-on { box-shadow: none; }
+.sie-root .sie-toggle.sie-on .sie-toggle-thumb { box-shadow: none; }
+.sie-root .sie-cat-card.sie-has-active::before,
+.sie-root .sie-row.sie-expanded::before { box-shadow: none; }
+.sie-root .sie-btn-primary {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 1px 0 rgba(26,20,12,0.15);
+  color: var(--sie-bg);
+  border-color: var(--sie-cyan-dim);
+}
+.sie-root .sie-btn-stop { box-shadow: none; text-shadow: none; }
+
+/* Surfaces favor double-rules and serif display. */
+.sie-root .sie-row,
+.sie-root .sie-cat-card { border-radius: 4px; }
+.sie-root .sie-row-name,
+.sie-root .sie-cat-name {
+  font-family: 'Fraunces', 'Times New Roman', serif;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
