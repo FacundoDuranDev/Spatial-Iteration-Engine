@@ -22,6 +22,9 @@ from .detail import DetailBoostFilter
 from .double_vision import DoubleVisionFilter
 from .edge_smooth import EdgeSmoothFilter
 from .edges import EdgeFilter
+from .face_hand_react import FaceHandReactFilter
+from .face_swap import FaceSwapFilter
+from .vans_face_tiles import VansFaceTilesFilter
 from .film_grain import FilmGrainFilter
 from .glitch_block import GlitchBlockFilter
 from .geometric_patterns import GeometricPatternFilter
@@ -81,6 +84,9 @@ __all__ = [
     "DoubleVisionFilter",
     "EdgeFilter",
     "EdgeSmoothFilter",
+    "FaceHandReactFilter",
+    "FaceSwapFilter",
+    "VansFaceTilesFilter",
     "FilmGrainFilter",
     "GeometricPatternFilter",
     "GlitchBlockFilter",
