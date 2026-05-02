@@ -1,0 +1,372 @@
+/* ============================================================
+   Mobile dashboard v2 — chrome layout
+   ------------------------------------------------------------
+   Tokens live on :root so they're available everywhere
+   regardless of how Gradio nests components. All selectors are
+   prefixed --siev2-*.
+   Stage theme palette: deep black, white type, phosphor cyan.
+   ============================================================ */
+
+:root {
+  --siev2-bg:           #000;
+  --siev2-surface:      #0a0a0a;
+  --siev2-surface-high: #141414;
+  --siev2-line:         #1c1c1c;
+  --siev2-line-strong:  #3f3f3f;
+  --siev2-hd-bg:        #050505;
+
+  --siev2-text:   #ffffff;
+  --siev2-text-2: #c9c9c9;
+  --siev2-text-3: #7a7a7a;
+
+  --siev2-accent:        #22f1d0;
+  --siev2-accent-soft:   rgba(34, 241, 208, 0.12);
+  --siev2-on-accent:     #000;
+  --siev2-danger:        #ff5a4e;
+  --siev2-glow-sm:       0 0 8px rgba(34, 241, 208, 0.5);
+  --siev2-glow:          0 0 12px rgba(34, 241, 208, 0.55), 0 0 4px rgba(34, 241, 208, 0.95);
+  --siev2-glow-lg:       0 0 28px rgba(34, 241, 208, 0.65), 0 0 6px rgba(34, 241, 208, 1);
+
+  --siev2-font-ui:   'Space Grotesk', system-ui, sans-serif;
+  --siev2-font-mono: 'Space Mono', ui-monospace, monospace;
+
+  --siev2-fs-xs: 13px; --siev2-fs-sm: 16px; --siev2-fs-md: 19px;
+  --siev2-fs-lg: 26px; --siev2-fs-xl: 32px;
+
+  --siev2-sp-1: 6px; --siev2-sp-2: 10px; --siev2-sp-3: 16px; --siev2-sp-4: 22px;
+  --siev2-hit: 64px;
+}
+
+/* ── Page-level overrides for Gradio ──────────────────────────── */
+html, body, .gradio-container {
+  background: var(--siev2-bg) !important;
+  color: var(--siev2-text) !important;
+}
+.gradio-container { padding: 0 !important; max-width: 440px !important; margin: 0 auto !important; }
+.gradio-container .main, .gradio-container .app, .fillable.app { gap: 0 !important; padding: 0 !important; }
+
+/* Gradio wraps each component in nested .block / .gr-group / .styler /
+   .padding / .form / .column wrappers. Strip background/borders/padding
+   from ALL of them so our own styled elements show through cleanly. */
+.gradio-container .block,
+.gradio-container .gr-block,
+.gradio-container .gr-group,
+.gradio-container .styler,
+.gradio-container .form,
+.gradio-container .padding,
+.gradio-container .gradio-group,
+.gradio-container .gradio-row,
+.gradio-container .gradio-column,
+.gradio-container .column,
+.gradio-container .row,
+.gradio-container .html-container,
+.gradio-container .prose {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  min-height: unset !important;
+}
+
+/* Markdown <p> default margin */
+.gradio-container .prose p,
+.gradio-container .prose h1,
+.gradio-container .prose h2,
+.gradio-container .prose h3,
+.gradio-container .prose h4 { margin: 0 !important; }
+
+/* Hide Gradio's own footer / branding / toast wrappers */
+.gradio-container footer,
+.gradio-container .footer,
+.gradio-container .built-with,
+.gradio-container .contain.svelte-czcr5b,
+.gradio-container .settings,
+.gradio-container .api-docs,
+.gradio-container .show-api,
+.gradio-container svelte-czcr5b > .built-with {
+  display: none !important;
+}
+.gradio-container .toast-wrap { display: none !important; }
+/* The catch-all svelte-czcr5b is the footer container */
+.svelte-czcr5b { display: none !important; }
+
+/* ── Header chrome ────────────────────────────────────────────── */
+.siev2-hd {
+  display: flex; align-items: center; gap: var(--siev2-sp-3);
+  padding: var(--siev2-sp-2) var(--siev2-sp-3);
+  background: var(--siev2-hd-bg);
+  border-bottom: 1px solid var(--siev2-line);
+  min-height: 56px;
+  font-family: var(--siev2-font-ui);
+  position: sticky; top: 0; z-index: 5;
+}
+.siev2-hd .ttl {
+  flex: 1; min-width: 0;
+  font-size: var(--siev2-fs-md); font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--siev2-text);
+}
+.siev2-hd .pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  font-family: var(--siev2-font-mono); font-size: var(--siev2-fs-xs);
+  letter-spacing: 0.08em; text-transform: uppercase;
+  border: 1px solid var(--siev2-line-strong);
+  color: var(--siev2-text-2);
+}
+.siev2-hd .pill.on {
+  color: var(--siev2-accent);
+  border-color: var(--siev2-accent);
+  background: var(--siev2-accent-soft);
+  box-shadow: var(--siev2-glow-sm);
+}
+.siev2-hd .pill .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--siev2-text-3);
+}
+.siev2-hd .pill.on .dot {
+  background: var(--siev2-accent);
+  box-shadow: var(--siev2-glow-sm);
+}
+
+.siev2-kpis {
+  display: flex; gap: var(--siev2-sp-3); align-items: center;
+  padding: 6px var(--siev2-sp-3) 10px;
+  font-family: var(--siev2-font-mono); font-size: var(--siev2-fs-xs);
+  color: var(--siev2-text-2);
+  background: var(--siev2-hd-bg);
+  border-bottom: 1px solid var(--siev2-line);
+}
+.siev2-kpis b { color: var(--siev2-accent); font-weight: 500; text-shadow: var(--siev2-glow-sm); }
+.siev2-kpis .sep { color: var(--siev2-text-3); }
+
+/* ── Hub buttons (gr.Button styled as cards) ──────────────────── */
+.siev2-hubrow {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 16px;
+}
+.siev2-hubrow > * { flex: unset !important; min-width: 0 !important; }
+
+/* Gradio also adds .lg.secondary classes — match them too */
+button.siev2-cat-btn,
+.siev2-cat-btn button,
+.siev2-cat-btn,
+.lg.secondary.siev2-cat-btn,
+button.lg.secondary.siev2-cat-btn {
+  background: var(--siev2-surface) !important;
+  background-color: var(--siev2-surface) !important;
+  color: var(--siev2-text) !important;
+  border: 1px solid var(--siev2-line) !important;
+  border-radius: 0 !important;
+  min-height: 120px !important;
+  padding: 14px !important;
+  font-family: var(--siev2-font-ui) !important;
+  font-size: var(--siev2-fs-lg) !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.02em !important;
+  text-align: left !important;
+  white-space: pre-wrap !important;
+  box-shadow: none !important;
+  cursor: pointer;
+  touch-action: manipulation;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: flex-end !important;
+  line-height: 1.15 !important;
+  transition: background 120ms ease;
+}
+.siev2-cat-btn:hover, .siev2-cat-btn:active {
+  background: var(--siev2-surface-high) !important;
+}
+
+/* ── Filter list rows ─────────────────────────────────────────── */
+.siev2-section-cap {
+  font-family: var(--siev2-font-mono);
+  font-size: var(--siev2-fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--siev2-text-3);
+  padding: var(--siev2-sp-3) var(--siev2-sp-3) var(--siev2-sp-2);
+}
+.siev2-row {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: var(--siev2-sp-2);
+  padding: 8px 12px !important;
+  margin: 0 var(--siev2-sp-3) var(--siev2-sp-2) !important;
+  background: var(--siev2-surface) !important;
+  border: 1px solid var(--siev2-line) !important;
+  min-height: var(--siev2-hit) !important;
+  flex-wrap: nowrap !important;
+}
+/* The toggle widget's outer Block — fixed width so it never collapses. */
+.siev2-row > :first-child {
+  flex: 0 0 auto !important;
+  width: 64px !important;
+  min-width: 64px !important;
+}
+/* Filter name (Markdown block) — takes the remaining space. */
+.siev2-row > .siev2-row-name {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  width: auto !important;
+  font-family: var(--siev2-font-ui) !important;
+  font-size: var(--siev2-fs-sm) !important;
+  font-weight: 600 !important;
+  color: var(--siev2-text) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+.siev2-row > .siev2-row-name p,
+.siev2-row > .siev2-row-name strong {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  display: block !important;
+  font-weight: 600 !important;
+}
+/* Open-detail chevron button — fixed width on the right. */
+.siev2-row > :last-child {
+  flex: 0 0 auto !important;
+  width: 64px !important;
+  min-width: 64px !important;
+}
+
+/* The "open detail" button next to each filter row */
+.siev2-open-btn,
+.siev2-open-btn button,
+button.siev2-open-btn {
+  flex: 0 0 auto !important;
+  min-width: 64px !important;
+  min-height: 48px !important;
+  background: transparent !important;
+  color: var(--siev2-accent) !important;
+  border: 1px solid var(--siev2-line-strong) !important;
+  border-radius: 0 !important;
+  font-family: var(--siev2-font-mono) !important;
+  font-size: 18px !important;
+  padding: 0 12px !important;
+  box-shadow: none !important;
+}
+.siev2-open-btn:hover { background: var(--siev2-surface-high) !important; }
+
+/* ── Back / page-action buttons (Volver, ‹, Reset, etc.) ─────── */
+.siev2-back-btn,
+.siev2-back-btn button,
+button.siev2-back-btn {
+  background: var(--siev2-surface) !important;
+  color: var(--siev2-text) !important;
+  border: 1px solid var(--siev2-line-strong) !important;
+  border-radius: 0 !important;
+  min-height: 56px !important;
+  padding: 0 var(--siev2-sp-3) !important;
+  font-family: var(--siev2-font-ui) !important;
+  font-size: var(--siev2-fs-sm) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.05em !important;
+  box-shadow: none !important;
+}
+
+/* ── Detail page chrome ───────────────────────────────────────── */
+.siev2-detail-meta {
+  font-family: var(--siev2-font-mono);
+  font-size: var(--siev2-fs-xs);
+  color: var(--siev2-text-3);
+  padding: var(--siev2-sp-2) var(--siev2-sp-3) var(--siev2-sp-3);
+  border-bottom: 1px solid var(--siev2-line);
+}
+.siev2-detail-meta b { color: var(--siev2-text-2); font-weight: 500; }
+
+/* The detail body wraps every widget — give them breathing room */
+.siev2-detail-body {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 18px !important;
+  padding: 18px var(--siev2-sp-3) 80px !important;
+}
+
+/* Tighten Gradio's labels inside the detail */
+.siev2-detail-body label,
+.siev2-detail-body .gradio-label {
+  font-family: var(--siev2-font-mono) !important;
+  font-size: var(--siev2-fs-xs) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--siev2-text-2) !important;
+}
+
+/* ── Page title (Markdown ### headings) ───────────────────────── */
+.siev2-page-title h3,
+.siev2-page-title h2 {
+  font-family: var(--siev2-font-ui) !important;
+  font-size: var(--siev2-fs-md) !important;
+  color: var(--siev2-text) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  letter-spacing: -0.015em !important;
+}
+
+/* ── Footer (sticky Start/Stop) ───────────────────────────────── */
+.siev2-footer {
+  position: sticky;
+  bottom: 0;
+  background: var(--siev2-hd-bg) !important;
+  border-top: 1px solid var(--siev2-line);
+  padding: var(--siev2-sp-3) !important;
+  z-index: 5;
+}
+.siev2-startstop,
+.siev2-startstop button,
+button.siev2-startstop {
+  width: 100% !important;
+  min-height: var(--siev2-hit) !important;
+  background: var(--siev2-accent) !important;
+  color: var(--siev2-on-accent) !important;
+  border: 1px solid var(--siev2-accent) !important;
+  border-radius: 0 !important;
+  font-family: var(--siev2-font-ui) !important;
+  font-size: var(--siev2-fs-sm) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  box-shadow: var(--siev2-glow-lg) !important;
+}
+.siev2-startstop.danger,
+.siev2-startstop.danger button {
+  background: transparent !important;
+  color: var(--siev2-danger) !important;
+  border-color: var(--siev2-danger) !important;
+  box-shadow: 0 0 16px rgba(255,90,78,0.25) !important;
+}
+
+/* ── Live status under the footer ─────────────────────────────── */
+.siev2-status,
+.siev2-status p {
+  font-family: var(--siev2-font-mono) !important;
+  font-size: 11px !important;
+  color: var(--siev2-text-3) !important;
+  text-align: center !important;
+  padding: 6px var(--siev2-sp-3) !important;
+  margin: 0 !important;
+}
+
+/* ── Hub row (header for Cat) ─────────────────────────────────── */
+.siev2-page-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: var(--siev2-sp-2) !important;
+  padding: var(--siev2-sp-2) var(--siev2-sp-3) !important;
+  background: var(--siev2-hd-bg) !important;
+  border-bottom: 1px solid var(--siev2-line) !important;
+  position: sticky; top: 0; z-index: 4;
+}
+.siev2-page-header > * { flex: 0 0 auto !important; }
+.siev2-page-header .siev2-page-title { flex: 1 !important; }
