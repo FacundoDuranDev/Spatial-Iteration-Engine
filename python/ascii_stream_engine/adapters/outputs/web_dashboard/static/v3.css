@@ -1014,5 +1014,128 @@ input, button, select, textarea { font-size: max(16px, 1em); font-family: inheri
   margin-bottom: 2px;
 }
 
+/* ─── Projection mapping view ──────────────────────────────── */
+
+.proj {
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-3) var(--sp-4) var(--sp-4);
+  gap: var(--sp-3);
+}
+
+.proj .row.proj-toggle-row {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: var(--sp-3);
+  gap: var(--sp-3);
+}
+
+/* Canvas wrap: aspect-ratio fija 16:9 ocupando todo el ancho. La altura
+   se calcula sola a partir del width — no hay JS de medición. */
+.proj-canvas-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  overflow: hidden;
+  /* Evitar que un drag de un handle haga scroll/zoom de la página
+     en mobile. Equivalente al `touch-action: none` que pide la skill. */
+  touch-action: none;
+}
+
+.proj-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Grid de tercios — referencia visual para alinear sin pelearle al ojo. */
+.proj-grid line {
+  stroke: var(--line-strong);
+  stroke-width: 0.15;
+  stroke-dasharray: 0.6 0.8;
+  opacity: 0.5;
+}
+
+/* Rectángulo source — el frame "sin warp" donde caen los corners. */
+.proj-ghost {
+  fill: none;
+  stroke: var(--text-2);
+  stroke-width: 0.2;
+  stroke-dasharray: 1 0.6;
+  opacity: 0.35;
+}
+
+/* Polígono que une los 4 corners actuales — el warp visible. */
+.proj-quad {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 0.35;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 1px var(--accent));
+}
+
+/* Handles — el `hit` es transparente y grande (≥ 48 CSS px equivalentes
+   al viewBox SVG); el `dot` es lo que se ve. La regla mobile-web-first
+   pide hit area ≥ 48 px → r=6 en viewBox de 100 ancho ≈ 26 px sobre
+   pantalla de 440 px = 52 px diámetro. */
+.proj-handle { cursor: grab; }
+.proj-handle.dragging { cursor: grabbing; }
+
+.proj-handle-hit {
+  fill: rgba(0, 0, 0, 0);
+  stroke: none;
+  /* Sin pointer-events: none — necesitamos que el hit area capture clicks. */
+}
+
+.proj-handle-dot {
+  fill: var(--accent);
+  stroke: var(--bg);
+  stroke-width: 0.4;
+  filter: drop-shadow(0 0 0.6px var(--accent));
+  pointer-events: none;
+}
+
+.proj-handle.dragging .proj-handle-dot {
+  fill: #ffffff;
+  stroke: var(--accent);
+  filter: drop-shadow(0 0 1.2px var(--accent));
+}
+
+.proj-handle-label {
+  font-family: var(--font-mono);
+  font-size: 2.2px;  /* En unidades viewBox — se escala con el SVG. */
+  fill: var(--text-2);
+  text-shadow: 0 0 1px var(--bg);
+  pointer-events: none;
+  letter-spacing: 0.08em;
+}
+
+.proj-actions {
+  display: flex;
+  gap: var(--sp-2);
+  justify-content: flex-end;
+}
+
+.proj-actions .btn {
+  flex: 0 0 auto;
+  min-width: 110px;
+}
+
+.proj-hint {
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+  color: var(--text-2);
+}
+.proj-hint b { color: var(--accent); font-weight: 500; }
+
+/* Hub card — outline más marcado cuando el warp está encendido, igual
+   que el resto de cat cards con .has-active. */
+.cat.cat-projection.has-active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), 0 0 12px rgba(34, 241, 208, 0.18);
+}
+
 /* ─── Generic helper ─────────────────────────────────────────── */
 .hidden { display: none !important; }

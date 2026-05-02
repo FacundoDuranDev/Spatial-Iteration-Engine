@@ -25,6 +25,7 @@
     { id: "STYLIZE",  name: "Estilo" },
     { id: "TRACKING", name: "Tracking" },
     { id: "MOD",      name: "Mapeos" },
+    { id: "PROJ",     name: "Proyecci\u00f3n" },
   ];
 
   // TRACKING no es una categor\u00eda real de filtros \u2014 es un panel de control
@@ -347,6 +348,8 @@
     modListBody:  document.getElementById("mod-list-body"),
     viewModCreate:document.getElementById("view-mod-create"),
     modCreateBody:document.getElementById("mod-create-body"),
+    viewProj:     document.getElementById("view-projection"),
+    projBody:     document.getElementById("proj-body"),
   };
 
   const state = {
@@ -471,6 +474,8 @@
         els.hdTitle.textContent = "Mapeos";
       } else if (cur.view === "mod-create") {
         els.hdTitle.textContent = "Nuevo mapeo · " + (cur.step || 1) + "/3";
+      } else if (cur.view === "projection") {
+        els.hdTitle.textContent = "Proyección · mapping";
       }
     }
   }
@@ -487,6 +492,7 @@
     if (view.view === "detail")     target = els.viewDetail;
     if (view.view === "mod-list")   target = els.viewModList;
     if (view.view === "mod-create") target = els.viewModCreate;
+    if (view.view === "projection") target = els.viewProj;
     if (state.shownTarget === target && !animate) {
       // Same view as last call (e.g. server tick re-render) — don't
       // re-trigger animations or scroll-to-top, just let the per-view
@@ -495,7 +501,7 @@
     }
     [
       els.viewHub, els.viewCat, els.viewDetail,
-      els.viewModList, els.viewModCreate,
+      els.viewModList, els.viewModCreate, els.viewProj,
     ].forEach((v) => v.classList.add("hidden"));
     target.classList.remove("hidden");
     target.classList.remove("enter");
@@ -544,6 +550,9 @@
     // mod-list refresca con cualquier tick (hay un mapping nuevo, o se borró,
     // o cambió la lista). El re-render es barato con N pequeño (~10 mappings).
     if (cur.view === "mod-list") renderModList();
+    // projection: solo refrescamos toggle/availability con server pushes;
+    // los corners NO se reescriben mid-drag para no pelearle al usuario.
+    if (cur.view === "projection") refreshProjectionState();
     state.lastFiltersJson = fJson;
   }
 
@@ -556,6 +565,7 @@
     if (cur.view === "detail")     renderDetail(cur.filter);
     if (cur.view === "mod-list")   renderModList();
     if (cur.view === "mod-create") renderModCreate(cur.step || 1);
+    if (cur.view === "projection") renderProjection();
   }
 
   // ── Hub ─────────────────────────────────────────────────────────
@@ -587,8 +597,30 @@
     // Mapeos: contador del N de modulations activas en el snapshot.
     const mods = state.snapshot.modulations || [];
     const modActive = mods.filter((m) => m.enabled !== false).length;
+    // Proyección: el meta-count es ON/OFF + si los corners están desplazados.
+    const proj = state.snapshot.projection || {};
+    const projOn = !!proj.enabled;
+    const projWarped = projOn && !_isIdentityCorners(proj.corners);
     document.querySelectorAll(".meta-count").forEach((el) => {
       const cat = el.dataset.cat;
+      if (cat === "PROJ") {
+        if (proj.available === false) {
+          el.textContent = "no disponible";
+          el.classList.remove("live");
+        } else if (projWarped) {
+          el.textContent = "encendido · calibrado";
+          el.classList.add("live");
+        } else if (projOn) {
+          el.textContent = "encendido · sin calibrar";
+          el.classList.add("live");
+        } else {
+          el.textContent = "apagado";
+          el.classList.remove("live");
+        }
+        const card = el.closest(".cat");
+        if (card) card.classList.toggle("has-active", projOn);
+        return;
+      }
       if (cat === "MOD") {
         const total = mods.length;
         el.textContent = modActive + " activo" + (modActive === 1 ? "" : "s") +
@@ -622,6 +654,23 @@
           chip.textContent = t.label;
           slot.appendChild(chip);
         });
+        return;
+      }
+      if (cat === "PROJ") {
+        // Chip único describiendo el estado del warp — lo mostramos solo
+        // cuando hay algo distinto a "apagado + identidad" para no ensuciar
+        // el hub en el caso default.
+        if (projWarped) {
+          const chip = document.createElement("span");
+          chip.className = "chip";
+          chip.textContent = "warp activo";
+          slot.appendChild(chip);
+        } else if (projOn) {
+          const chip = document.createElement("span");
+          chip.className = "chip more";
+          chip.textContent = "ON · identidad";
+          slot.appendChild(chip);
+        }
         return;
       }
       if (cat === "MOD") {
@@ -1072,6 +1121,290 @@
       popView();
     });
     body.appendChild(confirm);
+  }
+
+  // ── Projection mapping ─────────────────────────────────────────
+  // Identidad de los 4 corners: TL, TR, BR, BL.
+  const PROJ_IDENTITY = [[0, 0], [1, 0], [1, 1], [0, 1]];
+  // Throttle de WS dispatch en ms — 50ms = 20Hz, smooth en mobile sin
+  // saturar. El último valor del drag se manda igual en pointerup.
+  const PROJ_DISPATCH_MS = 50;
+  // Etiquetas de los 4 corners para la UI.
+  const PROJ_CORNER_LABELS = ["TL", "TR", "BR", "BL"];
+
+  function _isIdentityCorners(corners) {
+    if (!corners || corners.length !== 4) return true;
+    for (let i = 0; i < 4; i++) {
+      const c = corners[i] || [];
+      const id = PROJ_IDENTITY[i];
+      if (Math.abs((c[0] || 0) - id[0]) > 1e-3) return false;
+      if (Math.abs((c[1] || 0) - id[1]) > 1e-3) return false;
+    }
+    return true;
+  }
+
+  function _projCornersFromSnap() {
+    const proj = state.snapshot.projection || {};
+    const c = proj.corners;
+    if (!c || c.length !== 4) return PROJ_IDENTITY.map((p) => p.slice());
+    return c.map((p) => [Number(p[0]) || 0, Number(p[1]) || 0]);
+  }
+
+  function renderProjection() {
+    const body = els.projBody;
+    body.innerHTML = "";
+    const proj = state.snapshot.projection || {};
+    const available = proj.available !== false;
+
+    // ── Toggle row (Activar warp) ─────────────────────────────────
+    const togRow = document.createElement("div");
+    togRow.className = "row proj-toggle-row";
+    const togBtn = document.createElement("button");
+    togBtn.type = "button";
+    togBtn.className = "toggle" + (proj.enabled ? " on" : "");
+    togBtn.setAttribute("aria-label", "Activar projection mapping");
+    bindToggle(togBtn, !!proj.enabled, (on) => {
+      send({ op: "toggle_projection", on: on });
+    });
+    const togLbl = document.createElement("span");
+    togLbl.className = "name";
+    togLbl.textContent = available ? "Activar warp" : "Renderer no disponible";
+    togRow.appendChild(togBtn);
+    togRow.appendChild(togLbl);
+    body.appendChild(togRow);
+
+    if (!available) {
+      const hint = document.createElement("div");
+      hint.className = "empty";
+      hint.textContent = "El renderer activo no incluye ProjectionMappingRenderer. Reiniciá el dashboard con la stack v3.";
+      body.appendChild(hint);
+      return;
+    }
+
+    // ── Calibration canvas (16:9) ─────────────────────────────────
+    // Usamos SVG para los 4 handles + el quad, dentro de un wrap con
+    // aspect-ratio fijo. Las coords del SVG son [0..100] x [0..56.25] —
+    // así pasar a normalizado [0..1] es trivial (dividir).
+    const wrap = document.createElement("div");
+    wrap.className = "proj-canvas-wrap";
+    const VBW = 100;
+    const VBH = 56.25;  // 16:9
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 " + VBW + " " + VBH);
+    svg.setAttribute("class", "proj-svg");
+    svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+    wrap.appendChild(svg);
+    body.appendChild(wrap);
+
+    // Inicializar corners locales si no estamos draggeando.
+    if (!state.projDrag) {
+      state.projCorners = _projCornersFromSnap();
+    }
+
+    // Background grid + ghost source rect — referencias visuales.
+    const grid = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    grid.setAttribute("class", "proj-grid");
+    [0.25, 0.5, 0.75].forEach((t) => {
+      const lh = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      lh.setAttribute("x1", "0"); lh.setAttribute("y1", String(t * VBH));
+      lh.setAttribute("x2", String(VBW)); lh.setAttribute("y2", String(t * VBH));
+      grid.appendChild(lh);
+      const lv = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      lv.setAttribute("x1", String(t * VBW)); lv.setAttribute("y1", "0");
+      lv.setAttribute("x2", String(t * VBW)); lv.setAttribute("y2", String(VBH));
+      grid.appendChild(lv);
+    });
+    svg.appendChild(grid);
+
+    // Borde del canvas (rectángulo source = "lo que el render produce").
+    const ghost = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    ghost.setAttribute("x", "0"); ghost.setAttribute("y", "0");
+    ghost.setAttribute("width", String(VBW)); ghost.setAttribute("height", String(VBH));
+    ghost.setAttribute("class", "proj-ghost");
+    svg.appendChild(ghost);
+
+    // Polígono que conecta los 4 corners actuales — el "warp visible".
+    const quad = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+    quad.setAttribute("class", "proj-quad");
+    svg.appendChild(quad);
+
+    // Handles — uno por corner. Cada uno es un <g> con dos circles:
+    // el de afuera transparente con radio grande (hit area ≥ 48 CSS px),
+    // el de adentro visible. Eso cumple la regla mobile de 48px tap.
+    const handleEls = [];
+    for (let i = 0; i < 4; i++) {
+      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      g.setAttribute("class", "proj-handle");
+      g.setAttribute("data-idx", String(i));
+      const hit = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      hit.setAttribute("class", "proj-handle-hit");
+      // r=6 en viewBox de 100 ancho ≈ 26 px sobre pantalla de 440 px →
+      // 52 px de diámetro. Cumple la regla de mobile-web-first ≥ 48 CSS px.
+      hit.setAttribute("r", "6");
+      g.appendChild(hit);
+      const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      dot.setAttribute("class", "proj-handle-dot");
+      dot.setAttribute("r", "2");
+      g.appendChild(dot);
+      const lbl = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      lbl.setAttribute("class", "proj-handle-label");
+      lbl.setAttribute("dy", "-3.5");
+      lbl.setAttribute("text-anchor", "middle");
+      lbl.textContent = PROJ_CORNER_LABELS[i];
+      g.appendChild(lbl);
+      svg.appendChild(g);
+      handleEls.push(g);
+
+      _attachProjPointer(g, i, svg, VBW, VBH);
+    }
+
+    // Pintar la posición inicial.
+    _paintProjCorners(quad, handleEls, state.projCorners, VBW, VBH);
+
+    // Guardamos refs para que refreshProjectionState pueda repintar sin
+    // reconstruir el SVG entero en cada tick del server.
+    state.projUI = { svg, quad, handleEls, vbw: VBW, vbh: VBH };
+
+    // ── Action row (Reset + Centrar) ──────────────────────────────
+    const actions = document.createElement("div");
+    actions.className = "proj-actions";
+
+    const resetBtn = document.createElement("button");
+    resetBtn.type = "button";
+    resetBtn.className = "btn ghost";
+    resetBtn.textContent = "Reset";
+    resetBtn.addEventListener("click", () => {
+      send({ op: "reset_projection" });
+    });
+    actions.appendChild(resetBtn);
+
+    const centerBtn = document.createElement("button");
+    centerBtn.type = "button";
+    centerBtn.className = "btn ghost";
+    centerBtn.textContent = "Encoger 10%";
+    centerBtn.setAttribute("aria-label", "Encoger los corners 10% hacia el centro — quick test del warp");
+    centerBtn.addEventListener("click", () => {
+      // Inset 10% — útil para verificar al toque que el warp anda sin
+      // tener que dragear cada esquina manualmente.
+      send({
+        op: "set_projection_corners",
+        corners: [[0.1, 0.1], [0.9, 0.1], [0.9, 0.9], [0.1, 0.9]],
+      });
+    });
+    actions.appendChild(centerBtn);
+
+    body.appendChild(actions);
+
+    // ── Hint ──────────────────────────────────────────────────────
+    const hint = document.createElement("div");
+    hint.className = "empty proj-hint";
+    hint.innerHTML = "Arrastr&aacute; cada <b>esquina</b> hasta hacer encajar la imagen sobre la superficie f&iacute;sica del proyector. " +
+                     "El warp se aplica en el render output, no en el preview de la c&aacute;mara.";
+    body.appendChild(hint);
+  }
+
+  function refreshProjectionState() {
+    // Re-renderizamos solo si NO estamos draggeando — si el usuario está
+    // tocando un corner, el snapshot del server lo va a echo back y no
+    // queremos que la UI le pelee a su propio drag.
+    if (state.projDrag) return;
+    const proj = state.snapshot.projection || {};
+    if (proj.available === false) {
+      // El renderer desapareció (improbable pero defensivo) — full re-render.
+      renderProjection();
+      return;
+    }
+    // Refrescar el toggle (otro cliente puede haberlo flippeado).
+    const togBtn = els.projBody.querySelector(".proj-toggle-row .toggle");
+    if (togBtn) {
+      const wasOn = togBtn.classList.contains("on");
+      const isOn = !!proj.enabled;
+      if (wasOn !== isOn) togBtn.classList.toggle("on", isOn);
+    }
+    // Refrescar los corners pintados (si cambió desde el server, ej. otra
+    // sesión hizo reset). Sin reconstruir el SVG.
+    const ui = state.projUI;
+    if (ui) {
+      state.projCorners = _projCornersFromSnap();
+      _paintProjCorners(ui.quad, ui.handleEls, state.projCorners, ui.vbw, ui.vbh);
+    }
+  }
+
+  function _paintProjCorners(quad, handleEls, corners, vbw, vbh) {
+    const pts = corners.map(([nx, ny]) => (nx * vbw) + "," + (ny * vbh)).join(" ");
+    quad.setAttribute("points", pts);
+    handleEls.forEach((g, i) => {
+      const [nx, ny] = corners[i];
+      const x = nx * vbw, y = ny * vbh;
+      g.setAttribute("transform", "translate(" + x + " " + y + ")");
+    });
+  }
+
+  function _attachProjPointer(handleEl, idx, svg, vbw, vbh) {
+    // Pointer events (no touchstart/mousedown crap) + setPointerCapture
+    // = drag fluido en mobile + desktop sin tener que dispatch dos veces.
+    let throttleTimer = null;
+    let pendingX = null, pendingY = null;
+
+    function flush() {
+      if (pendingX === null) return;
+      send({
+        op: "set_projection_corner",
+        idx: idx,
+        x: pendingX,
+        y: pendingY,
+      });
+      pendingX = pendingY = null;
+    }
+
+    function pointToNorm(ev) {
+      // Convertir client coords → SVG viewBox coords → normalizadas [0,1].
+      const rect = svg.getBoundingClientRect();
+      const sx = ((ev.clientX - rect.left) / rect.width) * vbw;
+      const sy = ((ev.clientY - rect.top) / rect.height) * vbh;
+      let nx = sx / vbw, ny = sy / vbh;
+      if (nx < 0) nx = 0; else if (nx > 1) nx = 1;
+      if (ny < 0) ny = 0; else if (ny > 1) ny = 1;
+      return [nx, ny];
+    }
+
+    handleEl.addEventListener("pointerdown", (ev) => {
+      ev.preventDefault();
+      handleEl.setPointerCapture(ev.pointerId);
+      handleEl.classList.add("dragging");
+      state.projDrag = { idx: idx };
+    });
+
+    handleEl.addEventListener("pointermove", (ev) => {
+      if (!state.projDrag || state.projDrag.idx !== idx) return;
+      ev.preventDefault();
+      const [nx, ny] = pointToNorm(ev);
+      // Update local corner array + repaint SVG inmediato.
+      state.projCorners[idx] = [nx, ny];
+      const ui = state.projUI;
+      if (ui) _paintProjCorners(ui.quad, ui.handleEls, state.projCorners, ui.vbw, ui.vbh);
+      // Throttled WS dispatch.
+      pendingX = nx; pendingY = ny;
+      if (!throttleTimer) {
+        throttleTimer = setTimeout(() => {
+          throttleTimer = null;
+          flush();
+        }, PROJ_DISPATCH_MS);
+      }
+    });
+
+    function endDrag(ev) {
+      if (!state.projDrag || state.projDrag.idx !== idx) return;
+      try { handleEl.releasePointerCapture(ev.pointerId); } catch (_) {}
+      handleEl.classList.remove("dragging");
+      // Flush pending value y limpiar drag state.
+      if (throttleTimer) { clearTimeout(throttleTimer); throttleTimer = null; }
+      flush();
+      state.projDrag = null;
+    }
+
+    handleEl.addEventListener("pointerup", endDrag);
+    handleEl.addEventListener("pointercancel", endDrag);
   }
 
   // ── Cat list ────────────────────────────────────────────────────
@@ -1653,9 +1986,11 @@
     document.querySelectorAll(".cat").forEach((card) => {
       card.addEventListener("click", () => {
         const cat = card.dataset.cat;
-        // MOD usa una vista propia, no la lista de cat genérica.
+        // MOD y PROJ tienen vistas propias, no la lista de cat genérica.
         if (cat === "MOD") {
           pushView({ view: "mod-list" });
+        } else if (cat === "PROJ") {
+          pushView({ view: "projection" });
         } else {
           pushView({ view: "cat", cat: cat });
         }
