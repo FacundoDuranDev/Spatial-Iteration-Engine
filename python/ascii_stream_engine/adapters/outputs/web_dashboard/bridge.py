@@ -5,13 +5,22 @@ WIP filters are refused at the bridge layer (factory is None).
 """
 from __future__ import annotations
 
+import json
 import logging
+import os
+import tempfile
 import threading
-from typing import Any, Callable, Dict, Optional
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional
 
 from . import registry
 
 logger = logging.getLogger("web_dashboard.bridge")
+
+# Persistencia de mappings — mismo directorio que `presets.json` del notebook
+# (ver `presentation/notebook_api.py:2355`). Schema versionado v1.
+MODULATIONS_FILE = Path.home() / ".ascii_stream_engine" / "modulations.json"
+MODULATIONS_SCHEMA_VERSION = 1
 
 
 class EngineBridge:
@@ -36,6 +45,34 @@ class EngineBridge:
         # Live filter instances, lazily created on first toggle/set_param.
         # Maps fid -> filter instance (already added to engine.filter_pipeline).
         self._instances: Dict[str, Any] = {}
+
+        # Modulation: SignalBus + MediaPipeSignalSource + ModulationEngine.
+        # Sin mappings activos no consume nada (tick es no-op). El bridge
+        # es dueño del lifecycle porque acá viven los chokepoints (set_param)
+        # y la persistencia futura (Fase 3).
+        from ....application.modulation import (
+            MediaPipeSignalSource,
+            ModulationEngine,
+            SignalBus,
+        )
+
+        self._signal_bus = SignalBus()
+        self._signal_sources = [MediaPipeSignalSource()]
+        self._mod_engine = ModulationEngine(self._signal_bus)
+        try:
+            engine.attach_modulation(
+                self._mod_engine,
+                self._signal_bus,
+                self._signal_sources,
+                self.set_param,
+            )
+        except Exception:
+            logger.exception("attach_modulation failed; continuing without it")
+
+        # Auto-load mappings persistidos. Si el archivo no existe (primera
+        # run) o está corrupto, arrancamos vacío sin tirar — el usuario
+        # vuelve a crearlos desde la UI.
+        self._load_modulations()
 
     @property
     def engine(self):
@@ -150,6 +187,258 @@ class EngineBridge:
                 logger.exception("toggle_filter(%s) failed", fid)
                 return False
 
+    # --- tracking control ----------------------------------------------
+
+    def _find_overlay_renderer(self):
+        """Walk the renderer chain looking for an OverlayCapable adapter.
+
+        Usamos `isinstance(r, OverlayCapable)` en vez de comparar
+        `__class__.__name__` — el bridge no debería conocer la clase
+        concreta. Cualquier renderer que cumpla el Protocol funciona.
+        """
+        from ....ports.overlay_capable import OverlayCapable
+
+        r = getattr(self._engine, "get_renderer", lambda: None)()
+        seen = set()
+        while r is not None and id(r) not in seen:
+            seen.add(id(r))
+            if isinstance(r, OverlayCapable):
+                return r
+            r = getattr(r, "inner", None)
+        return None
+
+    def toggle_analyzer(self, name: str, on: bool) -> bool:
+        """Habilita/deshabilita un analyzer por nombre (face / hands / pose / ...).
+
+        Returns True si el analyzer existe y se modificó. La AnalyzerPipeline
+        ya expone `set_enabled(name, enabled)` y respeta el flag en `run()`,
+        así que un analyzer deshabilitado no consume CPU.
+        """
+        with self._lock:
+            pipeline = getattr(self._engine, "analyzer_pipeline", None)
+            if pipeline is None:
+                return False
+            try:
+                return bool(pipeline.set_enabled(name, bool(on)))
+            except Exception:
+                logger.exception("toggle_analyzer(%s) failed", name)
+                return False
+
+    def toggle_overlay(self, on: bool) -> bool:
+        """Muestra/oculta los landmarks dibujados en el preview.
+
+        El analyzer puede seguir corriendo (sigue alimentando filtros y el
+        ModulationEngine futuro) — esto controla SOLO el dibujo encima del
+        frame. Devuelve False si el renderer activo no es overlay-capable.
+        """
+        with self._lock:
+            overlay = self._find_overlay_renderer()
+            if overlay is None:
+                return False
+            try:
+                overlay.overlay_enabled = bool(on)
+                return True
+            except Exception:
+                logger.exception("toggle_overlay failed")
+                return False
+
+    def _tracking_state(self) -> Dict[str, Any]:
+        """Snapshot del estado de tracking — para UI mobile y debugging.
+
+        Counts vienen del último analysis cacheado por el engine; pueden
+        quedar en 0 si MediaPipe no detectó nada o si el analyzer está off.
+        """
+        face_enabled = False
+        hands_enabled = False
+        pipeline = getattr(self._engine, "analyzer_pipeline", None)
+        if pipeline is not None:
+            try:
+                for a in pipeline.snapshot():
+                    nm = getattr(a, "name", a.__class__.__name__)
+                    if nm == "face":
+                        face_enabled = bool(getattr(a, "enabled", True))
+                    elif nm == "hands":
+                        hands_enabled = bool(getattr(a, "enabled", True))
+            except Exception:
+                pass
+        overlay = self._find_overlay_renderer()
+        overlay_enabled = bool(getattr(overlay, "overlay_enabled", False)) if overlay else False
+        face_count = 0
+        hands_count = 0
+        try:
+            getter = getattr(self._engine, "get_last_analysis", None)
+            last = getter() if callable(getter) else {}
+            face = last.get("face") or {}
+            if isinstance(face, dict):
+                faces = face.get("faces") or []
+                face_count = len(faces) if isinstance(faces, list) else 0
+            hands = last.get("hands") or {}
+            if isinstance(hands, dict):
+                left = hands.get("left")
+                right = hands.get("right")
+                if left is not None and getattr(left, "size", 0) > 0:
+                    hands_count += 1
+                if right is not None and getattr(right, "size", 0) > 0:
+                    hands_count += 1
+        except Exception:
+            pass
+        return {
+            "face_enabled": face_enabled,
+            "hands_enabled": hands_enabled,
+            "overlay_enabled": overlay_enabled,
+            "overlay_available": overlay is not None,
+            "face_count": face_count,
+            "hands_count": hands_count,
+        }
+
+    # --- modulation ----------------------------------------------------
+
+    def list_signals(self) -> List[str]:
+        """Catálogo estático de señales disponibles para mapear.
+
+        Estático = no depende de si MediaPipe detectó algo. Lo construimos
+        agregando lo que cada SignalSource registrada declara.
+        """
+        out: List[str] = []
+        for src in self._signal_sources:
+            try:
+                out.extend(src.declared_signals())
+            except Exception:
+                logger.exception("signal source declared_signals failed")
+        # Mantener orden estable, sin duplicados (preserva el orden de
+        # primera aparición — útil para la UI).
+        seen = set()
+        unique: List[str] = []
+        for s in out:
+            if s not in seen:
+                seen.add(s)
+                unique.append(s)
+        return unique
+
+    def list_modulations(self) -> List[Dict[str, Any]]:
+        """Snapshot serializable de los mappings actuales — para snapshot/UI."""
+        with self._lock:
+            return [m.to_dict() for m in self._mod_engine.list()]
+
+    def add_modulation(self, payload: Dict[str, Any]) -> tuple[Optional[int], Optional[str]]:
+        """Crea un mapping. Devuelve (idx, None) ok o (None, error_msg).
+
+        Persiste a disco antes de devolver — si el save falla, el mapping
+        sí queda activo en memoria pero loggeamos warn (no rollback). El
+        UX es: "el mapping te funciona ya, pero al reiniciar capaz se
+        pierde". Mejor que rechazar el feature por un IOError.
+        """
+        from ....application.modulation import Modulation, curves
+        from .protocol import validate_modulation_payload
+
+        valid_signals = frozenset(self.list_signals())
+        valid_curves = frozenset(curves.CURVE_NAMES)
+        normalized, err = validate_modulation_payload(
+            payload, valid_signals, registry, valid_curves
+        )
+        if err is not None:
+            return None, err
+        with self._lock:
+            try:
+                m = Modulation(**normalized)
+                idx = self._mod_engine.add(m)
+            except Exception as e:
+                logger.exception("add_modulation: build/insert failed")
+                return None, f"internal: {e}"
+            self._save_modulations_quiet()
+        return idx, None
+
+    def remove_modulation(self, idx: int) -> bool:
+        with self._lock:
+            ok = self._mod_engine.remove(int(idx))
+            if ok:
+                self._save_modulations_quiet()
+            return ok
+
+    def clear_modulations(self) -> int:
+        with self._lock:
+            n = self._mod_engine.clear()
+            if n > 0:
+                self._save_modulations_quiet()
+            return n
+
+    # --- persistencia (atomic write + tolerant load) -------------------
+
+    def _save_modulations_quiet(self) -> None:
+        """Persiste a disco. Falla silenciosa con log warn — no rollback."""
+        try:
+            self._save_modulations()
+        except Exception:
+            logger.exception("save modulations failed (in-memory state intact)")
+
+    def _save_modulations(self) -> None:
+        MODULATIONS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        data = {
+            "version": MODULATIONS_SCHEMA_VERSION,
+            "mappings": self.list_modulations(),
+        }
+        # Atomic: write to tmp same dir, then rename. POSIX rename es atómico.
+        tmp = tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8",
+            dir=str(MODULATIONS_FILE.parent),
+            prefix=".modulations.", suffix=".tmp",
+            delete=False,
+        )
+        try:
+            json.dump(data, tmp, indent=2)
+            tmp.flush()
+            os.fsync(tmp.fileno())
+            tmp.close()
+            os.replace(tmp.name, str(MODULATIONS_FILE))
+        except Exception:
+            try:
+                os.unlink(tmp.name)
+            except Exception:
+                pass
+            raise
+
+    def _load_modulations(self) -> None:
+        """Lee mappings persistidos al boot. Tolerante a archivo ausente / corrupto."""
+        if not MODULATIONS_FILE.is_file():
+            return
+        try:
+            with MODULATIONS_FILE.open("r", encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception:
+            logger.exception("load modulations: parse failed; starting empty")
+            return
+        version = data.get("version") if isinstance(data, dict) else None
+        if version != MODULATIONS_SCHEMA_VERSION:
+            logger.warning(
+                "modulations.json schema v=%s, expected v=%s — ignoring",
+                version, MODULATIONS_SCHEMA_VERSION,
+            )
+            return
+        from ....application.modulation import Modulation
+        loaded = 0
+        for entry in data.get("mappings", []) or []:
+            try:
+                m = Modulation.from_dict(entry)
+                self._mod_engine.add(m)
+                loaded += 1
+            except Exception:
+                logger.exception("load modulations: skipping bad entry %r", entry)
+        if loaded:
+            logger.info("modulations: loaded %d mapping(s) from disk", loaded)
+
+    def clear_filters(self) -> int:
+        """Disable every currently-enabled filter instance. Returns count cleared."""
+        with self._lock:
+            n = 0
+            for fid, inst in self._instances.items():
+                try:
+                    if bool(inst.enabled):
+                        inst.enabled = False
+                        n += 1
+                except Exception:
+                    logger.exception("clear_filters: %s failed", fid)
+            return n
+
     def set_param(self, fid: str, pid: str, value: Any) -> bool:
         """Apply a param change. Value is assumed pre-clamped by the WS layer.
 
@@ -178,6 +467,13 @@ class EngineBridge:
         the apply callback writes to (or the underlying private). For
         un-instantiated or WIP filters we fall back to defaults.
         """
+        # Set de (fid, pid) bajo modulación activa — usado para marcar el
+        # snapshot. La UI lo usa para deshabilitar el slider y mostrar
+        # badge "🔗 modulado por X" (evita "fight" con el server tick).
+        try:
+            modulated = self._mod_engine.modulated_params()
+        except Exception:
+            modulated = set()
         out: Dict[str, Dict[str, Any]] = {}
         for spec in self._registry:
             fid = spec["id"]
@@ -190,13 +486,19 @@ class EngineBridge:
                 except Exception:
                     enabled = False
             params: Dict[str, Any] = {}
+            modulated_pids: List[str] = []
             if wip or inst is None:
-                # Default values until the filter is materialised.
                 for p in spec["params"]:
                     params[p["id"]] = p["default"]
             else:
                 params = self._read_live_params(fid, inst)
-            out[fid] = {"enabled": enabled, "wip": wip, "params": params}
+            for p in spec["params"]:
+                if (fid, p["id"]) in modulated:
+                    modulated_pids.append(p["id"])
+            entry: Dict[str, Any] = {"enabled": enabled, "wip": wip, "params": params}
+            if modulated_pids:
+                entry["modulated_params"] = modulated_pids
+            out[fid] = entry
         return out
 
     def _read_live_params(self, fid: str, inst: Any) -> Dict[str, Any]:
@@ -527,6 +829,9 @@ class EngineBridge:
                 "fps": round(fps, 1),
                 "lat_ms": round(lat_ms, 1),
                 "filters": self._filter_snapshot(),
+                "tracking": self._tracking_state(),
+                "modulations": self.list_modulations(),
+                "signals": self.list_signals(),
             }
 
     def add_listener(self, fn: Callable[[dict], None]) -> None:

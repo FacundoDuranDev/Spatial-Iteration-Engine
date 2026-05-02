@@ -40,6 +40,10 @@ class LandmarksOverlayRenderer:
 
     def __init__(self, inner: Optional[FrameRenderer] = None) -> None:
         self._inner = inner
+        # Runtime toggle — el dashboard mobile lo controla. Si está en False,
+        # render() hace passthrough sin dibujar nada (ni los puntos, ni el
+        # label "IA"). Sirve para limpiar el preview en una performance.
+        self._overlay_enabled: bool = True
 
     @property
     def inner(self) -> Optional[FrameRenderer]:
@@ -48,6 +52,14 @@ class LandmarksOverlayRenderer:
     @inner.setter
     def inner(self, renderer: Optional[FrameRenderer]) -> None:
         self._inner = renderer
+
+    @property
+    def overlay_enabled(self) -> bool:
+        return self._overlay_enabled
+
+    @overlay_enabled.setter
+    def overlay_enabled(self, on: bool) -> None:
+        self._overlay_enabled = bool(on)
 
     def output_size(self, config: EngineConfig) -> Tuple[int, int]:
         if self._inner:
@@ -85,6 +97,13 @@ class LandmarksOverlayRenderer:
                 img = frame.copy()
 
         h, w = img.shape[:2]
+
+        # Toggle mobile: si el overlay está apagado devolvemos el frame
+        # sin landmarks ni label. Mantiene la conversión BGR→RGB para que
+        # el sink siga recibiendo el formato esperado.
+        if not self._overlay_enabled:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            return RenderFrame(image=Image.fromarray(img), metadata={"source": "landmarks_overlay", "overlay": "off"})
 
         total_pts = 0
         if analysis:

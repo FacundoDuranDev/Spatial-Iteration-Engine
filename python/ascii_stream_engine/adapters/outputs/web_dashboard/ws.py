@@ -184,6 +184,100 @@ async def websocket_endpoint(socket: WebSocket, bridge: EngineBridge, auth_token
                 await socket.send_json(bridge.snapshot())
                 continue
 
+            if op == "add_modulation":
+                idx, err = bridge.add_modulation(payload)
+                if err is not None:
+                    await socket.send_json(
+                        {"type": "error", "code": "bad_modulation", "msg": err}
+                    )
+                    continue
+                await socket.send_json(bridge.snapshot())
+                continue
+
+            if op == "remove_modulation":
+                raw_idx = payload.get("idx")
+                if not isinstance(raw_idx, int):
+                    await socket.send_json(
+                        {"type": "error", "code": "bad_payload", "msg": "idx (int) required"}
+                    )
+                    continue
+                try:
+                    bridge.remove_modulation(raw_idx)
+                except Exception:
+                    logger.exception("remove_modulation dispatch failed")
+                    await socket.send_json(
+                        {"type": "error", "code": "internal", "msg": "remove_modulation"}
+                    )
+                    continue
+                await socket.send_json(bridge.snapshot())
+                continue
+
+            if op == "clear_modulations":
+                try:
+                    bridge.clear_modulations()
+                except Exception:
+                    logger.exception("clear_modulations dispatch failed")
+                    await socket.send_json(
+                        {"type": "error", "code": "internal", "msg": "clear_modulations"}
+                    )
+                    continue
+                await socket.send_json(bridge.snapshot())
+                continue
+
+            if op == "toggle_analyzer":
+                name = payload.get("name")
+                if not isinstance(name, str) or name not in {"face", "hands", "pose"}:
+                    await socket.send_json(
+                        {"type": "error", "code": "bad_payload", "msg": "name in {face,hands,pose}"}
+                    )
+                    continue
+                if "on" not in payload:
+                    await socket.send_json(
+                        {"type": "error", "code": "bad_payload", "msg": "on required"}
+                    )
+                    continue
+                on = coerce_bool(payload.get("on"))
+                try:
+                    bridge.toggle_analyzer(name, on)
+                except Exception:
+                    logger.exception("toggle_analyzer dispatch failed")
+                    await socket.send_json(
+                        {"type": "error", "code": "internal", "msg": "toggle_analyzer"}
+                    )
+                    continue
+                await socket.send_json(bridge.snapshot())
+                continue
+
+            if op == "toggle_overlay":
+                if "on" not in payload:
+                    await socket.send_json(
+                        {"type": "error", "code": "bad_payload", "msg": "on required"}
+                    )
+                    continue
+                on = coerce_bool(payload.get("on"))
+                try:
+                    bridge.toggle_overlay(on)
+                except Exception:
+                    logger.exception("toggle_overlay dispatch failed")
+                    await socket.send_json(
+                        {"type": "error", "code": "internal", "msg": "toggle_overlay"}
+                    )
+                    continue
+                await socket.send_json(bridge.snapshot())
+                continue
+
+            if op == "clear_filters":
+                try:
+                    bridge.clear_filters()
+                except Exception:
+                    logger.exception("clear_filters dispatch failed")
+                    await socket.send_json(
+                        {"type": "error", "code": "internal", "msg": "clear_filters"}
+                    )
+                    continue
+                await socket.send_json(bridge.snapshot())
+                continue
+
             if op == "set_param":
                 fid = payload.get("filter")
                 pid = payload.get("param")

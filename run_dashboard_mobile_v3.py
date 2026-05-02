@@ -27,10 +27,18 @@ import uvicorn
 
 print("[v3] loading engine...", flush=True)
 from ascii_stream_engine.application.engine import StreamEngine
+from ascii_stream_engine.application.pipeline.analyzer_pipeline import (
+    AnalyzerPipeline,
+)
 from ascii_stream_engine.adapters.sources.camera import OpenCVCameraSource
 from ascii_stream_engine.adapters.renderers.passthrough_renderer import (
     PassthroughRenderer,
 )
+from ascii_stream_engine.adapters.renderers.landmarks_overlay_renderer import (
+    LandmarksOverlayRenderer,
+)
+from ascii_stream_engine.adapters.perception.face import FaceLandmarkAnalyzer
+from ascii_stream_engine.adapters.perception.hands import HandLandmarkAnalyzer
 from ascii_stream_engine.adapters.outputs.preview_sink import PreviewSink
 from ascii_stream_engine.domain.config import EngineConfig
 from ascii_stream_engine.adapters.outputs.web_dashboard import create_app
@@ -117,15 +125,20 @@ def _build_engine() -> StreamEngine:
         enable_audio_reactive=False,
     )
     source = OpenCVCameraSource(camera_index=CAMERA_INDEX)
-    renderer = PassthroughRenderer()
+    renderer = LandmarksOverlayRenderer(inner=PassthroughRenderer())
     sink = StickyPreviewSink(
         window_name="Spatial-Iteration-Engine v3 — f=fullscreen · ESC=exit"
     )
+    analyzers = AnalyzerPipeline([
+        FaceLandmarkAnalyzer(enabled=True),
+        HandLandmarkAnalyzer(enabled=True),
+    ])
     return StreamEngine(
         source=source,
         renderer=renderer,
         sink=sink,
         config=config,
+        analyzers=analyzers,
         enable_profiling=False,
     )
 
@@ -145,7 +158,7 @@ def main() -> int:
     print("[v3] building engine (camera not opened yet)...", flush=True)
     engine = _build_engine()
 
-    app, token, _bridge = create_app(engine)
+    app, token, _bridge = create_app(engine, auth_token=os.environ.get("SIE_TOKEN") or None)
 
     ip = _lan_ip()
     url = f"http://{ip}:{PORT}/?t={token}"

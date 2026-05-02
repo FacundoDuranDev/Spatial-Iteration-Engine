@@ -175,6 +175,41 @@ input, button, select, textarea { font-size: max(16px, 1em); font-family: inheri
 }
 .pill.warn .dot { background: var(--danger); }
 
+/* Indicador "lo estoy viendo" — face/hands counts en vivo en el header.
+   Solo visible si hay detección activa, para que el VJ sepa al toque por
+   qué un mapping/filtro trackeado no responde (¿está tu cara en cuadro?). */
+.track-indicator {
+  display: inline-flex;
+  gap: var(--sp-2);
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--accent);
+  text-shadow: var(--glow-sm);
+  padding: 2px 8px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--accent-soft);
+}
+.track-indicator > span {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+.track-indicator .gly { font-size: 13px; line-height: 1; }
+.track-indicator b { font-weight: 600; }
+
+/* Sub-info al lado del nombre en la fila de un toggle (ej: "· 2 detectadas"). */
+.row .row-sub {
+  margin-left: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--accent);
+  text-shadow: var(--glow-sm);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+
 /* Body — scrollable middle */
 .body {
   flex: 1;
@@ -233,6 +268,21 @@ input, button, select, textarea { font-size: max(16px, 1em); font-family: inheri
   border-color: var(--danger);
   box-shadow: none;
 }
+/* Ghost = secondary action in the footer (Limpiar). Sits left of the
+   primary, narrower so the primary keeps visual weight. */
+.btn.ghost {
+  flex: 0 0 auto;
+  min-width: 110px;
+  background: transparent;
+  color: var(--text-2);
+  border-color: var(--line-strong);
+  box-shadow: none;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: var(--fs-sm);
+}
+.btn.ghost:active { background: var(--surface-high); color: var(--text); }
 .btn .gly { font-size: 14px; line-height: 1; }
 
 /* ─── Hub view ──────────────────────────────────────────────── */
@@ -310,6 +360,38 @@ input, button, select, textarea { font-size: max(16px, 1em); font-family: inheri
 .meta-count.live {
   color: var(--accent);
   text-shadow: var(--glow-sm);
+}
+
+/* Chips bajo el contador: nombres de los filtros activos en esta categoría.
+   Visibilidad de un vistazo sin entrar al cat list. */
+.cat .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: var(--sp-1);
+  /* No empuja el layout cuando está vacío (no hay activos). */
+  min-height: 0;
+}
+.cat .chip {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: var(--glow-sm);
+}
+.cat .chip.more {
+  color: var(--text-2);
+  background: transparent;
+  border-color: var(--line-strong);
+  text-shadow: none;
 }
 
 /* ─── View containers + drill-in nav ────────────────────────── */
@@ -708,6 +790,228 @@ input, button, select, textarea { font-size: max(16px, 1em); font-family: inheri
   background: var(--accent-soft);
   color: var(--accent);
   text-shadow: var(--glow-sm);
+}
+
+/* ─── Modulation views ──────────────────────────────────────── */
+
+.mod-list,
+.mod-create {
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-3) var(--sp-4) var(--sp-4);
+  gap: var(--sp-2);
+}
+
+.mod-row {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  min-height: var(--hit);
+  position: relative;
+  overflow: hidden;
+}
+.mod-row::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 2px;
+  background: var(--accent);
+  box-shadow: var(--glow-sm);
+}
+.mod-row.disabled::before { background: var(--text-3); box-shadow: none; }
+.mod-row.disabled .mod-main, .mod-row.disabled .mod-meta { opacity: 0.4; }
+
+.mod-row-left { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+
+.mod-main {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-md);
+  letter-spacing: var(--tracking-tight);
+  color: var(--text);
+  min-width: 0;
+}
+.mod-sig, .mod-tgt {
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mod-sig { color: var(--accent); text-shadow: var(--glow-sm); }
+.mod-tgt { color: var(--text); flex: 1; }
+.mod-arrow { color: var(--text-3); font-family: var(--font-mono); flex: 0 0 auto; }
+
+.mod-meta {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  letter-spacing: 0.04em;
+}
+
+.mod-del {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--text-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+  padding: 0;
+}
+.mod-del:active {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.mod-actions {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
+.mod-actions .btn { flex: 1; }
+
+/* ─── Modulation wizard (3 steps) ───────────────────────────── */
+
+.mod-step-intro {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+  padding-bottom: var(--sp-2);
+  border-bottom: 1px solid var(--line);
+  letter-spacing: 0.02em;
+}
+
+.sig-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
+.sig-cap {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-3);
+}
+.sig-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+.sig-chip {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  padding: 8px 14px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  touch-action: manipulation;
+  min-height: 40px;
+}
+.sig-chip:active { background: var(--surface-high); }
+.sig-chip.on {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  text-shadow: var(--glow-sm);
+}
+
+.param-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.param-pick {
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  padding: var(--sp-2) var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  min-height: 56px;
+  color: var(--text);
+}
+.param-pick:active { background: var(--surface-high); }
+.param-pick.on {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.param-pick.on .param-pick-top {
+  color: var(--accent);
+  text-shadow: var(--glow-sm);
+}
+.param-pick-top {
+  font-size: var(--fs-md);
+  letter-spacing: var(--tracking-tight);
+}
+.param-pick-sub {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  letter-spacing: 0.04em;
+}
+
+.mod-next {
+  margin-top: var(--sp-4);
+}
+.mod-next.disabled,
+.btn:disabled,
+.btn.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* ─── Param modulado en renderDetail ────────────────────────── */
+
+.param-block.param-modulated .slider .pin,
+.param-block.param-modulated .slider .track-wrap {
+  pointer-events: none;
+}
+.param-block.param-modulated .slider .val,
+.param-block.param-modulated .slider .fill,
+.param-block.param-modulated .slider .pin {
+  filter: saturate(0.4);
+}
+.param-block.param-modulated .stepper,
+.param-block.param-modulated .select,
+.param-block.param-modulated .toggle {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.param-mod-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: 2px 8px;
+  text-shadow: var(--glow-sm);
+  margin-bottom: 2px;
 }
 
 /* ─── Generic helper ─────────────────────────────────────────── */

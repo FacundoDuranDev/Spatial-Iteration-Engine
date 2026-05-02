@@ -44,6 +44,10 @@
         <span class="sep">&middot;</span>
         <span class="kpi"><b id="lat">0.0</b> ms</span>
       </div>
+      <span id="track-indicator" class="track-indicator hidden" title="Detecci&oacute;n viva">
+        <span class="ti-face hidden"><span class="gly">&#128064;</span><b id="ti-face-n">0</b></span>
+        <span class="ti-hands hidden"><span class="gly">&#9995;</span><b id="ti-hands-n">0</b></span>
+      </span>
       <span id="pill" class="pill"><span class="dot"></span><span id="pill-label">OFFLINE</span></span>
     </header>
 
@@ -54,21 +58,37 @@
             <span class="cap">DISTORT</span>
             <span class="name">Distorsi&oacute;n</span>
             <span class="meta"><span class="meta-count" data-cat="DISTORT">0 activos / 0 total</span></span>
+            <div class="chips" data-chips="DISTORT"></div>
           </article>
           <article class="cat" data-cat="COLOR">
             <span class="cap">COLOR</span>
             <span class="name">Color</span>
             <span class="meta"><span class="meta-count" data-cat="COLOR">0 activos / 0 total</span></span>
+            <div class="chips" data-chips="COLOR"></div>
           </article>
           <article class="cat" data-cat="GLITCH">
             <span class="cap">GLITCH</span>
             <span class="name">Glitch</span>
             <span class="meta"><span class="meta-count" data-cat="GLITCH">0 activos / 0 total</span></span>
+            <div class="chips" data-chips="GLITCH"></div>
           </article>
           <article class="cat" data-cat="STYLIZE">
             <span class="cap">STYLIZE</span>
             <span class="name">Estilo</span>
             <span class="meta"><span class="meta-count" data-cat="STYLIZE">0 activos / 0 total</span></span>
+            <div class="chips" data-chips="STYLIZE"></div>
+          </article>
+          <article class="cat cat-tracking" data-cat="TRACKING">
+            <span class="cap">TRACKING</span>
+            <span class="name">Tracking</span>
+            <span class="meta"><span class="meta-count" data-cat="TRACKING">0 fuentes activas</span></span>
+            <div class="chips" data-chips="TRACKING"></div>
+          </article>
+          <article class="cat cat-modulations" data-cat="MOD">
+            <span class="cap">MAPEOS</span>
+            <span class="name">Mapeos</span>
+            <span class="meta"><span class="meta-count" data-cat="MOD">0 mapeos</span></span>
+            <div class="chips" data-chips="MOD"></div>
           </article>
         </div>
       </section>
@@ -80,9 +100,20 @@
       <section id="view-detail" class="view view-detail hidden">
         <div class="detail" id="detail-body"></div>
       </section>
+
+      <section id="view-mod-list" class="view view-mod-list hidden">
+        <div class="mod-list" id="mod-list-body"></div>
+      </section>
+
+      <section id="view-mod-create" class="view view-mod-create hidden">
+        <div class="mod-create" id="mod-create-body"></div>
+      </section>
     </main>
 
     <footer id="ft" class="ft">
+      <button id="clear-btn" class="btn ghost hidden" type="button" aria-label="Limpiar todos los filtros">
+        <span id="clear-label">Limpiar</span>
+      </button>
       <button id="primary-btn" class="btn primary" type="button">
         <span class="gly">&#9654;</span> <span id="primary-label">Iniciar</span>
       </button>

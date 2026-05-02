@@ -8,7 +8,12 @@ from typing import Any
 
 PROTOCOL_VERSION = "1"
 
-ALLOWED_OPS = frozenset({"start", "stop", "toggle_filter", "set_param", "pong"})
+ALLOWED_OPS = frozenset({
+    "start", "stop", "toggle_filter", "set_param", "clear_filters",
+    "toggle_analyzer", "toggle_overlay",
+    "add_modulation", "remove_modulation", "clear_modulations",
+    "pong",
+})
 
 
 def is_allowed_op(op: Any) -> bool:
@@ -46,3 +51,52 @@ def coerce_bool(value: Any) -> bool:
     if isinstance(value, str):
         return value.strip().lower() not in {"", "false", "0", "no", "off"}
     return bool(value)
+
+
+def validate_modulation_payload(
+    payload: Any,
+    valid_signals: frozenset,
+    registry,  # web_dashboard.registry module-like
+    valid_curves: frozenset,
+):
+    """Validates and normalizes an add_modulation payload.
+
+    Returns (normalized_dict, None) on success, or (None, error_message) on
+    rejection. Out-of-range floats are clamped silently (igual que set_param).
+
+    Required keys: signal, filter, param.
+    Optional: in_min, in_max, out_min, out_max, curve, smoothing, enabled.
+    """
+    if not isinstance(payload, dict):
+        return None, "payload must be object"
+    sig = payload.get("signal")
+    if not isinstance(sig, str) or sig not in valid_signals:
+        return None, f"unknown signal: {sig!r}"
+    fid = payload.get("filter")
+    if not isinstance(fid, str) or registry.find_filter(fid) is None:
+        return None, f"unknown filter: {fid!r}"
+    pid = payload.get("param")
+    if not isinstance(pid, str) or registry.find_param(fid, pid) is None:
+        return None, f"unknown param: {fid}.{pid}"
+    # Numeric ranges — silent clamp [-1e6, 1e6] para evitar inf/nan en el bus.
+    in_min = clamp_float(payload.get("in_min", 0.0), -1e6, 1e6, default=0.0)
+    in_max = clamp_float(payload.get("in_max", 1.0), -1e6, 1e6, default=1.0)
+    out_min = clamp_float(payload.get("out_min", 0.0), -1e6, 1e6, default=0.0)
+    out_max = clamp_float(payload.get("out_max", 1.0), -1e6, 1e6, default=1.0)
+    curve = payload.get("curve", "linear")
+    if not isinstance(curve, str) or curve not in valid_curves:
+        return None, f"unknown curve: {curve!r}"
+    smoothing = clamp_float(payload.get("smoothing", 0.3), 0.0, 1.0, default=0.3)
+    enabled = coerce_bool(payload.get("enabled", True))
+    return {
+        "signal": sig,
+        "filter_id": fid,
+        "param_id": pid,
+        "in_min": in_min,
+        "in_max": in_max,
+        "out_min": out_min,
+        "out_max": out_max,
+        "curve": curve,
+        "smoothing": smoothing,
+        "enabled": enabled,
+    }, None

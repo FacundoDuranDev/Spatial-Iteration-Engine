@@ -57,9 +57,15 @@ def create_app(engine, auth_token: Optional[str] = None) -> tuple[FastAPI, str, 
         # rotations on every server boot are picked up by phones that
         # already had the page open.
         html = (STATIC_DIR / "index.html").read_text(encoding="utf-8")
+        # Cache-buster from app.js mtime so edits invalidate the browser cache
+        # even when the auth token is fixed (e.g. SIE_TOKEN env var).
+        try:
+            js_mtime = int((STATIC_DIR / "app.js").stat().st_mtime)
+        except OSError:
+            js_mtime = 0
         injected = (
             f'<script>window.SIE_TOKEN="{auth_token}";</script>\n'
-            f'<script src="/static/app.js?v={auth_token[:6]}"></script>'
+            f'<script src="/static/app.js?v={js_mtime}"></script>'
         )
         html = html.replace('<script src="/static/app.js"></script>', injected)
         return HTMLResponse(html, headers={"Cache-Control": "no-store"})

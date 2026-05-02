@@ -19,10 +19,21 @@
   // ────────────────────────────────────────────────────────────────
 
   const CATEGORIES = [
-    { id: "DISTORT", name: "Distorsi\u00f3n" },
-    { id: "COLOR",   name: "Color" },
-    { id: "GLITCH",  name: "Glitch" },
-    { id: "STYLIZE", name: "Estilo" },
+    { id: "DISTORT",  name: "Distorsi\u00f3n" },
+    { id: "COLOR",    name: "Color" },
+    { id: "GLITCH",   name: "Glitch" },
+    { id: "STYLIZE",  name: "Estilo" },
+    { id: "TRACKING", name: "Tracking" },
+    { id: "MOD",      name: "Mapeos" },
+  ];
+
+  // TRACKING no es una categor\u00eda real de filtros \u2014 es un panel de control
+  // de los analyzers (face/hands) y del overlay de landmarks. Se renderiza
+  // con un branch dedicado en renderCat.
+  const TRACKING_TOGGLES = [
+    { id: "face",    label: "Cara",       op: "toggle_analyzer", arg: "name" },
+    { id: "hands",   label: "Manos",      op: "toggle_analyzer", arg: "name" },
+    { id: "overlay", label: "Mostrar landmarks (overlay)", op: "toggle_overlay" },
   ];
 
   const FILTERS = [
@@ -91,6 +102,26 @@
       { id: "falloff",   kind: "slider", min: 0.05, max: 1.0, step: 0.05, default: 0.35, label: "Ancho banda" },
       { id: "mode",      kind: "select", options: ["stretch","compress","twist"], default: "stretch", label: "Modo" },
       { id: "smoothing", kind: "slider", min: 0.0, max: 1.0, step: 0.05, default: 0.3, label: "Suavizado" },
+    ]},
+    { id: "face_swap", name: "Intercambio de caras", cat: "DISTORT", wip: false, params: [
+      { id: "feather",   kind: "slider", min: 0.0, max: 0.9, step: 0.05, default: 0.25, label: "Difuminado" },
+      { id: "scale",     kind: "slider", min: 0.8, max: 1.5, step: 0.05, default: 1.05, label: "Escala" },
+      { id: "smoothing", kind: "slider", min: 0.0, max: 1.0, step: 0.05, default: 0.5,  label: "Suavizado" },
+      { id: "hold",      kind: "stepper", min: 0, max: 60, step: 1, default: 8, label: "Hold (frames)" },
+    ]},
+    { id: "vans_face_tiles", name: "Vans (caras en damero)", cat: "DISTORT", wip: false, params: [
+      { id: "cols",      kind: "stepper", min: 2, max: 24, step: 1, default: 8, label: "Columnas" },
+      { id: "rows",      kind: "stepper", min: 2, max: 18, step: 1, default: 6, label: "Filas" },
+      { id: "checker",   kind: "switch", default: true, label: "Damero" },
+      { id: "face_pad",  kind: "slider", min: 0.0, max: 0.6, step: 0.05, default: 0.15, label: "Margen cara" },
+      { id: "smoothing", kind: "slider", min: 0.0, max: 0.95, step: 0.05, default: 0.4, label: "Suavizado" },
+    ]},
+    { id: "face_hand_react", name: "Reactivo cara+manos", cat: "DISTORT", wip: false, params: [
+      { id: "strength",    kind: "slider", min: 0.0, max: 1.0, step: 0.05, default: 0.6, label: "Deformación" },
+      { id: "react",       kind: "slider", min: 0.0, max: 2.0, step: 0.05, default: 1.0, label: "Reactividad" },
+      { id: "face_invert", kind: "slider", min: 0.0, max: 1.0, step: 0.05, default: 1.0, label: "Invertir rostro" },
+      { id: "smoothing",   kind: "slider", min: 0.0, max: 1.0, step: 0.05, default: 0.4, label: "Suavizado" },
+      { id: "hold",        kind: "stepper", min: 0, max: 60, step: 1, default: 12, label: "Hold (frames)" },
     ]},
     { id: "kaleidoscope", name: "Caleidoscopio", cat: "DISTORT", wip: false, params: [
       { id: "segments", kind: "stepper", min: 2, max: 24, step: 1, default: 6, label: "Segmentos" },
@@ -299,6 +330,12 @@
     lat:          document.getElementById("lat"),
     primaryBtn:   document.getElementById("primary-btn"),
     primaryLabel: document.getElementById("primary-label"),
+    clearBtn:     document.getElementById("clear-btn"),
+    trackInd:     document.getElementById("track-indicator"),
+    tiFace:       null,
+    tiFaceN:      document.getElementById("ti-face-n"),
+    tiHands:      null,
+    tiHandsN:     document.getElementById("ti-hands-n"),
     body:         document.getElementById("body"),
     viewHub:      document.getElementById("view-hub"),
     viewCat:      document.getElementById("view-cat"),
@@ -306,19 +343,27 @@
     catList:      document.getElementById("cat-list"),
     detailBody:   document.getElementById("detail-body"),
     hubGrid:      document.getElementById("hub-grid"),
+    viewModList:  document.getElementById("view-mod-list"),
+    modListBody:  document.getElementById("mod-list-body"),
+    viewModCreate:document.getElementById("view-mod-create"),
+    modCreateBody:document.getElementById("mod-create-body"),
   };
 
   const state = {
     ws: null,
     backoff: RECONNECT_INITIAL_MS,
     reconnectTimer: null,
-    snapshot: { running: false, fps: 0, lat_ms: 0, filters: {} },
+    snapshot: { running: false, fps: 0, lat_ms: 0, filters: {}, modulations: [], signals: [] },
     navStack: [{ view: "hub" }],
     // Per-control "user is dragging right now" flag — keyed
     // "filter.param" — so server pushes don't yank the UI.
     dragging: {},
     // Per-(filter, param) debounce timers for set_param.
     paramTimers: {},
+    // Wizard state — el draft que se va completando entre los 3 steps.
+    // Vive aparte del navStack para que serializar el stack no cargue
+    // un objeto pesado por step.
+    modDraft: null,
   };
 
   function send(obj) {
@@ -347,9 +392,47 @@
     if (mode === "warn") els.pill.classList.add("warn");
   }
 
+  function updateTrackIndicator(tracking) {
+    if (!els.trackInd) return;
+    const fEnabled = !!tracking.face_enabled;
+    const hEnabled = !!tracking.hands_enabled;
+    const fN = tracking.face_count || 0;
+    const hN = tracking.hands_count || 0;
+    const showFace  = fEnabled && fN > 0;
+    const showHands = hEnabled && hN > 0;
+    const anyVisible = showFace || showHands;
+    els.trackInd.classList.toggle("hidden", !anyVisible);
+    const faceWrap  = els.trackInd.querySelector(".ti-face");
+    const handsWrap = els.trackInd.querySelector(".ti-hands");
+    if (faceWrap)  faceWrap.classList.toggle("hidden", !showFace);
+    if (handsWrap) handsWrap.classList.toggle("hidden", !showHands);
+    if (els.tiFaceN)  els.tiFaceN.textContent  = fN;
+    if (els.tiHandsN) els.tiHandsN.textContent = hN;
+  }
+
+  function activeFilterIds(snap) {
+    const out = [];
+    const fs = snap && snap.filters;
+    if (!fs) return out;
+    FILTERS.forEach((f) => {
+      const s = fs[f.id];
+      if (s && s.enabled) out.push(f.id);
+    });
+    return out;
+  }
+
   function updateChrome(snap) {
     els.fps.textContent = (snap.fps || 0).toFixed(1);
     els.lat.textContent = (snap.lat_ms || 0).toFixed(1);
+    // Mostrar "Limpiar" sólo cuando hay >=1 filtro activo — así no roba
+    // espacio al primary en el caso común de "todo apagado".
+    if (els.clearBtn) {
+      els.clearBtn.classList.toggle("hidden", activeFilterIds(snap).length === 0);
+    }
+    // Indicador "lo estoy viendo" — face/hands counts en vivo. Solo visible
+    // si el analyzer está encendido Y MediaPipe detecta algo. Sirve para
+    // saber al toque por qué un mapping/filtro trackeado no responde.
+    updateTrackIndicator(snap.tracking || {});
     if (snap.running) {
       setPill("LIVE", "on");
       els.primaryBtn.classList.remove("primary");
@@ -372,9 +455,11 @@
       els.backBtn.classList.add("hidden");
       els.hdTitle.textContent = "SIE \u00b7 Control";
     } else {
-      // Hide pill + KPIs in drill-down views — back+title need the room.
+      // Hide pill + KPIs + track indicator in drill-down views —
+      // back+title need the room.
       els.pill.classList.add("hidden");
       els.kpis.classList.add("hidden");
+      if (els.trackInd) els.trackInd.classList.add("hidden");
       els.backBtn.classList.remove("hidden");
       if (cur.view === "cat") {
         const c = CATEGORIES.find((x) => x.id === cur.cat);
@@ -382,6 +467,10 @@
       } else if (cur.view === "detail") {
         const f = FILTERS_BY_ID[cur.filter];
         els.hdTitle.textContent = f ? f.name : cur.filter;
+      } else if (cur.view === "mod-list") {
+        els.hdTitle.textContent = "Mapeos";
+      } else if (cur.view === "mod-create") {
+        els.hdTitle.textContent = "Nuevo mapeo · " + (cur.step || 1) + "/3";
       }
     }
   }
@@ -394,15 +483,20 @@
 
   function showView(view, animate) {
     let target = els.viewHub;
-    if (view.view === "cat")    target = els.viewCat;
-    if (view.view === "detail") target = els.viewDetail;
+    if (view.view === "cat")        target = els.viewCat;
+    if (view.view === "detail")     target = els.viewDetail;
+    if (view.view === "mod-list")   target = els.viewModList;
+    if (view.view === "mod-create") target = els.viewModCreate;
     if (state.shownTarget === target && !animate) {
       // Same view as last call (e.g. server tick re-render) — don't
       // re-trigger animations or scroll-to-top, just let the per-view
       // renderer update content in place.
       return;
     }
-    [els.viewHub, els.viewCat, els.viewDetail].forEach((v) => v.classList.add("hidden"));
+    [
+      els.viewHub, els.viewCat, els.viewDetail,
+      els.viewModList, els.viewModCreate,
+    ].forEach((v) => v.classList.add("hidden"));
     target.classList.remove("hidden");
     target.classList.remove("enter");
     if (animate) {
@@ -447,6 +541,9 @@
         if (cur.view === "detail") renderDetail(cur.filter);
       }
     }
+    // mod-list refresca con cualquier tick (hay un mapping nuevo, o se borró,
+    // o cambió la lista). El re-render es barato con N pequeño (~10 mappings).
+    if (cur.view === "mod-list") renderModList();
     state.lastFiltersJson = fJson;
   }
 
@@ -454,36 +551,544 @@
     const cur = currentView();
     showView(cur, !!animate);
     updateChrome(state.snapshot);
-    if (cur.view === "hub")    renderHub();
-    if (cur.view === "cat")    renderCat(cur.cat);
-    if (cur.view === "detail") renderDetail(cur.filter);
+    if (cur.view === "hub")        renderHub();
+    if (cur.view === "cat")        renderCat(cur.cat);
+    if (cur.view === "detail")     renderDetail(cur.filter);
+    if (cur.view === "mod-list")   renderModList();
+    if (cur.view === "mod-create") renderModCreate(cur.step || 1);
   }
 
   // ── Hub ─────────────────────────────────────────────────────────
+  // Cuántos chips de filtros activos cabemos en una tarjeta del hub
+  // antes de cortar con "+N". 4 entra prolijo en una iPhone 14 a 390px.
+  const HUB_CHIPS_MAX = 4;
+
   function renderHub() {
     const counts = {};
-    CATEGORIES.forEach((c) => { counts[c.id] = { active: 0, total: 0 }; });
+    const active = {};
+    CATEGORIES.forEach((c) => { counts[c.id] = { active: 0, total: 0 }; active[c.id] = []; });
     FILTERS.forEach((f) => {
       if (!counts[f.cat]) return;
       counts[f.cat].total += 1;
       const snap = state.snapshot.filters && state.snapshot.filters[f.id];
-      if (snap && snap.enabled) counts[f.cat].active += 1;
+      if (snap && snap.enabled) {
+        counts[f.cat].active += 1;
+        active[f.cat].push(f);
+      }
     });
+    // Tracking ocupa la 5ta tarjeta del hub: contador y chips son lo que
+    // está ENCENDIDO de los analyzers + overlay, no filtros tradicionales.
+    const tracking = state.snapshot.tracking || {};
+    const trChips = [];
+    if (tracking.face_enabled)    trChips.push({ id: "face",    label: "Cara" });
+    if (tracking.hands_enabled)   trChips.push({ id: "hands",   label: "Manos" });
+    if (tracking.overlay_enabled) trChips.push({ id: "overlay", label: "Overlay" });
+    const trActive = trChips.length;
+    // Mapeos: contador del N de modulations activas en el snapshot.
+    const mods = state.snapshot.modulations || [];
+    const modActive = mods.filter((m) => m.enabled !== false).length;
     document.querySelectorAll(".meta-count").forEach((el) => {
       const cat = el.dataset.cat;
+      if (cat === "MOD") {
+        const total = mods.length;
+        el.textContent = modActive + " activo" + (modActive === 1 ? "" : "s") +
+                         (total > modActive ? " / " + total + " total" : "");
+        el.classList.toggle("live", modActive > 0);
+        const card = el.closest(".cat");
+        if (card) card.classList.toggle("has-active", modActive > 0);
+        return;
+      }
+      if (cat === "TRACKING") {
+        el.textContent = trActive + " fuente" + (trActive === 1 ? "" : "s") + " activa" + (trActive === 1 ? "" : "s");
+        el.classList.toggle("live", trActive > 0);
+        const card = el.closest(".cat");
+        if (card) card.classList.toggle("has-active", trActive > 0);
+        return;
+      }
       const c = counts[cat] || { active: 0, total: 0 };
       el.textContent = c.active + " activos / " + c.total + " total";
       el.classList.toggle("live", c.active > 0);
       const card = el.closest(".cat");
       if (card) card.classList.toggle("has-active", c.active > 0);
     });
+    document.querySelectorAll(".chips[data-chips]").forEach((slot) => {
+      const cat = slot.dataset.chips;
+      slot.innerHTML = "";
+      if (cat === "TRACKING") {
+        // Chips no clickables — para editar entrar a la cat por tap normal.
+        trChips.forEach((t) => {
+          const chip = document.createElement("span");
+          chip.className = "chip";
+          chip.textContent = t.label;
+          slot.appendChild(chip);
+        });
+        return;
+      }
+      if (cat === "MOD") {
+        // Mostrar las primeras 3 modulaciones activas como chips legibles
+        // tipo "bloom←hands.right.y" — texto comprimido para entrar.
+        const visible = mods.slice(0, 3);
+        visible.forEach((m) => {
+          const chip = document.createElement("span");
+          chip.className = "chip";
+          chip.textContent = _modShortLabel(m);
+          if (m.enabled === false) chip.style.opacity = "0.5";
+          slot.appendChild(chip);
+        });
+        if (mods.length > visible.length) {
+          const more = document.createElement("span");
+          more.className = "chip more";
+          more.textContent = "+" + (mods.length - visible.length);
+          slot.appendChild(more);
+        }
+        return;
+      }
+      const list = active[cat] || [];
+      const visible = list.slice(0, HUB_CHIPS_MAX);
+      const overflow = list.length - visible.length;
+      visible.forEach((f) => {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "chip";
+        chip.textContent = f.name;
+        chip.setAttribute("aria-label", "Editar " + f.name);
+        chip.addEventListener("click", (e) => {
+          // El click en el chip NO debe propagar al .cat (que abriría el cat list).
+          e.stopPropagation();
+          pushView({ view: "detail", filter: f.id });
+        });
+        slot.appendChild(chip);
+      });
+      if (overflow > 0) {
+        const more = document.createElement("button");
+        more.type = "button";
+        more.className = "chip more";
+        more.textContent = "+" + overflow;
+        more.setAttribute("aria-label", overflow + " filtros activos más");
+        more.addEventListener("click", (e) => {
+          e.stopPropagation();
+          // Caer en el cat list normal — ahí los activos van arriba.
+          pushView({ view: "cat", cat: cat });
+        });
+        slot.appendChild(more);
+      }
+    });
+  }
+
+  // ── Tracking control panel (TRACKING category) ──────────────────
+  function renderTrackingCat() {
+    const list = els.catList;
+    list.innerHTML = "";
+    const tracking = state.snapshot.tracking || {};
+    TRACKING_TOGGLES.forEach((t) => {
+      const row = document.createElement("div");
+      row.className = "row";
+      let on = false;
+      if (t.id === "face")    on = !!tracking.face_enabled;
+      if (t.id === "hands")   on = !!tracking.hands_enabled;
+      if (t.id === "overlay") on = !!tracking.overlay_enabled;
+      if (t.id === "overlay" && tracking.overlay_available === false) {
+        row.classList.add("wip");
+      }
+      const toggle = document.createElement("button");
+      toggle.className = "toggle" + (on ? " on" : "");
+      toggle.type = "button";
+      toggle.setAttribute("aria-label", t.label);
+      bindToggle(toggle, on, (next) => {
+        if (t.op === "toggle_overlay") {
+          send({ op: "toggle_overlay", on: next });
+        } else if (t.op === "toggle_analyzer") {
+          send({ op: "toggle_analyzer", name: t.id, on: next });
+        }
+      });
+      const name = document.createElement("span");
+      name.className = "name";
+      name.textContent = t.label;
+      // Sub-info: cuántas detecciones vivas hay ahora mismo.
+      if (t.id === "face" && tracking.face_count > 0) {
+        const sub = document.createElement("span");
+        sub.className = "row-sub";
+        sub.textContent = "· " + tracking.face_count + " detectada" + (tracking.face_count === 1 ? "" : "s");
+        name.appendChild(sub);
+      }
+      if (t.id === "hands" && tracking.hands_count > 0) {
+        const sub = document.createElement("span");
+        sub.className = "row-sub";
+        sub.textContent = "· " + tracking.hands_count;
+        name.appendChild(sub);
+      }
+      row.appendChild(toggle);
+      row.appendChild(name);
+      list.appendChild(row);
+    });
+    // Pista de uso al pie — recordá que apagar el analyzer libera CPU,
+    // mientras que apagar el overlay solo oculta los puntos.
+    const hint = document.createElement("div");
+    hint.className = "empty";
+    hint.textContent = "Apagar un analyzer libera CPU. El overlay solo oculta los puntos sin apagar el tracking.";
+    list.appendChild(hint);
+  }
+
+  // ── Modulation: list view ──────────────────────────────────────
+  function renderModList() {
+    const body = els.modListBody;
+    body.innerHTML = "";
+    const mods = state.snapshot.modulations || [];
+    if (mods.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "empty";
+      empty.textContent = "Sin mapeos. Usá + para crear el primero.";
+      body.appendChild(empty);
+    } else {
+      mods.forEach((m, idx) => {
+        const row = document.createElement("div");
+        row.className = "mod-row";
+        if (m.enabled === false) row.classList.add("disabled");
+
+        const main = document.createElement("div");
+        main.className = "mod-main";
+        const sigEl = document.createElement("span");
+        sigEl.className = "mod-sig";
+        sigEl.textContent = _shortSignal(m.signal);
+        const arrow = document.createElement("span");
+        arrow.className = "mod-arrow";
+        arrow.textContent = "→";
+        const tgtEl = document.createElement("span");
+        tgtEl.className = "mod-tgt";
+        tgtEl.textContent = _shortFilter(m.filter_id) + " · " + m.param_id;
+        main.appendChild(sigEl);
+        main.appendChild(arrow);
+        main.appendChild(tgtEl);
+
+        const meta = document.createElement("div");
+        meta.className = "mod-meta";
+        meta.textContent = m.curve +
+          " · suav " + (m.smoothing != null ? m.smoothing.toFixed(2) : "0.30") +
+          " · out [" + (m.out_min != null ? m.out_min : 0) + ", " +
+          (m.out_max != null ? m.out_max : 1) + "]";
+
+        const del = document.createElement("button");
+        del.type = "button";
+        del.className = "mod-del";
+        del.setAttribute("aria-label", "Borrar mapeo");
+        del.textContent = "✕";
+        del.addEventListener("click", () => {
+          send({ op: "remove_modulation", idx: idx });
+        });
+
+        const left = document.createElement("div");
+        left.className = "mod-row-left";
+        left.appendChild(main);
+        left.appendChild(meta);
+        row.appendChild(left);
+        row.appendChild(del);
+        body.appendChild(row);
+      });
+    }
+
+    // Footer del view: + nuevo / clear all
+    const actions = document.createElement("div");
+    actions.className = "mod-actions";
+    const addBtn = document.createElement("button");
+    addBtn.type = "button";
+    addBtn.className = "btn primary";
+    addBtn.textContent = "+ Nuevo mapeo";
+    addBtn.addEventListener("click", () => {
+      state.modDraft = _newModDraft();
+      pushView({ view: "mod-create", step: 1 });
+    });
+    actions.appendChild(addBtn);
+    if (mods.length > 0) {
+      const clearBtn = document.createElement("button");
+      clearBtn.type = "button";
+      clearBtn.className = "btn ghost";
+      clearBtn.textContent = "Limpiar todos";
+      clearBtn.addEventListener("click", () => {
+        send({ op: "clear_modulations" });
+      });
+      actions.appendChild(clearBtn);
+    }
+    body.appendChild(actions);
+  }
+
+  function _newModDraft() {
+    return {
+      signal: null,
+      filter_id: null,
+      param_id: null,
+      in_min: 0.0, in_max: 1.0,
+      out_min: 0.0, out_max: 1.0,
+      curve: "linear",
+      smoothing: 0.3,
+      enabled: true,
+    };
+  }
+
+  // ── Modulation: create wizard (3 steps) ────────────────────────
+  function renderModCreate(step) {
+    const body = els.modCreateBody;
+    body.innerHTML = "";
+    if (state.modDraft == null) state.modDraft = _newModDraft();
+    if (step === 1) renderModStep1(body);
+    else if (step === 2) renderModStep2(body);
+    else renderModStep3(body);
+  }
+
+  // Step 1: pick signal — chips agrupados por namespace (face / hands)
+  function renderModStep1(body) {
+    const intro = document.createElement("div");
+    intro.className = "mod-step-intro";
+    intro.textContent = "Elegí qué señal del cuerpo va a controlar el filtro.";
+    body.appendChild(intro);
+
+    const signals = state.snapshot.signals || [];
+    if (signals.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "empty";
+      empty.textContent = "No hay señales declaradas — el dashboard arrancó sin tracking?";
+      body.appendChild(empty);
+      return;
+    }
+
+    // Agrupar por namespace (primer segmento del dotted name).
+    const groups = {};
+    signals.forEach((s) => {
+      const head = s.split(".")[0];
+      (groups[head] = groups[head] || []).push(s);
+    });
+    Object.keys(groups).sort().forEach((g) => {
+      const grp = document.createElement("div");
+      grp.className = "sig-group";
+      const cap = document.createElement("div");
+      cap.className = "sig-cap";
+      cap.textContent = g;
+      grp.appendChild(cap);
+      const wrap = document.createElement("div");
+      wrap.className = "sig-chips";
+      groups[g].forEach((s) => {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "sig-chip";
+        if (state.modDraft.signal === s) chip.classList.add("on");
+        chip.textContent = _shortSignal(s);
+        chip.addEventListener("click", () => {
+          state.modDraft.signal = s;
+          renderModCreate(1);  // re-render para mostrar selección
+        });
+        wrap.appendChild(chip);
+      });
+      grp.appendChild(wrap);
+      body.appendChild(grp);
+    });
+
+    const next = document.createElement("button");
+    next.type = "button";
+    next.className = "btn primary mod-next";
+    next.textContent = "Siguiente →";
+    next.disabled = !state.modDraft.signal;
+    if (next.disabled) next.classList.add("disabled");
+    next.addEventListener("click", () => {
+      if (state.modDraft.signal) {
+        state.navStack[state.navStack.length - 1].step = 2;
+        renderView(false);
+      }
+    });
+    body.appendChild(next);
+  }
+
+  // Step 2: pick filter + param — drill por categoría
+  function renderModStep2(body) {
+    const intro = document.createElement("div");
+    intro.className = "mod-step-intro";
+    intro.textContent = "Sobre " + _shortSignal(state.modDraft.signal) +
+                        ": elegí qué parámetro de qué filtro va a controlar.";
+    body.appendChild(intro);
+
+    // Solo params modulables: slider, stepper, angle.
+    const MODULABLE = new Set(["slider", "stepper", "angle"]);
+
+    // Por categoría → filtros con al menos 1 param modulable.
+    CATEGORIES.filter((c) => !["TRACKING", "MOD"].includes(c.id)).forEach((c) => {
+      const filtersInCat = FILTERS.filter((f) =>
+        f.cat === c.id && !f.wip &&
+        f.params.some((p) => MODULABLE.has(p.kind))
+      );
+      if (filtersInCat.length === 0) return;
+      const grp = document.createElement("div");
+      grp.className = "sig-group";
+      const cap = document.createElement("div");
+      cap.className = "sig-cap";
+      cap.textContent = c.name;
+      grp.appendChild(cap);
+      const wrap = document.createElement("div");
+      wrap.className = "param-list";
+      filtersInCat.forEach((f) => {
+        f.params.forEach((p) => {
+          if (!MODULABLE.has(p.kind)) return;
+          const row = document.createElement("button");
+          row.type = "button";
+          row.className = "param-pick";
+          if (state.modDraft.filter_id === f.id && state.modDraft.param_id === p.id) {
+            row.classList.add("on");
+          }
+          const top = document.createElement("span");
+          top.className = "param-pick-top";
+          top.textContent = f.name + " · " + p.label;
+          const sub = document.createElement("span");
+          sub.className = "param-pick-sub";
+          sub.textContent = p.kind + " [" + p.min + ", " + p.max + "]";
+          row.appendChild(top);
+          row.appendChild(sub);
+          row.addEventListener("click", () => {
+            state.modDraft.filter_id = f.id;
+            state.modDraft.param_id = p.id;
+            // Pre-llenar out_range con el rango natural del param.
+            state.modDraft.out_min = p.min;
+            state.modDraft.out_max = p.max;
+            renderModCreate(2);
+          });
+          wrap.appendChild(row);
+        });
+      });
+      grp.appendChild(wrap);
+      body.appendChild(grp);
+    });
+
+    const next = document.createElement("button");
+    next.type = "button";
+    next.className = "btn primary mod-next";
+    next.textContent = "Siguiente →";
+    next.disabled = !(state.modDraft.filter_id && state.modDraft.param_id);
+    if (next.disabled) next.classList.add("disabled");
+    next.addEventListener("click", () => {
+      if (state.modDraft.filter_id && state.modDraft.param_id) {
+        state.navStack[state.navStack.length - 1].step = 3;
+        renderView(false);
+      }
+    });
+    body.appendChild(next);
+  }
+
+  // Step 3: ajustar rangos + curva + smoothing + crear
+  function renderModStep3(body) {
+    const intro = document.createElement("div");
+    intro.className = "mod-step-intro";
+    intro.textContent = _modLongLabel({
+      signal: state.modDraft.signal,
+      filter_id: state.modDraft.filter_id,
+      param_id: state.modDraft.param_id,
+    });
+    body.appendChild(intro);
+
+    // Curve selector
+    const curveBlock = document.createElement("div");
+    curveBlock.className = "param-block";
+    const curveLbl = document.createElement("div");
+    curveLbl.className = "lbl";
+    curveLbl.textContent = "Curva";
+    curveBlock.appendChild(curveLbl);
+    const curveSel = document.createElement("div");
+    curveSel.className = "select";
+    ["linear", "ease_in_out", "ease_in", "ease_out", "invert"].forEach((c) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.dataset.value = c;
+      b.textContent = c.replace("_", " ");
+      if (state.modDraft.curve === c) b.classList.add("on");
+      b.addEventListener("click", () => {
+        state.modDraft.curve = c;
+        renderModCreate(3);
+      });
+      curveSel.appendChild(b);
+    });
+    curveBlock.appendChild(curveSel);
+    body.appendChild(curveBlock);
+
+    // Smoothing slider [0..1]
+    const smBlock = document.createElement("div");
+    smBlock.className = "param-block";
+    const smSlider = buildSlider({
+      min: 0.0, max: 1.0, step: 0.05,
+      label: "Suavizado (lag)",
+    }, state.modDraft.smoothing);
+    bindSlider(smSlider, state.modDraft.smoothing, 0.0, 1.0, 0.05, (v) => {
+      state.modDraft.smoothing = v;
+    });
+    smBlock.appendChild(smSlider);
+    body.appendChild(smBlock);
+
+    // Out range — dos sliders min/max
+    const outBlock = document.createElement("div");
+    outBlock.className = "param-block";
+    const outLbl = document.createElement("div");
+    outLbl.className = "lbl";
+    outLbl.textContent = "Rango de salida (sobre el parámetro)";
+    outBlock.appendChild(outLbl);
+    // Encontramos el rango natural del param para no dejar al usuario
+    // escribir cualquier número.
+    const fSpec = FILTERS_BY_ID[state.modDraft.filter_id];
+    const pSpec = (fSpec && fSpec.params || []).find((p) => p.id === state.modDraft.param_id);
+    const pMin = pSpec ? pSpec.min : 0.0;
+    const pMax = pSpec ? pSpec.max : 1.0;
+    const pStep = pSpec ? pSpec.step : 0.01;
+    const outMinSlider = buildSlider({
+      min: pMin, max: pMax, step: pStep, label: "Out min",
+    }, state.modDraft.out_min);
+    bindSlider(outMinSlider, state.modDraft.out_min, pMin, pMax, pStep, (v) => {
+      state.modDraft.out_min = v;
+    });
+    outBlock.appendChild(outMinSlider);
+    const outMaxSlider = buildSlider({
+      min: pMin, max: pMax, step: pStep, label: "Out max",
+    }, state.modDraft.out_max);
+    bindSlider(outMaxSlider, state.modDraft.out_max, pMin, pMax, pStep, (v) => {
+      state.modDraft.out_max = v;
+    });
+    outBlock.appendChild(outMaxSlider);
+    body.appendChild(outBlock);
+
+    // Confirm
+    const confirm = document.createElement("button");
+    confirm.type = "button";
+    confirm.className = "btn primary mod-next";
+    confirm.textContent = "Crear mapeo";
+    confirm.addEventListener("click", () => {
+      send({
+        op: "add_modulation",
+        signal: state.modDraft.signal,
+        filter: state.modDraft.filter_id,
+        param: state.modDraft.param_id,
+        in_min: state.modDraft.in_min,
+        in_max: state.modDraft.in_max,
+        out_min: state.modDraft.out_min,
+        out_max: state.modDraft.out_max,
+        curve: state.modDraft.curve,
+        smoothing: state.modDraft.smoothing,
+        enabled: true,
+      });
+      state.modDraft = null;
+      // Pop el wizard y caer en mod-list (que ahora muestra el nuevo).
+      // Nuestro nav stack tras step3 es: hub > mod-list > mod-create. Pop dos.
+      popView();
+    });
+    body.appendChild(confirm);
   }
 
   // ── Cat list ────────────────────────────────────────────────────
   function renderCat(catId) {
+    if (catId === "TRACKING") return renderTrackingCat();
     const list = els.catList;
     list.innerHTML = "";
-    const filters = FILTERS.filter((f) => f.cat === catId);
+    // Activos primero — para que el VJ vea de un saque qué corre y pueda
+    // editar sin scrollear entre 12 inactivos. WIP siempre al final.
+    const filters = FILTERS.filter((f) => f.cat === catId).slice().sort((a, b) => {
+      const sa = (state.snapshot.filters && state.snapshot.filters[a.id]) || {};
+      const sb = (state.snapshot.filters && state.snapshot.filters[b.id]) || {};
+      const ra = (a.wip ? 2 : 0) + (sa.enabled ? 0 : 1);
+      const rb = (b.wip ? 2 : 0) + (sb.enabled ? 0 : 1);
+      if (ra !== rb) return ra - rb;
+      return 0;  // mantener orden estable original dentro de cada bucket
+    });
     if (filters.length === 0) {
       const empty = document.createElement("div");
       empty.className = "empty";
@@ -586,9 +1191,24 @@
 
     const params = document.createElement("div");
     params.className = "params";
+    const modulatedPids = new Set(snap.modulated_params || []);
+    // Lookup signal modulando este param (para el badge).
+    const modBySigForFilter = {};
+    (state.snapshot.modulations || []).forEach((m) => {
+      if (m.filter_id === f.id) {
+        modBySigForFilter[m.param_id] = m.signal;
+      }
+    });
     f.params.forEach((p) => {
       const value = (snap.params && snap.params[p.id] !== undefined) ? snap.params[p.id] : p.default;
       const block = buildParamBlock(f.id, p, value);
+      if (block && modulatedPids.has(p.id)) {
+        block.classList.add("param-modulated");
+        const badge = document.createElement("div");
+        badge.className = "param-mod-badge";
+        badge.textContent = "🔗 " + _shortSignal(modBySigForFilter[p.id] || "");
+        block.insertBefore(badge, block.firstChild);
+      }
       if (block) params.appendChild(block);
     });
     detail.appendChild(params);
@@ -939,6 +1559,37 @@
     return decimals > 0 ? v.toFixed(decimals) : String(Math.round(v));
   }
 
+  // ── Modulation helpers ──────────────────────────────────────────
+  function _shortSignal(name) {
+    // hands.right.palm.y → mano-D.y · face.center.x → cara.x
+    if (!name) return "?";
+    const parts = name.split(".");
+    if (parts[0] === "hands" && parts.length >= 4) {
+      const side = parts[1] === "left" ? "I" : "D";
+      const axis = parts[parts.length - 1];
+      return "mano-" + side + "." + axis;
+    }
+    if (parts[0] === "face" && parts.length >= 3) {
+      return "cara." + parts.slice(2).join(".");
+    }
+    if (parts[0] === "hands" && parts[1] === "distance") return "manos-dist";
+    return name;
+  }
+
+  function _shortFilter(fid) {
+    const f = FILTERS_BY_ID[fid];
+    return f ? f.name : fid;
+  }
+
+  function _modShortLabel(m) {
+    return _shortFilter(m.filter_id) + "←" + _shortSignal(m.signal);
+  }
+
+  function _modLongLabel(m) {
+    const fname = _shortFilter(m.filter_id);
+    return _shortSignal(m.signal) + " → " + fname + " · " + m.param_id;
+  }
+
   // ────────────────────────────────────────────────────────────────
   // 10 · WS connect + reconnect
   // ────────────────────────────────────────────────────────────────
@@ -987,6 +1638,13 @@
       send({ op: state.snapshot.running ? "stop" : "start" });
     });
 
+    if (els.clearBtn) {
+      els.clearBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        send({ op: "clear_filters" });
+      });
+    }
+
     els.backBtn.addEventListener("click", (e) => {
       e.preventDefault();
       popView();
@@ -995,7 +1653,12 @@
     document.querySelectorAll(".cat").forEach((card) => {
       card.addEventListener("click", () => {
         const cat = card.dataset.cat;
-        pushView({ view: "cat", cat: cat });
+        // MOD usa una vista propia, no la lista de cat genérica.
+        if (cat === "MOD") {
+          pushView({ view: "mod-list" });
+        } else {
+          pushView({ view: "cat", cat: cat });
+        }
       });
     });
   }
