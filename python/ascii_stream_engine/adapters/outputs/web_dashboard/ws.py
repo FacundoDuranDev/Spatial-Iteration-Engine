@@ -506,6 +506,56 @@ async def websocket_endpoint(socket: WebSocket, bridge: EngineBridge, auth_token
                 await socket.send_json(bridge.snapshot())
                 continue
 
+            if op == "start_projection_calibration":
+                # idx es opcional — None usa la active region actual.
+                idx = payload.get("idx")
+                if idx is not None and not isinstance(idx, int):
+                    await socket.send_json(
+                        {"type": "error", "code": "bad_payload", "msg": "idx (int) o ausente"}
+                    )
+                    continue
+                try:
+                    bridge.start_projection_calibration(idx)
+                except Exception:
+                    logger.exception("start_projection_calibration dispatch failed")
+                    await socket.send_json(
+                        {"type": "error", "code": "internal", "msg": "start_projection_calibration"}
+                    )
+                    continue
+                await socket.send_json(bridge.snapshot())
+                continue
+
+            if op == "cancel_projection_calibration":
+                try:
+                    bridge.cancel_projection_calibration()
+                except Exception:
+                    logger.exception("cancel_projection_calibration dispatch failed")
+                    await socket.send_json(
+                        {"type": "error", "code": "internal", "msg": "cancel_projection_calibration"}
+                    )
+                    continue
+                await socket.send_json(bridge.snapshot())
+                continue
+
+            if op == "capture_projection_calibration":
+                try:
+                    ok, err = bridge.capture_projection_calibration()
+                except Exception:
+                    logger.exception("capture_projection_calibration dispatch failed")
+                    await socket.send_json(
+                        {"type": "error", "code": "internal", "msg": "capture_projection_calibration"}
+                    )
+                    continue
+                if not ok:
+                    await socket.send_json(
+                        {"type": "error", "code": "calibration_failed",
+                         "msg": err or "calibración falló"}
+                    )
+                    # No continúa — mandamos también el snapshot para que la
+                    # UI reflej el estado actual (sigue en modo calibración).
+                await socket.send_json(bridge.snapshot())
+                continue
+
             if op == "set_param":
                 fid = payload.get("filter")
                 pid = payload.get("param")

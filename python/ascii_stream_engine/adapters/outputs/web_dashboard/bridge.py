@@ -11,7 +11,7 @@ import os
 import tempfile
 import threading
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from . import registry
 
@@ -366,6 +366,7 @@ class EngineBridge:
             "mesh_points": pm.mesh_points,
             "corners": [list(c) for c in pm.corners_norm],
             "supported_sizes": list(SUPPORTED_MESH_SIZES),
+            "calibration_mode": bool(pm.calibration_mode),
         }
 
     # --- regiones (multi-region) -----------------------------------
@@ -444,6 +445,91 @@ class EngineBridge:
                     "rename_projection_region(%s,%r) failed", idx, name
                 )
                 return False
+
+    # --- auto-calibración (ChArUco) -------------------------------
+
+    def start_projection_calibration(self, region_idx: Optional[int] = None) -> bool:
+        """Entra en modo calibración: el renderer muestra el patrón ChArUco.
+
+        Si `region_idx` es None, usa la active region. La región objetivo
+        queda guardada para que `capture_projection_calibration()` sepa
+        a cuál aplicar los corners detectados.
+        """
+        with self._lock:
+            pm = self._find_projection_renderer()
+            if pm is None:
+                return False
+            try:
+                if region_idx is not None:
+                    pm.set_active_region(int(region_idx))
+                pm.calibration_mode = True
+                # Guardamos el target para validar al capturar.
+                self._calibration_target_region = pm.active_region_index
+                return True
+            except Exception:
+                logger.exception("start_projection_calibration failed")
+                return False
+
+    def cancel_projection_calibration(self) -> bool:
+        """Sale del modo calibración sin aplicar nada."""
+        with self._lock:
+            pm = self._find_projection_renderer()
+            if pm is None:
+                return False
+            try:
+                pm.calibration_mode = False
+                self._calibration_target_region = None
+                return True
+            except Exception:
+                logger.exception("cancel_projection_calibration failed")
+                return False
+
+    def capture_projection_calibration(self) -> Tuple[bool, Optional[str]]:
+        """Toma el último frame de cámara, detecta el patrón y aplica corners.
+
+        Returns `(ok, error)`. Si ok=True, la región active fue actualizada
+        con los corners detectados y el modo calibración quedó apagado.
+        Si ok=False, error es un string descriptivo (mostrar al usuario);
+        el modo calibración se mantiene para que pueda reintentar.
+        """
+        from ...renderers.projection_calibration import detect_corners_normalized
+
+        with self._lock:
+            pm = self._find_projection_renderer()
+            if pm is None:
+                return False, "renderer no disponible"
+            if not pm.calibration_mode:
+                return False, "no estás en modo calibración"
+            target = getattr(self, "_calibration_target_region", pm.active_region_index)
+            if target is None or not (0 <= target < len(pm.regions)):
+                return False, "target region inválida"
+            getter = getattr(self._engine, "get_last_input_frame", None)
+            if getter is None:
+                return False, "el engine no expone el último frame"
+            frame = getter()
+            if frame is None:
+                return False, "todavía no hay frames de cámara — esperá unos segundos"
+            corners, err = detect_corners_normalized(frame)
+            if corners is None:
+                return False, err or "no se detectaron markers"
+            # Aplicar los corners detectados a la region target.
+            try:
+                pm.set_active_region(int(target))
+                # Si la región tenía mesh denso, baja a 2x2 — auto-cal solo
+                # produce homografía perspective, no NxM. Querés precisión
+                # extra: subí densidad después de calibrar y ajustá manual.
+                if pm.mesh_size != (2, 2):
+                    pm.set_mesh_size(2, 2)
+                pm.set_corners(corners)
+                pm.calibration_mode = False
+                self._calibration_target_region = None
+                self._save_projection_quiet()
+                return True, None
+            except Exception:
+                logger.exception("apply calibration corners failed")
+                return False, "fallo aplicando corners — log del server"
+
+    # --- end auto-calibración --------------------------------------
 
     def toggle_projection(self, on: bool) -> bool:
         """Activa/desactiva el warp. Persiste el flag para la próxima run."""

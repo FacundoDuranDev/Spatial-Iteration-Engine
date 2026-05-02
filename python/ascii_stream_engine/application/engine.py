@@ -246,6 +246,19 @@ class StreamEngine:
         with self._analysis_lock:
             return dict(self._last_analysis)
 
+    def get_last_input_frame(self):
+        """Devuelve el último frame raw leído de la cámara, o None.
+
+        Sirve para herramientas que necesitan inspeccionar lo que está
+        viendo la cámara (ej. auto-calibración de projection mapping con
+        ChArUco). El frame es BGR uint8 — es la copia más fresca que el
+        FrameBuffer pueda devolver.
+        """
+        try:
+            return self._frame_buffer.get_latest()
+        except Exception:
+            return None
+
     @property
     def profiler(self) -> LoopProfiler:
         """Obtiene el profiler del engine."""

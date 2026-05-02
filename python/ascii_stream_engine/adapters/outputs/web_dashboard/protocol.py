@@ -19,6 +19,8 @@ ALLOWED_OPS = frozenset({
     "add_projection_region", "remove_projection_region",
     "set_projection_active_region", "set_projection_region_enabled",
     "rename_projection_region",
+    "start_projection_calibration", "capture_projection_calibration",
+    "cancel_projection_calibration",
     "pong",
 })
 

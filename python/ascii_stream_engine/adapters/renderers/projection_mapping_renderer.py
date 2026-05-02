@@ -346,6 +346,10 @@ class ProjectionMappingRenderer:
         self._lut_caches: List[Optional[Tuple[np.ndarray, np.ndarray, int, int, bytes]]] = (
             [None] * len(self._regions)
         )
+        # Modo calibración: cuando está activo, render() devuelve el patrón
+        # ChArUco en lugar del frame procesado. El bridge entra/sale del
+        # modo y orquesta la captura.
+        self._calibration_mode: bool = False
 
     # --- composition -------------------------------------------------
 
@@ -374,6 +378,16 @@ class ProjectionMappingRenderer:
     @overlay_enabled.setter
     def overlay_enabled(self, on: bool) -> None:
         self._enabled = bool(on)
+
+    # --- modo calibración -------------------------------------------
+
+    @property
+    def calibration_mode(self) -> bool:
+        return self._calibration_mode
+
+    @calibration_mode.setter
+    def calibration_mode(self, on: bool) -> None:
+        self._calibration_mode = bool(on)
 
     # --- regiones ----------------------------------------------------
 
@@ -499,6 +513,19 @@ class ProjectionMappingRenderer:
         config: EngineConfig,
         analysis: Optional[dict] = None,
     ) -> RenderFrame:
+        # Modo calibración: ignoramos el frame source y devolvemos el
+        # patrón ChArUco al tamaño del output. NO se aplica warp encima
+        # — si lo hiciéramos, los markers se distorsionarían y el detector
+        # no podría reconstruir la homografía.
+        if self._calibration_mode:
+            w, h = self.output_size(config)
+            from .projection_calibration import generate_pattern_image
+            pattern = generate_pattern_image(int(w), int(h))
+            return RenderFrame(
+                image=Image.fromarray(pattern),
+                metadata={"source": "projection_calibration", "calibration": True},
+            )
+
         if self._inner is not None:
             rendered = self._inner.render(frame, config, analysis)
         else:

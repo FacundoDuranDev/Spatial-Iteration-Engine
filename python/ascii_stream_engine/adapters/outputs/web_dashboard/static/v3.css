@@ -1267,6 +1267,55 @@ input, button, select, textarea { font-size: max(16px, 1em); font-family: inheri
 }
 .proj-hint b { color: var(--accent); font-weight: 500; }
 
+/* Banner de modo calibración — ocupa toda la projection view mientras
+   el operador apunta la cámara al proyector. Visualmente fuerte para
+   que se note que estamos en un modo especial. */
+.proj-calib-banner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  background: var(--surface);
+  border: 2px dashed var(--accent);
+  border-radius: 6px;
+  text-align: center;
+}
+.proj-calib-ttl {
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  letter-spacing: 0.16em;
+  color: var(--accent);
+  text-shadow: var(--glow-sm);
+  margin: 0;
+  text-transform: uppercase;
+}
+.proj-calib-sub {
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+  color: var(--text-2);
+  margin: 0;
+}
+.proj-calib-sub b { color: var(--accent); font-weight: 500; }
+.proj-calib-error {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  padding: var(--sp-2);
+  border-radius: 4px;
+  background: rgba(255, 80, 80, 0.08);
+}
+.proj-calib-actions {
+  display: flex;
+  gap: var(--sp-2);
+  justify-content: center;
+  margin-top: var(--sp-1);
+}
+.proj-calib-actions .btn {
+  flex: 1 1 0;
+  min-height: 56px;
+}
+
 /* Hub card — outline más marcado cuando el warp está encendido, igual
    que el resto de cat cards con .has-active. */
 .cat.cat-projection.has-active {

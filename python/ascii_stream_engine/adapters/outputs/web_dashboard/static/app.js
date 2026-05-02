@@ -1210,6 +1210,63 @@
       return;
     }
 
+    // ── Banner modo calibración ───────────────────────────────────
+    // Ocupa toda la view con el flujo "apuntá la cámara → Capturar".
+    // El resto de los controles (toggle, density, canvas, regiones) se
+    // ocultan mientras estamos calibrando — son distracción.
+    if (proj.calibration_mode) {
+      const banner = document.createElement("div");
+      banner.className = "proj-calib-banner";
+      const ttl = document.createElement("h2");
+      ttl.className = "proj-calib-ttl";
+      ttl.textContent = "MODO CALIBRACIÓN";
+      const sub = document.createElement("p");
+      sub.className = "proj-calib-sub";
+      sub.innerHTML = "El proyector est&aacute; mostrando un patr&oacute;n ChArUco fullscreen.<br>" +
+        "Apunt&aacute; la c&aacute;mara hacia donde el proyector tira la imagen, " +
+        "esperá a ver el patr&oacute;n completo en el preview, y tap&eacute; <b>Capturar</b>.";
+      banner.appendChild(ttl);
+      banner.appendChild(sub);
+
+      const errorBox = document.createElement("div");
+      errorBox.className = "proj-calib-error hidden";
+      errorBox.id = "proj-calib-error";
+      banner.appendChild(errorBox);
+      // Mostrar el último error si lo hay (server lo dejó en state).
+      if (state.lastCalibError) {
+        errorBox.textContent = state.lastCalibError;
+        errorBox.classList.remove("hidden");
+      }
+
+      const actions = document.createElement("div");
+      actions.className = "proj-calib-actions";
+      const captureBtn = document.createElement("button");
+      captureBtn.type = "button";
+      captureBtn.className = "btn primary";
+      captureBtn.textContent = "Capturar";
+      captureBtn.addEventListener("click", () => {
+        // Limpiamos el error mientras esperamos respuesta.
+        state.lastCalibError = null;
+        errorBox.classList.add("hidden");
+        send({ op: "capture_projection_calibration" });
+      });
+      const cancelBtn = document.createElement("button");
+      cancelBtn.type = "button";
+      cancelBtn.className = "btn ghost";
+      cancelBtn.textContent = "Cancelar";
+      cancelBtn.addEventListener("click", () => {
+        state.lastCalibError = null;
+        send({ op: "cancel_projection_calibration" });
+      });
+      actions.appendChild(captureBtn);
+      actions.appendChild(cancelBtn);
+      banner.appendChild(actions);
+
+      body.appendChild(banner);
+      // No renderizamos el resto de la UI mientras calibramos.
+      return;
+    }
+
     // ── Regions row (chips + "+ Nueva") ───────────────────────────
     const regions = Array.isArray(proj.regions) && proj.regions.length
       ? proj.regions : [{ name: "Región 1", enabled: true }];
@@ -1434,6 +1491,24 @@
       send({ op: "reset_projection" });
     });
     actions.appendChild(resetBtn);
+
+    // Auto-calibración con patrón ChArUco — solo si tiene sentido para
+    // la región actual (mesh 2x2 o vamos a forzarlo a 2x2). Siempre
+    // habilitado: si el mesh es denso, el bridge lo baja a 2x2.
+    const calibBtn = document.createElement("button");
+    calibBtn.type = "button";
+    calibBtn.className = "btn ghost";
+    calibBtn.textContent = "Calibrar";
+    calibBtn.setAttribute("aria-label", "Auto-calibrar la región active con ChArUco");
+    calibBtn.addEventListener("click", () => {
+      const ok = window.confirm(
+        "Va a entrar en MODO CALIBRACIÓN: el proyector mostrará un patrón " +
+        "ChArUco fullscreen. Apuntá la cámara al proyector. ¿Seguir?"
+      );
+      if (!ok) return;
+      send({ op: "start_projection_calibration", idx: activeIdx });
+    });
+    actions.appendChild(calibBtn);
 
     const centerBtn = document.createElement("button");
     centerBtn.type = "button";
@@ -2148,7 +2223,16 @@
       try { msg = JSON.parse(ev.data); } catch (_) { return; }
       if (msg.type === "state") render(msg);
       else if (msg.type === "ping") send({ op: "pong" });
-      else if (msg.type === "error") console.warn("[ws]", msg);
+      else if (msg.type === "error") {
+        console.warn("[ws]", msg);
+        // Errores de calibración los queremos visibles en la UI, no
+        // solo en consola — el operador está mirando el celu, no la term.
+        if (msg.code === "calibration_failed") {
+          state.lastCalibError = msg.msg || "no se detectó el patrón";
+          // Re-render del view actual si es projection — pinta el error.
+          if (currentView().view === "projection") renderProjection();
+        }
+      }
     });
 
     ws.addEventListener("close", (ev) => {
