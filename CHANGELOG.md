@@ -8,6 +8,16 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 ## [Unreleased]
 
 ### Added
+- `feat(projection)`: ProjectionMappingRenderer — renderer wrapper que aplica warp para projection mapping. Wireado en v3 stack como capa más externa (`passthrough → landmarks overlay → projection warp`). Soporta tres modos en una sola API:
+  - **4-corner perspective** (mesh 2x2): drag de las 4 esquinas, fast path con `cv2.warpPerspective`.
+  - **Mesh warping NxM** (densidades 2x2 / 3x3 / 5x5 / 9x9): cada celda subdividida en 2 triángulos rasterizados a un LUT cacheado, render con `cv2.remap`. LUT solo se reconstruye al cambiar el mesh.
+  - **Multi-región**: lista de regiones independientes, cada una con su mesh, name y enabled flag. Composición sobre canvas negro con alpha mask por región (las posteriores pintan encima).
+- `feat(projection)`: Auto-calibración con patrón ChArUco (`projection_calibration.py`). El renderer entra en modo calibración (patrón fullscreen sin warp), captura un frame de cámara, detecta los 4 corners externos del board, computa la homografía proyector→cámara y la invierte para obtener los corners "compensados" que hacen que la imagen aparezca rectangular en la superficie física. Limita a homografía perspective (modela superficies planas); ajuste fino se hace con mesh denso encima.
+- `feat(web-dashboard)`: Nueva categoría hub **MAPPING / Proyección** con calibration view: canvas SVG 16:9 con N×M handles draggeables (pointer events + setPointerCapture, hit-target ≥ 48 CSS px), density picker (2x2 / 3x3 / 5x5 / 9x9), region selector con chips (toggle / rename / delete / +nueva), botón Calibrar con banner de modo calibración (Capturar / Cancelar / error inline). Throttle WS dispatch a 20 Hz con flush en pointerup.
+- `feat(web-dashboard)`: 14 nuevos WS ops para projection mapping: `toggle_projection`, `set_projection_corners`, `set_projection_corner`, `reset_projection`, `set_projection_mesh_size`, `set_projection_mesh_points`, `set_projection_mesh_point`, `add_projection_region`, `remove_projection_region`, `set_projection_active_region`, `set_projection_region_enabled`, `rename_projection_region`, `start/capture/cancel_projection_calibration`. Persistencia en `~/.ascii_stream_engine/projection.json` (schema v3, atomic write, auto-migración v1 4-corner → v2 single mesh → v3 multi-region).
+- `feat(engine)`: `StreamEngine.get_last_input_frame()` para que el bridge pueda inspeccionar el último frame raw de cámara (usado por auto-calibración).
+- `feat(ports)`: Nueva clase `Region` (dataclass) en `projection_mapping_renderer.py`: encapsula mesh + name + enabled + métodos de mutación. Cada renderer tiene una lista de regions con una "active" sobre la que operan los métodos legacy.
+- `feat(preview)`: `PreviewSink` arranca en fullscreen por default — sin barra de título ni chrome del WM. Requisito para projection mapping (el proyector tiene que ver solo el frame). `f` toggle, `ESC` exit; `fullscreen=False` para opt-out.
 - `feat(temporal)`: TemporalManager service — demand-driven temporal state with lazy buffer allocation
 - `feat(pipeline)`: FilterContext — dict-compatible wrapper with temporal access for filters
 - `feat(filters)`: CRT Glitch filter — scanlines, chromatic aberration, VHS tracking, screen tear, noise, barrel distortion (perception-reactive via optical flow)
