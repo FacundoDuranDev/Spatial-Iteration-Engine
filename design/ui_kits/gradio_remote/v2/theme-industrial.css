@@ -1,0 +1,62 @@
+/* Industrial Minimal — token map for v2 components. */
+@import url('../b_industrial/tokens.css');
+
+.theme-industrial {
+  --v2-bg:           var(--bg);
+  --v2-surface:      var(--panel);
+  --v2-surface-high: var(--panel-2);
+  --v2-line:         var(--rule);
+  --v2-line-strong:  var(--panel-3);
+  --v2-hd-bg:        var(--panel);
+
+  --v2-text:    var(--text);
+  --v2-text-2:  var(--text-2);
+  --v2-text-3:  var(--text-3);
+
+  --v2-accent:        var(--accent);
+  --v2-accent-soft:   rgba(255, 212, 0, 0.12);
+  --v2-on-accent:     var(--accent-ink);
+  --v2-danger:        var(--live);
+  --v2-glow:          none;
+  --v2-glow-sm:       none;
+  --v2-glow-lg:       var(--bevel);
+  --v2-inset:         var(--inset);
+
+  --v2-font-ui:      var(--font-ui);
+  --v2-font-mono:    var(--font-mono);
+  --v2-font-display: var(--font-ui);
+  --v2-fw-bold: 700;
+  --v2-tracking-tight: -0.005em;
+
+  --v2-fs-xs: var(--t-xs);
+  --v2-fs-sm: var(--t-sm);
+  --v2-fs-md: var(--t-md);
+  --v2-fs-lg: var(--t-lg);
+  --v2-fs-xl: var(--t-2xl);
+
+  --v2-sp-1: var(--s-1);
+  --v2-sp-2: var(--s-2);
+  --v2-sp-3: var(--s-3);
+  --v2-sp-4: var(--s-4);
+  --v2-sp-5: var(--s-5);
+  --v2-sp-6: var(--s-6);
+  --v2-sp-7: var(--s-7);
+
+  --v2-r-sm: var(--r-sm);
+  --v2-r-md: var(--r-md);
+
+  --v2-hit: var(--hit);
+}
+
+/* Industrial: hairline groove between sections, bevel on header. */
+.theme-industrial .v2-hd {
+  box-shadow: inset 0 -1px 0 rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.theme-industrial .v2-ft {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.theme-industrial .v2-cat,
+.theme-industrial .v2-row,
+.theme-industrial .v2-stepper button {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+}

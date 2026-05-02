@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Gradio Remote · v2 — generic filter UI · 3 variants</title>
+
+<link rel="stylesheet" href="../shared/frame.css" />
+<link rel="stylesheet" href="components.css" />
+<link rel="stylesheet" href="theme-paper.css" />
+<link rel="stylesheet" href="theme-industrial.css" />
+<link rel="stylesheet" href="theme-stage.css" />
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+
+<style>
+  html, body { background: #111; margin: 0; }
+  body { font-family: ui-monospace, 'JetBrains Mono', monospace; }
+  /* Single-phone view (when opened on the actual phone): use ?view=hub|cat|detail|specs&theme=paper|industrial|stage */
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script src="../shared/data.js"></script>
+<script type="text/babel" src="app.jsx"></script>
+
+</body>
+</html>

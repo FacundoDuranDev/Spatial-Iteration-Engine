@@ -73,6 +73,8 @@ window.FILTERS = [
   { id: 'temporal_scan', name: 'TemporalScan', cat: 'DISTORT', params: [
     { id: 'buffer', label: 'Buffer size', kind: 'slider', min: 5, max: 60, step: 5, default: 30, unit: 'fr' },
     { id: 'angle', label: 'Scan angle', kind: 'angle', min: 0, max: 360, default: 0, unit: '°' },
+    { id: 'band_width', label: 'Band width', kind: 'slider', min: 0.0, max: 0.5, step: 0.01, default: 0.0 },
+    { id: 'curve', label: 'Curve', kind: 'select', options: ['linear','ease'], default: 'linear' },
   ]},
   { id: 'radial_blur', name: 'Radial Blur', cat: 'DISTORT', params: [
     { id: 'strength', label: 'Strength', kind: 'slider', min: 0, max: 1, step: 0.05, default: 0.3 },

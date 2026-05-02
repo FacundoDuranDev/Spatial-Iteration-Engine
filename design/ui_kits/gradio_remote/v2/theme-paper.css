@@ -1,0 +1,64 @@
+/* Paper Console — token map for v2 components.
+   Imports the variant tokens and remaps them to --v2-*. */
+@import url('../a_paper/tokens.css');
+
+.theme-paper {
+  --v2-bg:           var(--paper-0);
+  --v2-surface:      var(--paper-1);
+  --v2-surface-high: var(--paper-2);
+  --v2-line:         var(--paper-3);
+  --v2-line-strong:  var(--paper-edge);
+  --v2-hd-bg:        var(--paper-1);
+
+  --v2-text:    var(--ink-0);
+  --v2-text-2:  var(--ink-1);
+  --v2-text-3:  var(--ink-2);
+
+  --v2-accent:        var(--accent);
+  --v2-accent-soft:   var(--accent-soft);
+  --v2-on-accent:     var(--paper-0);
+  --v2-danger:        var(--accent-ink);
+  --v2-glow:          none;
+  --v2-glow-sm:       none;
+  --v2-glow-lg:       inset 0 1px 0 rgba(255,255,255,0.5), 0 1px 0 rgba(26,20,12,0.15);
+  --v2-inset:         inset 0 1px 0 rgba(255,255,255,0.6), inset 0 -1px 0 rgba(0,0,0,0.05);
+
+  --v2-font-ui:      var(--font-ui);
+  --v2-font-mono:    var(--font-mono);
+  --v2-font-display: var(--font-display);
+  --v2-fw-bold: 500;
+  --v2-tracking-tight: -0.015em;
+
+  --v2-fs-xs: var(--t-xs);
+  --v2-fs-sm: var(--t-sm);
+  --v2-fs-md: var(--t-md);
+  --v2-fs-lg: var(--t-lg);
+  --v2-fs-xl: var(--t-2xl);
+
+  --v2-sp-1: var(--s-1);
+  --v2-sp-2: var(--s-2);
+  --v2-sp-3: var(--s-3);
+  --v2-sp-4: var(--s-4);
+  --v2-sp-5: var(--s-5);
+  --v2-sp-6: var(--s-6);
+  --v2-sp-7: var(--s-7);
+
+  --v2-r-sm: var(--r-sm);
+  --v2-r-md: var(--r-md);
+
+  --v2-hit: var(--hit);
+}
+
+/* Paper-specific touches: paper grain on the screen, serif drift. */
+.theme-paper .v2-screen { color: var(--v2-text); }
+.theme-paper .v2-screen::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: var(--grain);
+  background-size: 160px 160px;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  opacity: 0.45;
+  z-index: 1;
+}
+.theme-paper .v2-hd, .theme-paper .v2-ft, .theme-paper .v2-body { position: relative; z-index: 2; }

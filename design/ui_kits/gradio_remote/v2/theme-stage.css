@@ -1,0 +1,73 @@
+/* High-Contrast Stage — token map for v2 components.
+   Bigger hit targets, sharp corners, phosphor glow. */
+@import url('../c_stage/tokens.css');
+
+.theme-stage {
+  --v2-bg:           var(--bg);
+  --v2-surface:      #0a0a0a;
+  --v2-surface-high: #141414;
+  --v2-line:         var(--rule);
+  --v2-line-strong:  var(--ink-4);
+  --v2-hd-bg:        #050505;
+
+  --v2-text:    var(--ink);
+  --v2-text-2:  var(--ink-2);
+  --v2-text-3:  var(--ink-3);
+
+  --v2-accent:        var(--accent);
+  --v2-accent-soft:   rgba(34, 241, 208, 0.12);
+  --v2-on-accent:     var(--bg);
+  --v2-danger:        var(--live);
+  --v2-glow:          var(--accent-glow);
+  --v2-glow-sm:       0 0 8px rgba(34, 241, 208, 0.5);
+  --v2-glow-lg:       0 0 28px rgba(34, 241, 208, 0.65), 0 0 6px rgba(34, 241, 208, 1);
+  --v2-inset:         none;
+
+  --v2-font-ui:      var(--font-ui);
+  --v2-font-mono:    var(--font-mono);
+  --v2-font-display: var(--font-ui);
+  --v2-fw-bold: 600;
+  --v2-tracking-tight: -0.02em;
+
+  --v2-fs-xs: 13px;
+  --v2-fs-sm: 16px;
+  --v2-fs-md: 19px;
+  --v2-fs-lg: 26px;
+  --v2-fs-xl: 36px;
+
+  --v2-sp-1: var(--s-1);
+  --v2-sp-2: var(--s-2);
+  --v2-sp-3: var(--s-3);
+  --v2-sp-4: var(--s-4);
+  --v2-sp-5: var(--s-5);
+  --v2-sp-6: var(--s-6);
+  --v2-sp-7: var(--s-7);
+
+  --v2-r-sm: 0;
+  --v2-r-md: 0;
+
+  --v2-hit: 64px;
+}
+
+/* Stage: sharp corners on every container, bigger atoms. */
+.theme-stage .v2-cat,
+.theme-stage .v2-row,
+.theme-stage .v2-stepper,
+.theme-stage .v2-pills,
+.theme-stage .v2-btn,
+.theme-stage .v2-text-input { border-radius: 0; }
+
+.theme-stage .v2-toggle { width: 64px; height: 36px; }
+.theme-stage .v2-toggle::after { width: 26px; height: 26px; }
+.theme-stage .v2-toggle.on::after { transform: translateX(28px); }
+
+.theme-stage .v2-stepper button { width: 56px; height: 52px; font-size: 24px; }
+.theme-stage .v2-stepper .v { min-width: 72px; font-size: var(--v2-fs-md); }
+
+.theme-stage .v2-slider .pin { width: 28px; height: 28px; border-width: 3px; }
+.theme-stage .v2-dial .face { width: 156px; height: 156px; }
+.theme-stage .v2-dial .needle { height: 66px; }
+
+/* Make the accent really sing on stage. */
+.theme-stage .v2-cat .name { letter-spacing: var(--v2-tracking-tight); }
+.theme-stage .v2-hd .pill.on { box-shadow: var(--v2-glow-sm); }
