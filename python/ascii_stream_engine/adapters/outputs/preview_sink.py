@@ -24,15 +24,23 @@ class PreviewSink:
 
     WINDOW_NAME = "Spatial-Iteration-Engine Preview"
 
-    def __init__(self, window_name: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        window_name: Optional[str] = None,
+        fullscreen: bool = True,
+    ) -> None:
         self._window_name = window_name or self.WINDOW_NAME
         self._is_open = False
         self._output_size: Optional[Tuple[int, int]] = None
+        # Fullscreen-first: para projection mapping y performance lo que se ve
+        # tiene que ser SOLO el frame, sin barra de título ni chrome del WM.
+        # `f` sigue toggleando, `ESC` sale de fullscreen.
+        self._fullscreen_default = bool(fullscreen)
 
     def open(self, config: EngineConfig, output_size: Tuple[int, int]) -> None:
         self.close()
         self._output_size = output_size
-        self._is_fullscreen = False
+        self._is_fullscreen = self._fullscreen_default
         self._is_open = True
         self._ensure_window()
 
