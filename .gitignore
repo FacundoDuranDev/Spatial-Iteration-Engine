@@ -90,6 +90,7 @@ desktop.ini
 # Claude Code
 CLAUDE.md
 .claude/*.lock
+.claude/scratch/_screenshots/
 
 # Research (internal notes, not versioned)
 research/
